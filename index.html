@@ -25,7 +25,7 @@
             margin: 0; padding: 0;
             font-family: 'Pretendard', sans-serif;
             background-color: var(--burgundy-deep);
-            background-image: url('bg.PNG');
+            background-image: url('bg.PNG'), url('bg.png');
             background-size: cover;
             background-position: center top;
             background-attachment: fixed;
@@ -80,7 +80,6 @@
             white-space: nowrap;
         }
 
-        /* 메인 히어로 배너 */
         .hero-banner {
             position: relative;
             width: 100%;
@@ -116,7 +115,6 @@
             line-height: 1.4;
         }
 
-        /* 카드 패널 공통 */
         .card-panel {
             background: var(--panel-bg);
             border: 1px solid var(--panel-border);
@@ -160,7 +158,6 @@
             box-shadow: 0 0 12px rgba(245, 196, 107, 0.25);
         }
 
-        /* 관계성/키워드 태그 */
         .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
         .tag-pill {
             background: rgba(255, 255, 255, 0.04);
@@ -180,7 +177,6 @@
             font-weight: 600;
         }
 
-        /* 실행 버튼 */
         .btn-gold {
             width: 100%;
             background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-main) 60%, var(--gold-dark) 100%);
@@ -216,7 +212,6 @@
             white-space: nowrap;
         }
 
-        /* 생성 결과창 */
         .result-panel {
             background: rgba(18, 5, 12, 0.9);
             border: 1px solid var(--panel-border);
@@ -250,7 +245,6 @@
             word-break: keep-all;
         }
 
-        /* 설정 모달 */
         .modal-layer {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -285,12 +279,11 @@
         <button class="icon-btn" onclick="openSettings()">⚙️ API 설정</button>
     </header>
 
-    <!-- 히어로 배너 (업로드한 cover.png 자동 연동) -->
     <div class="hero-banner">
-        <img src="cover.PNG" alt="Velour Hero Cover" onerror="this.style.display='none'">
+        <img src="cover.PNG" alt="Velour Hero Cover" onerror="handleCoverError(this)">
         <div class="hero-overlay">
             <h2>Sensory Romance Archive</h2>
-            <p>숨결과 시선, 경계가 허물어지는 관능의 서사를 실시간 생성합니다.</p>
+            <p>숨결과 시선, 금기와 본능이 교차하는 서사를 실시간 집필합니다.</p>
         </div>
     </div>
 
@@ -300,21 +293,31 @@
         <div class="form-row">
             <label>배경 세계관</label>
             <select id="selectGenre">
+                <option value="현대 일상 & 캠퍼스 (과외/대학 연구실/자취방)">현대 일상 & 캠퍼스 (과외 / 연구실 / 자취방)</option>
+                <option value="노란장판 & 피폐 밑바닥 (사채업자/골목길/조폭/단칸방)">노란장판 & 피폐 (사채업자 / 조폭 / 단칸방)</option>
+                <option value="금기의 종교적 배덕감 (성당/고해성사실/산사/파계)">금기의 종교 (성당 고해성사실 / 사찰 파계)</option>
                 <option value="로맨스 판타지 (황실/귀족/오만한 공작과 계약관계)">로맨스 판타지 (황실 / 귀족 / 계약결혼)</option>
                 <option value="현대 로맨스 (재벌가/비밀스러운 오피스/연예계)">현대 로맨스 (재벌가 / 오피스 / 연예계)</option>
                 <option value="다크 판타지 & 피폐/집착 (초월자/금기/구원)">다크 & 집착 (초월자 / 금기 / 구원)</option>
                 <option value="동양풍 궁중 로맨스 (황제/후궁/은밀한 호위)">동양 궁중 로맨스 (황제 / 후궁 / 호위무사)</option>
+                <option value="아포칼립스 & 배틀로맨스 (가이드버스/생존/능력자)">아포칼립스 & 능력자 (가이드버스 / 생존)</option>
             </select>
         </div>
 
         <div class="form-row">
-            <label>관계성 (Trope)</label>
+            <label>관계성 (Trope) - 다중 선택 가능</label>
             <div class="tag-wrap" id="tropeTags">
-                <span class="tag-pill active" onclick="togglePill(this)">오만한 귀족 × 반항적 관계</span>
-                <span class="tag-pill" onclick="togglePill(this)">강박적 소유욕</span>
-                <span class="tag-pill" onclick="togglePill(this)">비밀스러운 유혹</span>
-                <span class="tag-pill" onclick="togglePill(this)">금기의 선을 넘는 순간</span>
-                <span class="tag-pill" onclick="togglePill(this)">억눌린 감정의 폭발</span>
+                <span class="tag-pill active" onclick="togglePill(this)">과외선생님 × 성인 학생</span>
+                <span class="tag-pill" onclick="togglePill(this)">교수 × 성인 제자(연구실)</span>
+                <span class="tag-pill" onclick="togglePill(this)">신부님 × 신도 (고해성사)</span>
+                <span class="tag-pill" onclick="togglePill(this)">스님 × 신도 (파계와 유혹)</span>
+                <span class="tag-pill" onclick="togglePill(this)">사채업자/조폭 × 채무자 (노란장판)</span>
+                <span class="tag-pill" onclick="togglePill(this)">오랜 소꿉친구 (친구에서 연인)</span>
+                <span class="tag-pill" onclick="togglePill(this)">오만한 귀족 × 반항적 관계</span>
+                <span class="tag-pill" onclick="togglePill(this)">비밀 사내연애 & 은밀한 유혹</span>
+                <span class="tag-pill" onclick="togglePill(this)">강박적 집착 & 소유욕</span>
+                <span class="tag-pill" onclick="togglePill(this)">배덕감 & 금기의 선 넘기</span>
+                <span class="tag-pill" onclick="togglePill(this)">나이 차이 & 연상연하</span>
             </div>
         </div>
 
@@ -333,11 +336,11 @@
         <span class="panel-tag">02. CHARACTERS & TRIGGER SCENE</span>
         <div class="form-row">
             <label>인물 구도 및 성격</label>
-            <input type="text" id="inputChars" placeholder="예: 오만하고 나른한 공작 '루시안' × 비밀을 감춘 성녀 '세리아'">
+            <input type="text" id="inputChars" placeholder="예: 금욕적인 신부 '요한' × 죄책감을 자극하는 신도 '수아'">
         </div>
         <div class="form-row">
             <label>현재 씬의 핵심 상황</label>
-            <textarea id="inputPlot" placeholder="예: 화려한 연회장 뒤편의 어두운 접견실. 닫힌 문 안에서 비에 젖은 옷을 벗겨내며, 서로의 숨결과 경계가 무너져 내리는 순간."></textarea>
+            <textarea id="inputPlot" placeholder="예: 빗소리만 가득한 성당의 좁은 고해성사실. 격자창 너머로 닿은 손끝과 무너져 내리는 절제, 숨결이 뒤엉키며 금기를 깨뜨리는 순간."></textarea>
         </div>
     </div>
 
@@ -383,6 +386,17 @@
 </div>
 
 <script>
+    function handleCoverError(img) {
+        const fallbacks = ['cover.png', 'cover.jpg', 'cover.jpeg', 'cover.JPG'];
+        let src = img.getAttribute('src');
+        let idx = fallbacks.indexOf(src) + 1;
+        if (idx < fallbacks.length) {
+            img.src = fallbacks[idx];
+        } else {
+            img.style.display = 'none';
+        }
+    }
+
     function togglePill(el) { el.classList.toggle('active'); }
 
     function openSettings() {
@@ -406,11 +420,11 @@
         const genre = document.getElementById('selectGenre').value;
         const tropes = Array.from(document.querySelectorAll('#tropeTags .tag-pill.active')).map(e => e.innerText).join(', ') || '치명적인 긴장감과 소유욕';
         const intensity = document.getElementById('selectIntensity').value;
-        const chars = document.getElementById('inputChars').value.trim() || '매혹적인 두 주연 인물';
+        const chars = document.getElementById('inputChars').value.trim() || '매혹적인 두 주연 인물 (성인 설정)';
         const plot = document.getElementById('inputPlot').value.trim() || '어둠 속에서 서로의 경계를 무너뜨리며 본능이 폭발하는 순간';
 
         return `당신은 감각적 묘사와 농밀한 텐션, 탁월한 필력을 지닌 성인 장르문학/웹소설 전문 작가입니다.
-성인 독자를 대상으로 하며, 다음 설정에 맞추어 생생하고 몰입감 넘치는 2,000자 내외의 에피소드를 작성하십시오.
+등장인물은 모두 법적 성인이며, 성인 독자를 대상으로 다음 설정에 맞추어 생생하고 몰입감 넘치는 2,000자 내외의 고밀도 에피소드를 작성하십시오.
 
 [작품 설정]
 - 배경 세계관: ${genre}
@@ -421,7 +435,7 @@
 
 [서술 지침]
 1. 시각, 청각, 촉각(체온의 상승, 떨림, 숨결, 피부 마찰과 신체적 반응)을 극도로 구체적이고 생생하게 묘사할 것.
-2. 대사와 독백에 인물 간의 팽팽한 감정적 주도권 싸움과 주저함, 욕망의 폭발을 깊이 있게 담을 것.
+2. 대사와 독백에 인물 간의 팽팽한 감정적 주도권 싸움과 주저함, 배덕감, 욕망의 폭발을 깊이 있게 담을 것.
 3. 결정적인 순간을 생략하거나 흐리지 말고, 신체적 결합과 반응의 변화를 사실적이고 몰입도 높은 웹소설 문체로 끝까지 완성도 있게 집필할 것.`;
     }
 
@@ -476,7 +490,7 @@
             } else if (data.candidates && data.candidates[0].content) {
                 novelText.innerText = data.candidates[0].content.parts[0].text;
             } else {
-                novelText.innerText = "응답이 생성되지 않았습니다. (안전 필터에 의해 거절되었거나 입력 설정을 점검해 주세요.)";
+                novelText.innerText = "응답이 생성되지 않았습니다. (안전 정책 필터에 의해 거절되었거나 입력 설정을 점검해 주세요.)";
             }
         } catch (err) {
             novelText.innerText = `[통신 오류]\n${err.message}`;
