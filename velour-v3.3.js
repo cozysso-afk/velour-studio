@@ -483,3 +483,1380 @@ ${isContinue && historyTail() ? `\n[장기 연속성 보강 — 최근 이야기
 
   console.info('✦ VELOUR Story Engine V3.3 loaded');
 })();
+/* =========================================================
+   VELOUR V3.4 LONGFORM PATCH
+   붙이는 위치: 기존 velour-v3.3.js 파일의 맨 마지막 줄 아래
+
+   기능:
+   - 장편 4,000자+ / 일반 2,500~3,500자 선택
+   - Gemini maxOutputTokens = 8192
+   - 장편 묘사 강제 + 반복 방지
+   - 이어쓰기 최근 문맥 최대 약 10,000자 보강
+   - 생성 후 실제 글자 수 표시
+   ========================================================= */
+(() => {
+  'use strict';
+
+  if (window.__VELOUR_V34_LONGFORM_PATCH__) return;
+  window.__VELOUR_V34_LONGFORM_PATCH__ = true;
+
+  const LENGTH_KEY = 'VELOUR_V34_LENGTH_MODE';
+  const DEFAULT_LENGTH = 'long4000';
+
+  function getLengthMode() {
+    try {
+      return localStorage.getItem(LENGTH_KEY) || DEFAULT_LENGTH;
+    } catch (e) {
+      return DEFAULT_LENGTH;
+    }
+  }
+
+  function setLengthMode(value) {
+    try {
+      localStorage.setItem(LENGTH_KEY, value);
+    } catch (e) {}
+  }
+
+  function minimumChars() {
+    return getLengthMode() === 'normal2500' ? 2500 : 4000;
+  }
+
+  function lengthLabel() {
+    return getLengthMode() === 'normal2500'
+      ? '일반 · 2,500~3,500자'
+      : '장편 · 최소 4,000자 목표';
+  }
+
+  function installLengthUI() {
+    const panel = document.getElementById('velourV33Panel');
+    if (!panel || document.getElementById('v34LengthMode')) return;
+
+    // 화면의 버전 표기를 V3.4로 갱신
+    const panelTag = panel.querySelector('.panel-tag');
+    if (panelTag) {
+      panelTag.textContent = panelTag.textContent.replace(/V3\.3/g, 'V3.4');
+    }
+
+    const relTitle = document.querySelector('.v33-rel-title');
+    if (relTitle) {
+      relTitle.textContent = relTitle.textContent.replace(/V3\.3/g, 'V3.4');
+    }
+
+    // 서사 속도/크로스오버 수가 있는 첫 그리드에 분량 선택 추가
+    const firstGrid = panel.querySelector('.v33-grid');
+
+    if (firstGrid) {
+      const row = document.createElement('div');
+      row.className = 'form-row';
+
+      row.innerHTML = `
+        <label>한 화 분량</label>
+        <select id="v34LengthMode">
+          <option value="long4000">
+            장편 · 최소 4,000자 목표
+          </option>
+
+          <option value="normal2500">
+            일반 · 2,500~3,500자
+          </option>
+        </select>
+      `;
+
+      firstGrid.appendChild(row);
+
+      const select = row.querySelector('#v34LengthMode');
+
+      select.value = getLengthMode();
+
+      select.addEventListener('change', () => {
+        setLengthMode(select.value);
+        updateV34Status();
+      });
+    }
+
+    // 기존 V3.3 상태창 아래에 V3.4 분량 상태 추가
+    const status = panel.querySelector('#v33Status');
+
+    if (
+      status &&
+      !document.getElementById('v34LengthStatus')
+    ) {
+      const extra = document.createElement('div');
+
+      extra.id = 'v34LengthStatus';
+      extra.className = 'v33-status';
+      extra.style.marginTop = '7px';
+
+      status.insertAdjacentElement('afterend', extra);
+    }
+
+    // 기존 하단 엔진 배지를 V3.4로 갱신
+    const possibleBadges =
+      [...document.querySelectorAll('div')]
+        .filter(el =>
+          /Story Engine V3\.3/.test(
+            el.textContent || ''
+          )
+        );
+
+    possibleBadges.forEach(el => {
+      el.textContent =
+        '✦ Story Engine V3.4 · ' +
+        '4K Longform + ' +
+        '8192 Output Tokens + ' +
+        'Auto Director';
+    });
+
+    updateV34Status();
+  }
+
+  function updateV34Status() {
+    const el =
+      document.getElementById(
+        'v34LengthStatus'
+      );
+
+    if (!el) return;
+
+    el.innerHTML =
+      `<b>V3.4 LONGFORM</b>` +
+      ` · ${lengthLabel()}` +
+      ` · Gemini 출력 한도 8192 tokens`;
+  }
+
+  function longformDirective() {
+    if (
+      getLengthMode() ===
+      'normal2500'
+    ) {
+      return `
+[VELOUR V3.4 · 분량 지시]
+
+- 공백 포함 약 2,500~3,500자를 목표로 한 화를 작성한다.
+
+- 짧은 대사만 연속시키지 말고,
+  대사 사이의 심리 변화,
+  시선,
+  손동작,
+  몸의 방향,
+  주변 소리,
+  공간의 거리와
+  사건의 원인을 충분히 서술한다.
+
+- 같은 감정,
+  같은 외모 설명,
+  같은 문장을 되풀이해서
+  분량을 채우지 않는다.
+`;
+    }
+
+    return `
+[VELOUR V3.4 · 장편 4,000자+ 강제]
+
+- 공백 포함 최소 4,000자 이상을 목표로 한다.
+
+- 권장 분량은 약 4,200~5,500자다.
+
+- 대화 사이의 심리 묘사를 생략하지 않는다.
+
+- 인물의 시선이 어디에 머무르는지,
+  왜 피하는지,
+  언제 다시 상대를 보는지까지
+  장면의 감정 변화와 연결해 서술한다.
+
+- 손동작,
+  자세 변화,
+  몸의 방향,
+  두 사람 사이의 물리적 거리 변화를
+  장면 속에서 구체적으로 보여준다.
+
+- 주변의 빛,
+  소리,
+  온도,
+  냄새,
+  공간의 크기,
+  문이나 창문,
+  가구의 위치처럼
+  장면의 분위기를 만드는 환경 요소를
+  적절히 활용한다.
+
+- 중요한 장면을
+  한두 문장으로 요약해서
+  건너뛰지 않는다.
+
+- 장면은 기본적으로
+
+  행동
+  → 상대의 반응
+  → 내면 변화
+  → 다음 선택
+
+  의 흐름이 느껴지도록 쓴다.
+
+- 한 화 안에 최소 2개의
+  작은 장면 비트를 포함한다.
+
+- 또는 한 번 이상의
+  자연스러운 시간 변화,
+  공간 이동,
+  외부 사건 변화를 사용한다.
+
+- 긴 분량이어도
+  한 장소에서 같은 대화만
+  끝없이 반복하지 않는다.
+
+- 인물의 감정은
+  설명문으로 선언하기보다
+
+  침묵,
+  말투 변화,
+  시선,
+  행동,
+  선택,
+  회피,
+  질투,
+  망설임
+
+  등을 통해 보여준다.
+
+- 분량을 채우기 위해
+  같은 표현을 반복하지 않는다.
+
+- 이미 설명한 외모를
+  매 문단 다시 묘사하지 않는다.
+
+- 같은 과거 회상을
+  여러 번 반복하지 않는다.
+
+- 같은 긴장 문장,
+  같은 신체 반응,
+  같은 대사를
+  변형해서 되풀이하지 않는다.
+
+- 장면의 디테일은 늘리되
+  사건과 관계는 반드시 앞으로 진행한다.
+
+- 마지막 부분이라고
+  갑자기 사건을 압축하지 않는다.
+
+- 마지막 약 15%에서도
+
+  새로운 감정 정보,
+  새로운 선택,
+  새로운 약속,
+  새로운 갈등,
+  다음 화로 이어질 사건 단서
+
+  가운데 최소 하나를 추가한다.
+
+- 매 화의 마지막을
+  항상 똑같은 종류의 긴장 장면으로
+  끝내지 않는다.
+
+- 질문,
+  발각,
+  전화,
+  메시지,
+  약속,
+  질투,
+  이동,
+  새로운 임무,
+  뜻밖의 방문,
+  관계 정의,
+  작은 거짓말,
+  비밀 발견
+
+  등 다양한 방식으로
+  다음 화의 문을 연다.
+`;
+  }
+
+  /*
+   * Gemini REST 요청 직전에
+   * generationConfig.maxOutputTokens를
+   * 8192로 추가한다.
+   *
+   * 기존 safetySettings,
+   * temperature,
+   * topP 등은 그대로 보존한다.
+   */
+  function installGeminiFetchPatch() {
+    if (
+      window.__VELOUR_V34_FETCH_PATCHED__
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_FETCH_PATCHED__ =
+      true;
+
+    const nativeFetch =
+      window.fetch.bind(window);
+
+    window.fetch =
+      async function(input, init) {
+        try {
+          const url =
+            typeof input === 'string'
+              ? input
+              : (
+                  input &&
+                  input.url
+                    ? input.url
+                    : ''
+                );
+
+          const isGemini =
+            /generativelanguage\.googleapis\.com\/.*:generateContent/i
+              .test(url);
+
+          const isPost =
+            init &&
+            String(
+              init.method || 'GET'
+            ).toUpperCase() === 'POST';
+
+          if (
+            isGemini &&
+            isPost &&
+            typeof init.body === 'string'
+          ) {
+            const payload =
+              JSON.parse(init.body);
+
+            payload.generationConfig =
+              Object.assign(
+                {},
+                payload.generationConfig || {},
+                {
+                  maxOutputTokens: 8192
+                }
+              );
+
+            init =
+              Object.assign(
+                {},
+                init,
+                {
+                  body:
+                    JSON.stringify(
+                      payload
+                    )
+                }
+              );
+          }
+        } catch (err) {
+          console.warn(
+            '[VELOUR V3.4] ' +
+            'maxOutputTokens 패치 실패 — ' +
+            '기존 요청으로 계속 진행:',
+            err
+          );
+        }
+
+        return nativeFetch(
+          input,
+          init
+        );
+      };
+  }
+
+  function recentHistory(
+    maxChars = 10000
+  ) {
+    try {
+      if (
+        typeof storyHistory !==
+          'undefined' &&
+        storyHistory
+      ) {
+        return String(
+          storyHistory
+        ).slice(
+          -maxChars
+        );
+      }
+    } catch (e) {}
+
+    return '';
+  }
+
+  /*
+   * V3.3이 이미 만들어둔
+   * buildPrompt를 한 번 더 감싼다.
+   */
+  function installPromptPatch() {
+    if (
+      window.__VELOUR_V34_PROMPT_PATCHED__
+    ) {
+      return;
+    }
+
+    if (
+      typeof window.buildPrompt !==
+      'function'
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_PROMPT_PATCHED__ =
+      true;
+
+    const previousBuildPrompt =
+      window.buildPrompt;
+
+    window.buildPrompt =
+      function(
+        isContinue = false
+      ) {
+        let prompt =
+          previousBuildPrompt(
+            isContinue
+          );
+
+        /*
+         * 원본에 남아 있는
+         * "2,000자 내외" 지시를
+         * 현재 분량 모드에 맞게 교체
+         */
+        prompt =
+          prompt.replace(
+            /등장인물은 모두 성인이며,\s*성인 독자를 위해 깊이 있는 호흡으로 2,000자 내외의 에피소드를 집필하십시오\./,
+            getLengthMode() ===
+              'normal2500'
+              ? (
+                '등장인물은 모두 성인이며, ' +
+                '공백 포함 약 2,500~3,500자의 ' +
+                '충분한 호흡으로 한 화를 집필하십시오.'
+              )
+              : (
+                '등장인물은 모두 성인이며, ' +
+                '공백 포함 최소 4,000자 이상, ' +
+                '권장 4,200~5,500자의 긴 호흡으로 ' +
+                '한 화를 집필하십시오.'
+              )
+          );
+
+        /*
+         * 문구 형태가 조금 다를 때를 위한
+         * 보조 치환
+         */
+        prompt =
+          prompt.replace(
+            /2,000자 내외의 에피소드를 집필하십시오\./g,
+            getLengthMode() ===
+              'normal2500'
+              ? (
+                '공백 포함 약 ' +
+                '2,500~3,500자의 ' +
+                '에피소드를 집필하십시오.'
+              )
+              : (
+                '공백 포함 최소 4,000자 이상, ' +
+                '권장 4,200~5,500자의 ' +
+                '에피소드를 집필하십시오.'
+              )
+          );
+
+        prompt += `
+
+${longformDirective()}
+`;
+
+        /*
+         * 이어쓰기에서는
+         * V3.3의 직전 문맥에 더해서
+         * 최근 약 10,000자를 추가 참고
+         */
+        if (isContinue) {
+          const history =
+            recentHistory(
+              10000
+            );
+
+          if (history) {
+            prompt += `
+
+[VELOUR V3.4 · 장기 연속성 보강]
+
+아래는 최근 이야기의
+연속성 참고 자료다.
+
+이미 일어난 일을
+처음처럼 다시 설명하거나
+되돌리지 않는다.
+
+관계의 진척,
+약속,
+비밀,
+감정 자각,
+서로 알고 있는 정보,
+이미 벌어진 사건을
+그대로 기억하고 이어간다.
+
+직전 화와 완전히 같은 장소,
+같은 대화,
+같은 접촉,
+같은 갈등을
+다시 반복하지 않는다.
+
+[최근 이야기]
+
+${history}
+`;
+          }
+        }
+
+        return prompt;
+      };
+  }
+
+  function installCharCounter() {
+    const novel =
+      document.getElementById(
+        'novelText'
+      );
+
+    if (!novel) return;
+
+    if (
+      !document.getElementById(
+        'v34CharCount'
+      )
+    ) {
+      const counter =
+        document.createElement(
+          'div'
+        );
+
+      counter.id =
+        'v34CharCount';
+
+      counter.style.cssText =
+        'font-size:10px;' +
+        'color:#bca7b2;' +
+        'text-align:right;' +
+        'margin-top:8px;' +
+        'line-height:1.45;';
+
+      novel.insertAdjacentElement(
+        'afterend',
+        counter
+      );
+    }
+  }
+
+  function updateCharCounter() {
+    installCharCounter();
+
+    const novel =
+      document.getElementById(
+        'novelText'
+      );
+
+    const counter =
+      document.getElementById(
+        'v34CharCount'
+      );
+
+    if (
+      !novel ||
+      !counter
+    ) {
+      return;
+    }
+
+    const text =
+      (
+        novel.innerText || ''
+      ).trim();
+
+    if (
+      !text ||
+      text.startsWith(
+        '[API 오류]'
+      ) ||
+      text.startsWith(
+        '[통신 오류]'
+      ) ||
+      text.includes(
+        '응답이 생성되지 않았습니다'
+      )
+    ) {
+      counter.textContent = '';
+      return;
+    }
+
+    const count =
+      text.length;
+
+    const minimum =
+      minimumChars();
+
+    if (
+      count >= minimum
+    ) {
+      counter.style.color =
+        '#bca7b2';
+
+      counter.textContent =
+        `본문 ${count.toLocaleString()}자` +
+        ` · 목표 분량 충족`;
+    } else {
+      counter.style.color =
+        '#ffd08a';
+
+      counter.textContent =
+        `본문 ${count.toLocaleString()}자` +
+        ` · 목표 ${minimum.toLocaleString()}자+` +
+        `보다 짧게 종료됨`;
+    }
+  }
+
+  /*
+   * 실제 생성 함수도 한 번 감싸서
+   * 생성 완료 후 글자 수를 표시한다.
+   */
+  function installGeneratePatch() {
+    if (
+      window.__VELOUR_V34_GENERATE_PATCHED__
+    ) {
+      return;
+    }
+
+    if (
+      typeof window.generateStory !==
+      'function'
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_GENERATE_PATCHED__ =
+      true;
+
+    const previousGenerateStory =
+      window.generateStory;
+
+    window.generateStory =
+      async function(
+        isContinue = false
+      ) {
+        await previousGenerateStory(
+          isContinue
+        );
+
+        updateCharCounter();
+        updateV34Status();
+      };
+  }
+
+  /*
+   * 설치 순서 중요
+   *
+   * 기존 V3.3이 먼저 실행된 뒤
+   * 이 패치가 실행되는 구조다.
+   */
+  installGeminiFetchPatch();
+
+  installLengthUI();
+
+  installPromptPatch();
+
+  installCharCounter();
+
+  installGeneratePatch();
+
+  console.info(
+    '✦ VELOUR V3.4 LONGFORM PATCH loaded · ' +
+    'maxOutputTokens 8192'
+  );
+})();
+/* =========================================================
+   VELOUR V3.4 LONGFORM PATCH
+   붙이는 위치: 기존 velour-v3.3.js 파일의 맨 마지막 줄 아래
+
+   기능:
+   - 장편 4,000자+ / 일반 2,500~3,500자 선택
+   - Gemini maxOutputTokens = 8192
+   - 장편 묘사 강제 + 반복 방지
+   - 이어쓰기 최근 문맥 최대 약 10,000자 보강
+   - 생성 후 실제 글자 수 표시
+   ========================================================= */
+(() => {
+  'use strict';
+
+  if (window.__VELOUR_V34_LONGFORM_PATCH__) return;
+  window.__VELOUR_V34_LONGFORM_PATCH__ = true;
+
+  const LENGTH_KEY = 'VELOUR_V34_LENGTH_MODE';
+  const DEFAULT_LENGTH = 'long4000';
+
+  function getLengthMode() {
+    try {
+      return localStorage.getItem(LENGTH_KEY) || DEFAULT_LENGTH;
+    } catch (e) {
+      return DEFAULT_LENGTH;
+    }
+  }
+
+  function setLengthMode(value) {
+    try {
+      localStorage.setItem(LENGTH_KEY, value);
+    } catch (e) {}
+  }
+
+  function minimumChars() {
+    return getLengthMode() === 'normal2500' ? 2500 : 4000;
+  }
+
+  function lengthLabel() {
+    return getLengthMode() === 'normal2500'
+      ? '일반 · 2,500~3,500자'
+      : '장편 · 최소 4,000자 목표';
+  }
+
+  function installLengthUI() {
+    const panel = document.getElementById('velourV33Panel');
+    if (!panel || document.getElementById('v34LengthMode')) return;
+
+    // 화면의 버전 표기를 V3.4로 갱신
+    const panelTag = panel.querySelector('.panel-tag');
+    if (panelTag) {
+      panelTag.textContent = panelTag.textContent.replace(/V3\.3/g, 'V3.4');
+    }
+
+    const relTitle = document.querySelector('.v33-rel-title');
+    if (relTitle) {
+      relTitle.textContent = relTitle.textContent.replace(/V3\.3/g, 'V3.4');
+    }
+
+    // 서사 속도/크로스오버 수가 있는 첫 그리드에 분량 선택 추가
+    const firstGrid = panel.querySelector('.v33-grid');
+
+    if (firstGrid) {
+      const row = document.createElement('div');
+      row.className = 'form-row';
+
+      row.innerHTML = `
+        <label>한 화 분량</label>
+        <select id="v34LengthMode">
+          <option value="long4000">
+            장편 · 최소 4,000자 목표
+          </option>
+
+          <option value="normal2500">
+            일반 · 2,500~3,500자
+          </option>
+        </select>
+      `;
+
+      firstGrid.appendChild(row);
+
+      const select = row.querySelector('#v34LengthMode');
+
+      select.value = getLengthMode();
+
+      select.addEventListener('change', () => {
+        setLengthMode(select.value);
+        updateV34Status();
+      });
+    }
+
+    // 기존 V3.3 상태창 아래에 V3.4 분량 상태 추가
+    const status = panel.querySelector('#v33Status');
+
+    if (
+      status &&
+      !document.getElementById('v34LengthStatus')
+    ) {
+      const extra = document.createElement('div');
+
+      extra.id = 'v34LengthStatus';
+      extra.className = 'v33-status';
+      extra.style.marginTop = '7px';
+
+      status.insertAdjacentElement('afterend', extra);
+    }
+
+    // 기존 하단 엔진 배지를 V3.4로 갱신
+    const possibleBadges =
+      [...document.querySelectorAll('div')]
+        .filter(el =>
+          /Story Engine V3\.3/.test(
+            el.textContent || ''
+          )
+        );
+
+    possibleBadges.forEach(el => {
+      el.textContent =
+        '✦ Story Engine V3.4 · ' +
+        '4K Longform + ' +
+        '8192 Output Tokens + ' +
+        'Auto Director';
+    });
+
+    updateV34Status();
+  }
+
+  function updateV34Status() {
+    const el =
+      document.getElementById(
+        'v34LengthStatus'
+      );
+
+    if (!el) return;
+
+    el.innerHTML =
+      `<b>V3.4 LONGFORM</b>` +
+      ` · ${lengthLabel()}` +
+      ` · Gemini 출력 한도 8192 tokens`;
+  }
+
+  function longformDirective() {
+    if (
+      getLengthMode() ===
+      'normal2500'
+    ) {
+      return `
+[VELOUR V3.4 · 분량 지시]
+
+- 공백 포함 약 2,500~3,500자를 목표로 한 화를 작성한다.
+
+- 짧은 대사만 연속시키지 말고,
+  대사 사이의 심리 변화,
+  시선,
+  손동작,
+  몸의 방향,
+  주변 소리,
+  공간의 거리와
+  사건의 원인을 충분히 서술한다.
+
+- 같은 감정,
+  같은 외모 설명,
+  같은 문장을 되풀이해서
+  분량을 채우지 않는다.
+`;
+    }
+
+    return `
+[VELOUR V3.4 · 장편 4,000자+ 강제]
+
+- 공백 포함 최소 4,000자 이상을 목표로 한다.
+
+- 권장 분량은 약 4,200~5,500자다.
+
+- 대화 사이의 심리 묘사를 생략하지 않는다.
+
+- 인물의 시선이 어디에 머무르는지,
+  왜 피하는지,
+  언제 다시 상대를 보는지까지
+  장면의 감정 변화와 연결해 서술한다.
+
+- 손동작,
+  자세 변화,
+  몸의 방향,
+  두 사람 사이의 물리적 거리 변화를
+  장면 속에서 구체적으로 보여준다.
+
+- 주변의 빛,
+  소리,
+  온도,
+  냄새,
+  공간의 크기,
+  문이나 창문,
+  가구의 위치처럼
+  장면의 분위기를 만드는 환경 요소를
+  적절히 활용한다.
+
+- 중요한 장면을
+  한두 문장으로 요약해서
+  건너뛰지 않는다.
+
+- 장면은 기본적으로
+
+  행동
+  → 상대의 반응
+  → 내면 변화
+  → 다음 선택
+
+  의 흐름이 느껴지도록 쓴다.
+
+- 한 화 안에 최소 2개의
+  작은 장면 비트를 포함한다.
+
+- 또는 한 번 이상의
+  자연스러운 시간 변화,
+  공간 이동,
+  외부 사건 변화를 사용한다.
+
+- 긴 분량이어도
+  한 장소에서 같은 대화만
+  끝없이 반복하지 않는다.
+
+- 인물의 감정은
+  설명문으로 선언하기보다
+
+  침묵,
+  말투 변화,
+  시선,
+  행동,
+  선택,
+  회피,
+  질투,
+  망설임
+
+  등을 통해 보여준다.
+
+- 분량을 채우기 위해
+  같은 표현을 반복하지 않는다.
+
+- 이미 설명한 외모를
+  매 문단 다시 묘사하지 않는다.
+
+- 같은 과거 회상을
+  여러 번 반복하지 않는다.
+
+- 같은 긴장 문장,
+  같은 신체 반응,
+  같은 대사를
+  변형해서 되풀이하지 않는다.
+
+- 장면의 디테일은 늘리되
+  사건과 관계는 반드시 앞으로 진행한다.
+
+- 마지막 부분이라고
+  갑자기 사건을 압축하지 않는다.
+
+- 마지막 약 15%에서도
+
+  새로운 감정 정보,
+  새로운 선택,
+  새로운 약속,
+  새로운 갈등,
+  다음 화로 이어질 사건 단서
+
+  가운데 최소 하나를 추가한다.
+
+- 매 화의 마지막을
+  항상 똑같은 종류의 긴장 장면으로
+  끝내지 않는다.
+
+- 질문,
+  발각,
+  전화,
+  메시지,
+  약속,
+  질투,
+  이동,
+  새로운 임무,
+  뜻밖의 방문,
+  관계 정의,
+  작은 거짓말,
+  비밀 발견
+
+  등 다양한 방식으로
+  다음 화의 문을 연다.
+`;
+  }
+
+  /*
+   * Gemini REST 요청 직전에
+   * generationConfig.maxOutputTokens를
+   * 8192로 추가한다.
+   *
+   * 기존 safetySettings,
+   * temperature,
+   * topP 등은 그대로 보존한다.
+   */
+  function installGeminiFetchPatch() {
+    if (
+      window.__VELOUR_V34_FETCH_PATCHED__
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_FETCH_PATCHED__ =
+      true;
+
+    const nativeFetch =
+      window.fetch.bind(window);
+
+    window.fetch =
+      async function(input, init) {
+        try {
+          const url =
+            typeof input === 'string'
+              ? input
+              : (
+                  input &&
+                  input.url
+                    ? input.url
+                    : ''
+                );
+
+          const isGemini =
+            /generativelanguage\.googleapis\.com\/.*:generateContent/i
+              .test(url);
+
+          const isPost =
+            init &&
+            String(
+              init.method || 'GET'
+            ).toUpperCase() === 'POST';
+
+          if (
+            isGemini &&
+            isPost &&
+            typeof init.body === 'string'
+          ) {
+            const payload =
+              JSON.parse(init.body);
+
+            payload.generationConfig =
+              Object.assign(
+                {},
+                payload.generationConfig || {},
+                {
+                  maxOutputTokens: 8192
+                }
+              );
+
+            init =
+              Object.assign(
+                {},
+                init,
+                {
+                  body:
+                    JSON.stringify(
+                      payload
+                    )
+                }
+              );
+          }
+        } catch (err) {
+          console.warn(
+            '[VELOUR V3.4] ' +
+            'maxOutputTokens 패치 실패 — ' +
+            '기존 요청으로 계속 진행:',
+            err
+          );
+        }
+
+        return nativeFetch(
+          input,
+          init
+        );
+      };
+  }
+
+  function recentHistory(
+    maxChars = 10000
+  ) {
+    try {
+      if (
+        typeof storyHistory !==
+          'undefined' &&
+        storyHistory
+      ) {
+        return String(
+          storyHistory
+        ).slice(
+          -maxChars
+        );
+      }
+    } catch (e) {}
+
+    return '';
+  }
+
+  /*
+   * V3.3이 이미 만들어둔
+   * buildPrompt를 한 번 더 감싼다.
+   */
+  function installPromptPatch() {
+    if (
+      window.__VELOUR_V34_PROMPT_PATCHED__
+    ) {
+      return;
+    }
+
+    if (
+      typeof window.buildPrompt !==
+      'function'
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_PROMPT_PATCHED__ =
+      true;
+
+    const previousBuildPrompt =
+      window.buildPrompt;
+
+    window.buildPrompt =
+      function(
+        isContinue = false
+      ) {
+        let prompt =
+          previousBuildPrompt(
+            isContinue
+          );
+
+        /*
+         * 원본에 남아 있는
+         * "2,000자 내외" 지시를
+         * 현재 분량 모드에 맞게 교체
+         */
+        prompt =
+          prompt.replace(
+            /등장인물은 모두 성인이며,\s*성인 독자를 위해 깊이 있는 호흡으로 2,000자 내외의 에피소드를 집필하십시오\./,
+            getLengthMode() ===
+              'normal2500'
+              ? (
+                '등장인물은 모두 성인이며, ' +
+                '공백 포함 약 2,500~3,500자의 ' +
+                '충분한 호흡으로 한 화를 집필하십시오.'
+              )
+              : (
+                '등장인물은 모두 성인이며, ' +
+                '공백 포함 최소 4,000자 이상, ' +
+                '권장 4,200~5,500자의 긴 호흡으로 ' +
+                '한 화를 집필하십시오.'
+              )
+          );
+
+        /*
+         * 문구 형태가 조금 다를 때를 위한
+         * 보조 치환
+         */
+        prompt =
+          prompt.replace(
+            /2,000자 내외의 에피소드를 집필하십시오\./g,
+            getLengthMode() ===
+              'normal2500'
+              ? (
+                '공백 포함 약 ' +
+                '2,500~3,500자의 ' +
+                '에피소드를 집필하십시오.'
+              )
+              : (
+                '공백 포함 최소 4,000자 이상, ' +
+                '권장 4,200~5,500자의 ' +
+                '에피소드를 집필하십시오.'
+              )
+          );
+
+        prompt += `
+
+${longformDirective()}
+`;
+
+        /*
+         * 이어쓰기에서는
+         * V3.3의 직전 문맥에 더해서
+         * 최근 약 10,000자를 추가 참고
+         */
+        if (isContinue) {
+          const history =
+            recentHistory(
+              10000
+            );
+
+          if (history) {
+            prompt += `
+
+[VELOUR V3.4 · 장기 연속성 보강]
+
+아래는 최근 이야기의
+연속성 참고 자료다.
+
+이미 일어난 일을
+처음처럼 다시 설명하거나
+되돌리지 않는다.
+
+관계의 진척,
+약속,
+비밀,
+감정 자각,
+서로 알고 있는 정보,
+이미 벌어진 사건을
+그대로 기억하고 이어간다.
+
+직전 화와 완전히 같은 장소,
+같은 대화,
+같은 접촉,
+같은 갈등을
+다시 반복하지 않는다.
+
+[최근 이야기]
+
+${history}
+`;
+          }
+        }
+
+        return prompt;
+      };
+  }
+
+  function installCharCounter() {
+    const novel =
+      document.getElementById(
+        'novelText'
+      );
+
+    if (!novel) return;
+
+    if (
+      !document.getElementById(
+        'v34CharCount'
+      )
+    ) {
+      const counter =
+        document.createElement(
+          'div'
+        );
+
+      counter.id =
+        'v34CharCount';
+
+      counter.style.cssText =
+        'font-size:10px;' +
+        'color:#bca7b2;' +
+        'text-align:right;' +
+        'margin-top:8px;' +
+        'line-height:1.45;';
+
+      novel.insertAdjacentElement(
+        'afterend',
+        counter
+      );
+    }
+  }
+
+  function updateCharCounter() {
+    installCharCounter();
+
+    const novel =
+      document.getElementById(
+        'novelText'
+      );
+
+    const counter =
+      document.getElementById(
+        'v34CharCount'
+      );
+
+    if (
+      !novel ||
+      !counter
+    ) {
+      return;
+    }
+
+    const text =
+      (
+        novel.innerText || ''
+      ).trim();
+
+    if (
+      !text ||
+      text.startsWith(
+        '[API 오류]'
+      ) ||
+      text.startsWith(
+        '[통신 오류]'
+      ) ||
+      text.includes(
+        '응답이 생성되지 않았습니다'
+      )
+    ) {
+      counter.textContent = '';
+      return;
+    }
+
+    const count =
+      text.length;
+
+    const minimum =
+      minimumChars();
+
+    if (
+      count >= minimum
+    ) {
+      counter.style.color =
+        '#bca7b2';
+
+      counter.textContent =
+        `본문 ${count.toLocaleString()}자` +
+        ` · 목표 분량 충족`;
+    } else {
+      counter.style.color =
+        '#ffd08a';
+
+      counter.textContent =
+        `본문 ${count.toLocaleString()}자` +
+        ` · 목표 ${minimum.toLocaleString()}자+` +
+        `보다 짧게 종료됨`;
+    }
+  }
+
+  /*
+   * 실제 생성 함수도 한 번 감싸서
+   * 생성 완료 후 글자 수를 표시한다.
+   */
+  function installGeneratePatch() {
+    if (
+      window.__VELOUR_V34_GENERATE_PATCHED__
+    ) {
+      return;
+    }
+
+    if (
+      typeof window.generateStory !==
+      'function'
+    ) {
+      return;
+    }
+
+    window.__VELOUR_V34_GENERATE_PATCHED__ =
+      true;
+
+    const previousGenerateStory =
+      window.generateStory;
+
+    window.generateStory =
+      async function(
+        isContinue = false
+      ) {
+        await previousGenerateStory(
+          isContinue
+        );
+
+        updateCharCounter();
+        updateV34Status();
+      };
+  }
+
+  /*
+   * 설치 순서 중요
+   *
+   * 기존 V3.3이 먼저 실행된 뒤
+   * 이 패치가 실행되는 구조다.
+   */
+  installGeminiFetchPatch();
+
+  installLengthUI();
+
+  installPromptPatch();
+
+  installCharCounter();
+
+  installGeneratePatch();
+
+  console.info(
+    '✦ VELOUR V3.4 LONGFORM PATCH loaded · ' +
+    'maxOutputTokens 8192'
+  );
+})();
+
