@@ -342,7 +342,7 @@
     if (!res.ok) throw new Error('원본 로드 실패: HTTP ' + res.status);
     let html = await res.text();
     html = html.replace('</head>', FIX_CSS + '\n</head>');
-    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.3.js?v=33"><' + '/script>\n</body>');
+    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.3.js?v=34"><' + '/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch(err) {
     document.body.innerHTML='<div class="boot"><div><b>⚠️ VELOUR 로드 실패</b><span>'+String(err.message||err)+'<br><br>네트워크 연결 후 다시 열어줘.</span></div></div>';
