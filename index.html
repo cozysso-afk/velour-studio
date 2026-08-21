@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-<div class="boot"><div><b>✦ VELOUR</b><span>부분 유실 복구 보호 + V4.4 Appearance를 불러오는 중…</span></div></div>
+<div class="boot"><div><b>✦ VELOUR</b><span>부분 유실 복구 보호 + V4.4.3 Slowburn Gate를 불러오는 중…</span></div></div>
 <script>
 (async function bootVelour(){
   const SOURCE = 'https://raw.githubusercontent.com/cozysso-afk/velour-studio/89a8931f8219fe9c3245cfbc0468932def227fe5/index.html';
@@ -503,7 +503,7 @@
     if (!res.ok) throw new Error('원본 로드 실패: HTTP ' + res.status);
     let html = await res.text();
     html = html.replace('</head>', FIX_CSS + '\n</head>');
-    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.js?v=4401"><' + '/script>\n</body>');
+    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.3.js?v=4431"><' + '/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch(err) {
     document.body.innerHTML='<div class="boot"><div><b>⚠️ VELOUR 로드 실패</b><span>'+String(err.message||err)+'<br><br>네트워크 연결 후 다시 열어줘.</span></div></div>';
