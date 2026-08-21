@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>VELOUR V4.2 loading…</title>
+  <title>VELOUR V4.4.2 Partial Storage Rescue loading…</title>
   <style>
     html,body{margin:0;min-height:100%;background:#16070e;color:#fff6f8;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}
     .boot{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}
@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-<div class="boot"><div><b>✦ VELOUR</b><span>저장함 + Generation Helpers V3.5 + V4.2 Religion + Taxonomy을 불러오는 중…</span></div></div>
+<div class="boot"><div><b>✦ VELOUR</b><span>부분 유실 복구 보호 + V4.4 Appearance를 불러오는 중…</span></div></div>
 <script>
 (async function bootVelour(){
   const SOURCE = 'https://raw.githubusercontent.com/cozysso-afk/velour-studio/89a8931f8219fe9c3245cfbc0468932def227fe5/index.html';
@@ -78,6 +78,8 @@
       </div>
       <div class="velour-lib-tools">
         <input id="velourStorySearch" type="search" placeholder="제목·인물·관계 검색" oninput="renderStoryLibrary()">
+        <button class="velour-small-btn" onclick="recoverStoryLibrary()">🛟 복구</button>
+        <button class="velour-small-btn" onclick="diagnoseStoryLibrary()">🔎 진단</button>
         <button class="velour-small-btn" onclick="copyStoryLibrary()">전체 복사</button>
         <button class="velour-small-btn" onclick="clearStoryLibrary()">비우기</button>
       </div>
@@ -93,6 +95,7 @@
   window.__VELOUR_V2_INSTALLED__ = true;
 
   const LIB_KEY = 'VELOUR_STORY_LIBRARY_V2';
+  const LIB_BACKUP_KEYS = ['VELOUR_STORY_LIBRARY_V2_BACKUP_1','VELOUR_STORY_LIBRARY_V2_BACKUP_2','VELOUR_STORY_LIBRARY_V2_BACKUP_3'];
   const DRAFT_KEY = 'VELOUR_STORY_DRAFT_V2';
   let sessionEpisodes = [];
 
@@ -100,15 +103,124 @@
     return String(value ?? '').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));
   }
 
+  function parseStoryArray(raw){
+    if(!raw) return null;
+    try { const data=JSON.parse(raw); return Array.isArray(data)?data:null; }
+    catch(e){ return null; }
+  }
+  function looksLikeStory(item){
+    return !!(item && typeof item==='object' && (
+      (typeof item.storyHistory==='string' && item.storyHistory.trim()) ||
+      (typeof item.currentText==='string' && item.currentText.trim()) ||
+      (Array.isArray(item.episodes) && item.episodes.some(ep=>ep && typeof ep.text==='string' && ep.text.trim()))
+    ));
+  }
   function library(){
-    try { const data=JSON.parse(localStorage.getItem(LIB_KEY)||'[]'); return Array.isArray(data)?data:[]; }
-    catch(e){ return []; }
+    const raw=localStorage.getItem(LIB_KEY);
+    const data=parseStoryArray(raw);
+    if(data) return data;
+    // 파싱 실패를 '삭제됨'으로 위장하지 않는다. 백업이 있으면 읽기 전용으로 보여준다.
+    for(const key of LIB_BACKUP_KEYS){
+      const backup=parseStoryArray(localStorage.getItem(key));
+      if(backup && backup.length) return backup;
+    }
+    return [];
+  }
+  function rotateLibraryBackups(){
+    try{
+      const currentRaw=localStorage.getItem(LIB_KEY);
+      const current=parseStoryArray(currentRaw);
+      if(!current || !current.length) return;
+      const b2=localStorage.getItem(LIB_BACKUP_KEYS[1]);
+      const b1=localStorage.getItem(LIB_BACKUP_KEYS[0]);
+      if(b2) localStorage.setItem(LIB_BACKUP_KEYS[2],b2);
+      if(b1) localStorage.setItem(LIB_BACKUP_KEYS[1],b1);
+      localStorage.setItem(LIB_BACKUP_KEYS[0],currentRaw);
+    }catch(e){}
   }
   function setLibrary(items){
-    try { localStorage.setItem(LIB_KEY, JSON.stringify(items.slice(0,60))); }
+    try {
+      rotateLibraryBackups();
+      localStorage.setItem(LIB_KEY, JSON.stringify(items.slice(0,60)));
+    }
     catch(e){ alert('저장 공간이 부족해. 오래된 스토리를 일부 지워줘.'); }
   }
-
+  function storyFingerprint(item){
+    return String(item?.id || '')+'|'+String(item?.title||'')+'|'+String(item?.storyHistory||item?.currentText||'').slice(0,160);
+  }
+  function scanRecoverableStories(){
+    const found=[]; const sources=[]; const sourceCounts={};
+    function addStory(item,source){
+      if(!looksLikeStory(item)) return;
+      found.push(item);
+      sourceCounts[source]=(sourceCounts[source]||0)+1;
+    }
+    function walk(value,source,depth){
+      if(depth>3 || value==null) return;
+      if(Array.isArray(value)){
+        const stories=value.filter(looksLikeStory);
+        if(stories.length){ stories.forEach(x=>addStory(x,source)); return; }
+        value.slice(0,80).forEach(v=>walk(v,source,depth+1));
+        return;
+      }
+      if(typeof value==='object'){
+        if(looksLikeStory(value)){ addStory(value,source); return; }
+        for(const [k,v] of Object.entries(value)){
+          if(['library','stories','savedStories','items','data','backup'].includes(k) || Array.isArray(v)) walk(v,source+'>'+k,depth+1);
+        }
+      }
+    }
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i); if(!key) continue;
+      let raw=''; try{raw=localStorage.getItem(key)||'';}catch(e){continue;}
+      if(!raw) continue;
+      try{ walk(JSON.parse(raw),key,0); }catch(e){}
+    }
+    try{
+      const draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
+      if(draft && looksLikeStory(draft)){
+        addStory({
+          id:'recovered-draft-'+Date.now(),
+          title:'복구된 임시 스토리 · '+new Date().toLocaleDateString('ko-KR'),
+          date:new Date().toLocaleString('ko-KR'),
+          settings:draft.settings||{}, episodeCount:draft.episodeCount||1,
+          storyHistory:draft.storyHistory||'', currentText:draft.currentText||'', episodes:draft.episodes||[],
+          v4State:draft.v4State||null
+        }, DRAFT_KEY+'(임시저장)');
+      }
+    }catch(e){}
+    Object.entries(sourceCounts).forEach(([k,n])=>sources.push(k+' ('+n+')'));
+    return {items:found,sources};
+  }
+  function storyIdentity(item){
+    if(item?.id) return 'id:'+String(item.id);
+    return 'fp:'+String(item?.title||'')+'|'+String(item?.date||'')+'|'+String(item?.storyHistory||item?.currentText||'').slice(0,220);
+  }
+  function dedupeStories(items){
+    const out=[]; const seen=new Set();
+    for(const item of items){
+      if(!looksLikeStory(item)) continue;
+      const id=storyIdentity(item);
+      if(seen.has(id)) continue;
+      seen.add(id); out.push(item);
+    }
+    return out;
+  }
+  function velourStorageSummary(){
+    const rows=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i); if(!key || !key.includes('VELOUR')) continue;
+      const raw=localStorage.getItem(key)||'';
+      let count='';
+      try{
+        const parsed=JSON.parse(raw);
+        if(Array.isArray(parsed)) count=' · 배열 '+parsed.length+'개';
+        else if(parsed && typeof parsed==='object') count=' · 객체';
+      }catch(e){ count=' · JSON 파싱 실패'; }
+      rows.push(key+' · '+raw.length.toLocaleString()+'자'+count);
+    }
+    return rows;
+  }
   function currentSettings(){
     return {
       genre: document.getElementById('selectGenre')?.value || '',
@@ -306,6 +418,50 @@
     navigator.clipboard.writeText(text).then(()=>alert('📋 저장함 전체를 복사했어.'));
   };
 
+  window.diagnoseStoryLibrary=function(){
+    const primary=parseStoryArray(localStorage.getItem(LIB_KEY)||'')||[];
+    const scan=scanRecoverableStories();
+    const existingIds=new Set(primary.map(storyIdentity));
+    const candidates=dedupeStories(scan.items).filter(x=>!existingIds.has(storyIdentity(x)));
+    const lines=[
+      '현재 메인 저장함: '+primary.length+'개',
+      '다른 위치의 추가 복구 후보: '+candidates.length+'개',
+      '',
+      '스캔 출처: '+(scan.sources.join(', ')||'없음'),
+      '',
+      '남아 있는 VELOUR 저장 키:',
+      ...(velourStorageSummary().length?velourStorageSummary():['없음'])
+    ];
+    alert(lines.join('\n'));
+  };
+
+  window.recoverStoryLibrary=function(){
+    const primaryRaw=localStorage.getItem(LIB_KEY)||'';
+    const primary=parseStoryArray(primaryRaw)||[];
+    const scan=scanRecoverableStories();
+    const existingIds=new Set(primary.map(storyIdentity));
+    const candidates=dedupeStories(scan.items).filter(x=>!existingIds.has(storyIdentity(x)));
+
+    if(!candidates.length){
+      const rows=velourStorageSummary();
+      alert('현재 메인 저장함 '+primary.length+'개는 그대로 남아 있어.\n하지만 다른 저장 위치에서 추가 작품 후보는 찾지 못했어.\n\n남아 있는 VELOUR 키:\n'+(rows.join('\n')||'없음')+'\n\n이 상태에서는 새 저장/비우기를 하지 말고 이 창을 캡처해서 보여줘.');
+      renderStoryLibrary(); return;
+    }
+
+    const candidateSummary=candidates.slice(0,12).map((x,i)=>(i+1)+'. '+(x.title||'제목 없음')+' · '+(x.date||'날짜 없음')+' · EP '+(x.episodeCount||'?')).join('\n');
+    const ok=confirm('현재 저장함 '+primary.length+'개는 유지하고, 다른 저장 흔적에서 추가 후보 '+candidates.length+'개를 찾았어.\n\n'+candidateSummary+(candidates.length>12?'\n…외 '+(candidates.length-12)+'개':'')+'\n\n이 후보들만 기존 저장함에 병합 복구할까?');
+    if(!ok) return;
+    try{
+      const stamp=Date.now();
+      if(primaryRaw) localStorage.setItem('VELOUR_STORY_LIBRARY_V2_PRE_RESCUE_'+stamp,primaryRaw);
+      const merged=dedupeStories([...primary,...candidates]).slice(0,60);
+      localStorage.setItem(LIB_KEY,JSON.stringify(merged));
+      localStorage.setItem(LIB_BACKUP_KEYS[0],JSON.stringify(merged));
+      alert('🛟 기존 '+primary.length+'개를 보존한 채 총 '+merged.length+'개로 병합 복구했어.');
+      renderStoryLibrary();
+    }catch(e){ alert('복구 저장 중 오류: '+String(e.message||e)); }
+  };
+
   window.deleteStory=function(id){
     const items=library(); if(!confirm('이 스토리를 삭제할까?'))return;
     setLibrary(items.filter(x=>String(x.id)!==String(id))); renderStoryLibrary();
@@ -331,6 +487,11 @@
     };
   }
 
+  try{
+    const raw=localStorage.getItem(LIB_KEY);
+    const arr=parseStoryArray(raw);
+    if(arr && arr.length && !localStorage.getItem(LIB_BACKUP_KEYS[0])) localStorage.setItem(LIB_BACKUP_KEYS[0],raw);
+  }catch(e){}
   addReunionOptions();
   installLibraryButtons();
   showDraftBanner();
