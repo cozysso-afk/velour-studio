@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>VELOUR V4.4.2 Partial Storage Rescue loading…</title>
+  <title>VELOUR V4.4.4 loading…</title>
   <style>
     html,body{margin:0;min-height:100%;background:#16070e;color:#fff6f8;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}
     .boot{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}
@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-<div class="boot"><div><b>✦ VELOUR</b><span>부분 유실 복구 보호 + V4.4.3 Slowburn Gate를 불러오는 중…</span></div></div>
+<div class="boot"><div><b>✦ VELOUR</b><span>저장함 보호 + V4.4.4 Clean Prompt를 불러오는 중…</span></div></div>
 <script>
 (async function bootVelour(){
   const SOURCE = 'https://raw.githubusercontent.com/cozysso-afk/velour-studio/89a8931f8219fe9c3245cfbc0468932def227fe5/index.html';
@@ -288,10 +288,18 @@
     }
   }
 
+  function looksLikeModelRefusal(text){
+    const t=String(text||'').trim();
+    if(!t || t.length>1600) return false;
+    const refusal=/(진행할 수 없(?:습니다|어요)?|생성(?:이)? 불가능|생성할 수 없(?:습니다|어요)?|작성할 수 없(?:습니다|어요)?|제공할 수 없(?:습니다|어요)?|도와드릴 수 없(?:습니다|어요)?|I (?:can(?:not|'t)|am unable to) (?:help|assist|provide|generate|write))/i;
+    const context=/(성적|노골적|신체 부위|콘텐츠|지침|정책|sexual|explicit|policy|guideline)/i;
+    return refusal.test(t)&&context.test(t);
+  }
+
   function validGeneratedText(){
     const text=document.getElementById('novelText')?.innerText?.trim() || '';
     if(!text) return '';
-    if(text.includes('서사 집필 중') || text.startsWith('[API 오류]') || text.startsWith('[통신 오류]') || text.includes('응답이 생성되지 않았습니다')) return '';
+    if(text.includes('서사 집필 중') || text.startsWith('[API 오류]') || text.startsWith('[통신 오류]') || text.includes('응답이 생성되지 않았습니다') || looksLikeModelRefusal(text)) return '';
     return text;
   }
 
@@ -503,7 +511,7 @@
     if (!res.ok) throw new Error('원본 로드 실패: HTTP ' + res.status);
     let html = await res.text();
     html = html.replace('</head>', FIX_CSS + '\n</head>');
-    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.3.js?v=4431"><' + '/script>\n</body>');
+    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.4.js?v=4441"><' + '/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch(err) {
     document.body.innerHTML='<div class="boot"><div><b>⚠️ VELOUR 로드 실패</b><span>'+String(err.message||err)+'<br><br>네트워크 연결 후 다시 열어줘.</span></div></div>';
