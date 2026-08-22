@@ -291,7 +291,7 @@
   function looksLikeModelRefusal(text){
     const t=String(text||'').trim();
     if(!t || t.length>1600) return false;
-    const refusal=/(진행할 수 없(?:습니다|어요)?|생성(?:이)? 불가능|생성할 수 없(?:습니다|어요)?|작성할 수 없(?:습니다|어요)?|제공할 수 없(?:습니다|어요)?|도와드릴 수 없(?:습니다|어요)?|I (?:can(?:not|'t)|am unable to) (?:help|assist|provide|generate|write))/i;
+    const refusal=/(진행할 수 없(?:습니다|어요)?|생성(?:이)? 불가능|생성할 수 없(?:습니다|어요)?|작성할 수 없(?:습니다|어요)?|제공할 수 없(?:습니다|어요)?|도와드릴 수 없(?:습니다|어요)?|지원하지 않(?:습니다|아요)?|지원할 수 없(?:습니다|어요)?|허용되지 않(?:습니다|아요)?|요청을 수행할 수 없(?:습니다|어요)?|응답할 수 없(?:습니다|어요)?|I (?:can(?:not|'t)|am unable to) (?:help|assist|provide|generate|write))/i;
     const context=/(성적|노골적|신체 부위|콘텐츠|지침|정책|sexual|explicit|policy|guideline)/i;
     return refusal.test(t)&&context.test(t);
   }
@@ -511,7 +511,7 @@
     if (!res.ok) throw new Error('원본 로드 실패: HTTP ' + res.status);
     let html = await res.text();
     html = html.replace('</head>', FIX_CSS + '\n</head>');
-    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.5.js?v=4451"><' + '/script>\n</body>');
+    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.6.js?v=4461"><' + '/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch(err) {
     document.body.innerHTML='<div class="boot"><div><b>⚠️ VELOUR 로드 실패</b><span>'+String(err.message||err)+'<br><br>네트워크 연결 후 다시 열어줘.</span></div></div>';
