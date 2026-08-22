@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>VELOUR V4.4.9 loading…</title>
+  <title>VELOUR V4.4.11 loading…</title>
   <style>
     html,body{margin:0;min-height:100%;background:#16070e;color:#fff6f8;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}
     .boot{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}
@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-<div class="boot"><div><b>✦ VELOUR</b><span>생활밀착 WORLD PACK + 이어 저장 + Refusal Hotfix를 불러오는 중…</span></div></div>
+<div class="boot"><div><b>✦ VELOUR</b><span>대용량 저장함 + 장면 다양성 엔진을 불러오는 중…</span></div></div>
 <script>
 (async function bootVelour(){
   const SOURCE = 'https://raw.githubusercontent.com/cozysso-afk/velour-studio/89a8931f8219fe9c3245cfbc0468932def227fe5/index.html';
@@ -33,8 +33,8 @@
   .velour-library-title { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .velour-library-title h3 { margin:0; font-family:'Noto Serif KR',serif; font-size:17px; color:#ffebaa; }
   .velour-library-x { background:transparent; border:0; color:#c9b1bd; font-size:24px; padding:0 5px; }
-  .velour-lib-tools { display:flex; gap:7px; margin-top:11px; }
-  .velour-lib-tools input { flex:1; min-width:0; }
+  .velour-lib-tools { display:flex; gap:7px; margin-top:11px; flex-wrap:wrap; }
+  .velour-lib-tools input[type="search"] { flex:1 1 180px; min-width:0; }
   .velour-small-btn {
     border:1px solid rgba(245,196,107,.25); background:rgba(245,196,107,.08); color:#ffebaa;
     border-radius:10px; padding:8px 10px; font-size:10.5px; font-weight:650; white-space:nowrap;
@@ -80,6 +80,9 @@
         <input id="velourStorySearch" type="search" placeholder="제목·인물·관계 검색" oninput="renderStoryLibrary()">
         <button class="velour-small-btn" onclick="recoverStoryLibrary()">🛟 복구</button>
         <button class="velour-small-btn" onclick="diagnoseStoryLibrary()">🔎 진단</button>
+        <button class="velour-small-btn" onclick="exportVelourLibrary()">⬇️ 백업</button>
+        <button class="velour-small-btn" onclick="document.getElementById('velourImportFile')?.click()">⬆️ 복원</button>
+        <input id="velourImportFile" type="file" accept="application/json,.json" style="display:none" onchange="importVelourLibrary(this.files?.[0]);this.value=''">
         <button class="velour-small-btn" onclick="copyStoryLibrary()">전체 복사</button>
         <button class="velour-small-btn" onclick="clearStoryLibrary()">비우기</button>
       </div>
@@ -144,7 +147,7 @@
   function setLibrary(items){
     try {
       rotateLibraryBackups();
-      localStorage.setItem(LIB_KEY, JSON.stringify(items.slice(0,60)));
+      localStorage.setItem(LIB_KEY, JSON.stringify(items));
     }
     catch(e){ alert('저장 공간이 부족해. 오래된 스토리를 일부 지워줘.'); }
   }
@@ -324,7 +327,13 @@
   function saveDraft(){
     const draft=draftObject();
     if(!draft) return;
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); showDraftBanner(); } catch(e){}
+    try {
+      if(typeof window.__VELOUR_IDB_SAVE_DRAFT__==='function'){
+        Promise.resolve(window.__VELOUR_IDB_SAVE_DRAFT__(draft)).catch(()=>{});
+        return;
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); showDraftBanner();
+    } catch(e){}
   }
 
   function showDraftBanner(){
@@ -530,7 +539,7 @@
     try{
       const stamp=Date.now();
       if(primaryRaw) localStorage.setItem('VELOUR_STORY_LIBRARY_V2_PRE_RESCUE_'+stamp,primaryRaw);
-      const merged=dedupeStories([...primary,...candidates]).slice(0,60);
+      const merged=dedupeStories([...primary,...candidates]);
       localStorage.setItem(LIB_KEY,JSON.stringify(merged));
       localStorage.setItem(LIB_BACKUP_KEYS[0],JSON.stringify(merged));
       alert('🛟 기존 '+primary.length+'개를 보존한 채 총 '+merged.length+'개로 병합 복구했어.');
@@ -582,7 +591,7 @@
     if (!res.ok) throw new Error('원본 로드 실패: HTTP ' + res.status);
     let html = await res.text();
     html = html.replace('</head>', FIX_CSS + '\n</head>');
-    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.9.js?v=4491"><' + '/script>\n</body>');
+    html = html.replace('</body>', LIBRARY_HTML + '\n<script>' + PATCH_JS + '<' + '/script>\n<script src="./velour-v3.5.js?v=3501"><' + '/script>\n<script src="./velour-v4.4.11.js?v=441101"><' + '/script>\n</body>');
     document.open(); document.write(html); document.close();
   } catch(err) {
     document.body.innerHTML='<div class="boot"><div><b>⚠️ VELOUR 로드 실패</b><span>'+String(err.message||err)+'<br><br>네트워크 연결 후 다시 열어줘.</span></div></div>';
