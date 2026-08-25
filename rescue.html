@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VELOUR Forensic Rescue</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#12070d;color:#f8edf2;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}.wrap{max-width:760px;margin:auto;padding:20px 14px 70px}h1{font-size:22px;margin:4px 0 8px;color:#ffe2a0}.sub{font-size:12px;line-height:1.65;color:#cbb7c0}.warn{margin:14px 0;padding:12px;border:1px solid #7f5a2a;background:#2b1c0c;border-radius:12px;color:#ffe2a0;font-size:12px;line-height:1.6}.bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}button{border:1px solid #80623d;background:#2a1821;color:#ffe3a7;border-radius:10px;padding:10px 12px;font-weight:700;font-size:12px}.primary{background:#f3c66f;color:#2a1700;border-color:#f3c66f}.danger{border-color:#8d3f4d;color:#ffb8c5}.meta{font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ad98a2;background:#0b0508;padding:10px;border-radius:10px;white-space:pre-wrap;word-break:break-word}.status{margin:10px 0;font-size:12px;color:#e7cfa6}.card{border:1px solid #4f3440;background:#1a0c13;border-radius:14px;padding:12px;margin:10px 0}.card.morning{border-color:#c89c48;box-shadow:0 0 0 1px rgba(243,198,111,.1) inset}.top{display:flex;justify-content:space-between;gap:10px}.title{font-weight:800;font-size:13px;color:#fff0c4}.badge{font-size:10px;color:#2a1700;background:#f3c66f;border-radius:999px;padding:3px 7px;white-space:nowrap}.small{font-size:10.5px;color:#bda9b3;line-height:1.55;margin-top:5px}.preview{font:12px/1.65 Georgia,"Noto Serif KR",serif;color:#eadde3;white-space:pre-wrap;max-height:180px;overflow:auto;background:#10070b;border-radius:9px;padding:9px;margin-top:9px}.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.empty{padding:22px;text-align:center;color:#a8929c;border:1px dashed #4f3440;border-radius:12px}.footer{margin-top:24px;color:#947e88;font-size:10.5px;line-height:1.55}input[type=file]{display:none}
+</style>
+</head>
+<body><div class="wrap">
+<h1>🛟 VELOUR FORENSIC RESCUE</h1>
+<div class="sub">앱 엔진을 로드하지 않고, <b>현재 주소(origin)의 브라우저 저장소만</b> 읽어서 사라진 스토리/초안/백업 조각을 찾는 긴급 복구 도구.</div>
+<div class="warn"><b>중요:</b> 먼저 <b>스캔만</b> 해. 자동 저장/마이그레이션/삭제는 하지 않는다. 후보가 확인되기 전에는 VELOUR 본앱에서 새 생성·이어저장을 하지 않는 게 안전하다.</div>
+<div id="origin" class="meta"></div>
+<div class="bar"><button id="scan" class="primary">🔎 전체 저장소 스캔</button><button id="export">⬇️ 발견 후보 JSON 백업</button><button id="copy">📋 진단 복사</button></div>
+<div id="status" class="status">아직 스캔하지 않았어.</div>
+<div id="summary" class="meta" style="display:none"></div>
+<div id="results"></div>
+<div class="footer">이 페이지는 외부 서버로 데이터를 전송하지 않는다. API 키/토큰처럼 보이는 값은 후보 백업에서 제외한다. IndexedDB 복구 버튼을 누를 때만 선택한 후보를 새 작품 ID로 추가한다.</div>
+</div>
+<script>
+'use strict';
+(() => {
+  const KNOWN_DB='VELOUR_STORY_DB_V1';
+  const SENSITIVE_RE=/(api.?key|token|secret|password|authorization)/i;
+  let scanResult={candidates:[], sources:[], errors:[], startedAt:null, finishedAt:null};
+  const $=id=>document.getElementById(id);
+  $('origin').textContent=`현재 origin: ${location.origin}\n현재 URL: ${location.href}\n브라우저 시각: ${new Date().toLocaleString('ko-KR')}`;
+
+  function cloneSafe(x){ try{return structuredClone(x)}catch(e){try{return JSON.parse(JSON.stringify(x))}catch(_){return null}} }
+  function looksText(v){return typeof v==='string' && v.trim().length>=40;}
+  function stripMeta(s){return String(s||'').replace(/\n?\[\[VELOUR_V4_META\]\][\s\S]*?\[\[\/VELOUR_V4_META\]\]\s*/g,'').trim();}
+  function longestText(o){
+    if(!o||typeof o!=='object') return '';
+    const vals=[];
+    for(const k of ['currentText','storyHistory','text','novelText','content','body']) if(looksText(o[k])) vals.push(stripMeta(o[k]));
+    if(Array.isArray(o.episodes)){
+      const eps=o.episodes.map(e=>stripMeta(e?.text||e?.currentText||'')).filter(looksText);
+      if(eps.length){ vals.push(eps.join('\n\n')); vals.push(eps[eps.length-1]); }
+    }
+    vals.sort((a,b)=>b.length-a.length); return vals[0]||'';
+  }
+  function storyLike(o){
+    if(!o||typeof o!=='object'||Array.isArray(o)) return false;
+    const body=longestText(o);
+    return body.length>=80 || (Array.isArray(o.episodes)&&o.episodes.some(e=>looksText(e?.text))) || (o.v4State&&typeof o.v4State==='object'&&(o.episodeCount||o.activeStoryId));
+  }
+  function parseTs(o){
+    for(const k of ['updatedAt','savedAt','createdAt','recoveredAt','date','at']){
+      const v=o?.[k]; if(!v) continue; const t=Date.parse(v); if(Number.isFinite(t)) return t;
+    }
+    return 0;
+  }
+  function epNum(o){
+    const a=Number(o?.episodeCount||o?.episode||0); if(a>0)return a;
+    if(Array.isArray(o?.episodes)&&o.episodes.length){const e=Number(o.episodes[o.episodes.length-1]?.episode||o.episodes.length);if(e>0)return e;}
+    return 0;
+  }
+  function titleOf(o,path){return String(o?.title||o?.activeStoryTitle||o?.name||(/draft/i.test(path)?'임시저장 후보':'제목 없음')).trim().slice(0,120);}
+  function hash(s){let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16);}
+  function isTodayMorning(ts){if(!ts)return false; const d=new Date(ts),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate()&&d.getHours()<12;}
+  function sanitize(o,depth=0){
+    if(depth>8) return '[depth-limit]';
+    if(o==null||typeof o==='number'||typeof o==='boolean') return o;
+    if(typeof o==='string') return o;
+    if(Array.isArray(o)) return o.slice(0,200).map(v=>sanitize(v,depth+1));
+    if(typeof o==='object'){
+      const out={}; for(const [k,v] of Object.entries(o)){ if(SENSITIVE_RE.test(k)){out[k]='[REDACTED]';continue;} out[k]=sanitize(v,depth+1);} return out;
+    }
+    return String(o);
+  }
+  function addCandidate(o,source,path){
+    if(!storyLike(o))return;
+    const body=longestText(o),ts=parseTs(o),ep=epNum(o),title=titleOf(o,path);
+    const sig=hash(`${title}|${ep}|${body.length}|${body.slice(0,1200)}|${body.slice(-1200)}`);
+    scanResult.candidates.push({sig,source,path,title,episode:ep,bodyLength:body.length,timestamp:ts,morning:isTodayMorning(ts),preview:body.slice(-1800),raw:sanitize(cloneSafe(o))});
+  }
+  function walk(v,source,path='root',depth=0,seen=new WeakSet()){
+    if(depth>8||v==null)return;
+    if(typeof v==='object'){
+      if(seen.has(v))return; seen.add(v);
+      addCandidate(v,source,path);
+      if(Array.isArray(v)){for(let i=0;i<Math.min(v.length,250);i++)walk(v[i],source,`${path}[${i}]`,depth+1,seen);}
+      else for(const [k,val] of Object.entries(v)){if(SENSITIVE_RE.test(k))continue; if(typeof val==='object'&&val!==null)walk(val,source,`${path}.${k}`,depth+1,seen);}
+    }
+  }
+  function scanStorage(storage,label){
+    let count=0;
+    for(let i=0;i<storage.length;i++){
+      const key=storage.key(i); if(!key||SENSITIVE_RE.test(key))continue;
+      const raw=storage.getItem(key); if(!raw)continue;
+      if(!/VELOUR/i.test(key) && !/[\[{]/.test(raw.trim().slice(0,1))) continue;
+      count++;
+      try{const parsed=JSON.parse(raw);walk(parsed,`${label}:${key}`,'root');}
+      catch(e){ if(/VELOUR/i.test(key)&&raw.length>80)addCandidate({title:`RAW ${key}`,currentText:raw},`${label}:${key}`,'raw'); }
+    }
+    scanResult.sources.push(`${label}: ${count}개 키 검사`);
+  }
+  function openExistingDb(name){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(name);
+      let abortedCreation=false;
+      req.onupgradeneeded=()=>{abortedCreation=true; try{req.transaction.abort()}catch(e){}};
+      req.onsuccess=()=>{ if(abortedCreation){try{req.result.close()}catch(e){};resolve(null)} else resolve(req.result); };
+      req.onerror=()=>{ if(abortedCreation||req.error?.name==='AbortError')resolve(null); else reject(req.error||new Error('IDB open failed')); };
+    });
+  }
+  function getAllStore(db,store){return new Promise((resolve,reject)=>{try{const tx=db.transaction(store,'readonly');const req=tx.objectStore(store).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error)}catch(e){reject(e)}})}
+  async function scanDB(name){
+    const db=await openExistingDb(name); if(!db)return;
+    const stores=[...db.objectStoreNames]; scanResult.sources.push(`IndexedDB ${name}: stores=${stores.join(', ')||'(없음)'}`);
+    for(const store of stores){
+      try{const rows=await getAllStore(db,store); for(let i=0;i<rows.length;i++)walk(rows[i],`IDB:${name}/${store}`,`row[${i}]`);}
+      catch(e){scanResult.errors.push(`IDB ${name}/${store}: ${e?.message||e}`)}
+    }
+    db.close();
+  }
+  async function scanIndexedDB(){
+    let names=[];
+    if(indexedDB.databases){try{const dbs=await indexedDB.databases();names=dbs.map(x=>x.name).filter(Boolean).filter(n=>/VELOUR/i.test(n));}catch(e){scanResult.errors.push('indexedDB.databases 조회 실패: '+(e?.message||e));}}
+    if(!names.includes(KNOWN_DB))names.push(KNOWN_DB);
+    for(const n of [...new Set(names)])try{await scanDB(n)}catch(e){scanResult.errors.push(`IDB ${n}: ${e?.message||e}`)}
+  }
+  function dedupe(){
+    const map=new Map();
+    for(const c of scanResult.candidates){const old=map.get(c.sig);if(!old){map.set(c.sig,c);continue;} if(c.timestamp>old.timestamp)map.set(c.sig,c);}
+    scanResult.candidates=[...map.values()].sort((a,b)=>(Number(b.morning)-Number(a.morning))||(b.timestamp-a.timestamp)||(b.bodyLength-a.bodyLength));
+  }
+  function fmtTs(ts){return ts?new Date(ts).toLocaleString('ko-KR'):'시간 정보 없음';}
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function render(){
+    const cs=scanResult.candidates;
+    const morning=cs.filter(x=>x.morning).length;
+    $('summary').style.display='block';
+    $('summary').textContent=[`발견 후보: ${cs.length}개`,`오늘 오전 타임스탬프 후보: ${morning}개`,`검사 소스: ${scanResult.sources.length}개`,`오류: ${scanResult.errors.length}개`,`완료: ${new Date(scanResult.finishedAt).toLocaleString('ko-KR')}`].join('\n');
+    $('results').innerHTML=cs.length?cs.map((c,i)=>`<div class="card ${c.morning?'morning':''}"><div class="top"><div><div class="title">${esc(c.title)}</div><div class="small">${esc(c.source)} · ${esc(c.path)}</div></div>${c.morning?'<span class="badge">오늘 오전 후보</span>':''}</div><div class="small">EP ${c.episode||'-'} · 본문 ${c.bodyLength.toLocaleString()}자 · ${esc(fmtTs(c.timestamp))} · ID ${esc(c.sig)}</div><div class="preview">${esc(c.preview||'(미리보기 없음)')}</div><div class="actions"><button onclick="window.__vrCopy(${i})">본문 복사</button><button onclick="window.__vrDownload(${i})">후보 JSON 저장</button><button class="danger" onclick="window.__vrRecover(${i})">이 후보를 새 작품으로 복구</button></div></div>`).join(''):'<div class="empty">현재 origin에서 스토리 형태의 후보를 찾지 못했어.</div>';
+  }
+  async function scan(){
+    $('scan').disabled=true;$('status').textContent='스캔 중… 앱 데이터에는 쓰지 않고 읽기만 하는 중.';
+    scanResult={candidates:[],sources:[],errors:[],startedAt:new Date().toISOString(),finishedAt:null};
+    try{scanStorage(localStorage,'localStorage')}catch(e){scanResult.errors.push('localStorage: '+(e?.message||e))}
+    try{scanStorage(sessionStorage,'sessionStorage')}catch(e){scanResult.errors.push('sessionStorage: '+(e?.message||e))}
+    try{await scanIndexedDB()}catch(e){scanResult.errors.push('IndexedDB: '+(e?.message||e))}
+    dedupe();scanResult.finishedAt=new Date().toISOString();render();
+    $('status').textContent=`스캔 완료. 후보 ${scanResult.candidates.length}개${scanResult.candidates.some(x=>x.morning)?' · 오늘 오전 후보가 위에 표시됨':''}.`;$('scan').disabled=false;
+  }
+  window.__vrCopy=async i=>{const c=scanResult.candidates[i];if(!c)return;try{await navigator.clipboard.writeText(c.preview||JSON.stringify(c.raw,null,2));alert('복사했어.')}catch(e){alert('복사 실패: '+(e?.message||e))}};
+  function dl(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1200)}
+  window.__vrDownload=i=>{const c=scanResult.candidates[i];if(c)dl(`VELOUR-rescue-candidate-${c.sig}.json`,c)};
+  async function putNewStory(candidate){
+    const db=await new Promise((resolve,reject)=>{const req=indexedDB.open(KNOWN_DB);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});
+    if(!db.objectStoreNames.contains('stories')){db.close();throw new Error('stories 저장소가 없어. 본앱의 저장 DB가 아닌 것 같아.');}
+    const base=candidate.raw&&typeof candidate.raw==='object'?cloneSafe(candidate.raw):{};
+    const src=(base?.story&&typeof base.story==='object')?base.story:base;
+    const item=cloneSafe(src)||{};
+    item.id=`forensic-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    item.title=`[복구] ${candidate.title||'오전 작업'}`;
+    item.recoveredBy='VELOUR_FORENSIC_RESCUE_V1';item.recoveredFrom=candidate.source;item.recoveredAt=new Date().toISOString();
+    if(!item.currentText&&!item.storyHistory&&candidate.preview)item.currentText=candidate.preview;
+    await new Promise((resolve,reject)=>{const tx=db.transaction('stories','readwrite');const req=tx.objectStore('stories').put(item);req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error)});db.close();return item.id;
+  }
+  window.__vrRecover=async i=>{const c=scanResult.candidates[i];if(!c)return;if(!confirm(`이 후보를 기존 작품을 건드리지 않고 새 작품으로 추가할까?\n\n${c.title}\nEP ${c.episode||'-'} · ${fmtTs(c.timestamp)}`))return;try{const id=await putNewStory(c);alert('새 작품으로 복구했어. 본앱 저장함을 다시 열어 확인해.\nID: '+id)}catch(e){alert('복구 쓰기 실패: '+(e?.message||e))}};
+  $('scan').onclick=scan;
+  $('export').onclick=()=>{if(!scanResult.finishedAt)return alert('먼저 스캔해줘.');const safe={format:'VELOUR_FORENSIC_RESCUE_V1',origin:location.origin,startedAt:scanResult.startedAt,finishedAt:scanResult.finishedAt,sources:scanResult.sources,errors:scanResult.errors,candidates:scanResult.candidates};dl(`VELOUR-forensic-${new Date().toISOString().replace(/[:.]/g,'-')}.json`,safe)};
+  $('copy').onclick=async()=>{if(!scanResult.finishedAt)return alert('먼저 스캔해줘.');const lines=[`VELOUR FORENSIC DIAGNOSTIC`,`origin: ${location.origin}`,`candidates: ${scanResult.candidates.length}`,`today morning: ${scanResult.candidates.filter(x=>x.morning).length}`,...scanResult.sources,...scanResult.errors.map(x=>'ERROR '+x),...scanResult.candidates.slice(0,20).map((c,i)=>`#${i+1} ${c.title} | EP ${c.episode||'-'} | ${c.bodyLength} chars | ${fmtTs(c.timestamp)} | ${c.source}`)];try{await navigator.clipboard.writeText(lines.join('\n'));alert('진단을 복사했어.')}catch(e){alert(lines.join('\n'))}};
+})();
+</script></body></html>
