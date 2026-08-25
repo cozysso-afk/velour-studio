@@ -1,7 +1,7 @@
 'use strict';
 
 /* =========================================================
-   VELOUR STORY ENGINE V4.4.38 — STAGE-ISOLATED PROMPT + RESPONSE VAULT
+   VELOUR STORY ENGINE V4.4.32 — BODY PROSE VARIATION
    Loaded AFTER velour-v3.5.js.
 
    Goals
@@ -38,7 +38,7 @@
   'use strict';
   if (window.__VELOUR_V44_INSTALLED__) return;
   window.__VELOUR_V44_INSTALLED__ = true;
-  window.__VELOUR_ENGINE_VERSION__ = '4.4.38';
+  window.__VELOUR_ENGINE_VERSION__ = '4.4.32';
 
   const CFG_KEY = 'VELOUR_STORY_ENGINE_V44';
   const OLD_CFG_KEYS = ['VELOUR_STORY_ENGINE_V43','VELOUR_STORY_ENGINE_V42','VELOUR_STORY_ENGINE_V41','VELOUR_STORY_ENGINE_V40'];
@@ -49,7 +49,7 @@
   const MAX_TIMELINE = 80;
   const MAX_THREADS = 24;
   const MAX_SCENES = 12;
-  // V4.4.38 three-tier longform memory.
+  // V4.4.32 three-tier longform memory.
   // Tier 1: durable facts that should remain true across arcs.
   // Tier 2: archived 6-episode arc digests built from confirmed one-line timeline entries.
   // Tier 3: recent timeline/open threads/scenes + raw tail handoff.
@@ -571,7 +571,7 @@
     if(!anchor) return;
     const p=document.createElement('section'); p.id='velourV40Panel'; p.className='v40-panel';
     p.innerHTML=`
-      <div class="v40-title"><b>✦ STORY ENGINE V4.4.38 · CAUSAL BUILDUP LOCK</b><span class="v40-badge">기존 저장함 호환</span></div>
+      <div class="v40-title"><b>✦ STORY ENGINE V4.4.32 · CAUSAL BUILDUP LOCK</b><span class="v40-badge">기존 저장함 호환</span></div>
       <div class="v41-quick" id="v41Quick"></div>
 
       <details class="v40-section" id="v41SecWorld">
@@ -689,7 +689,7 @@
         </div>
         <div class="v40-note">더티톡 수치는 ‘지금 당장 말하는 강도’가 아니라 <b>해금 후 최대 강도</b>로 적용해. AUTO에서는 첫 성인 장면 해금 화를 기준으로 내적 끌림 → 관심 → 플러팅 → 직접 성적 언어 순서로 늦춰. <b>첫 관계 해금 후 페이스</b>는 그 이후에도 계속 대화만 하며 정체되는 걸 막는 별도 축이야.</div>
         <div class="v40-field" style="margin-top:9px"><label>허용할 장면 구도 풀 · 최근 사용 구도는 자동 회피</label><div class="v40-checks" id="v4PatternChecks">${INTIMACY_PATTERNS.map(([id,label])=>`<label class="v40-chip"><input type="checkbox" value="${id}"${state.intimacyPatterns.includes(id)?' checked':''}>${esc(label)}</label>`).join('')}</div></div>
-        <div class="v40-note">V4.4.38은 위 큰 구도 선택 안에서 <b>${POSITION_CATALOG.length}종 세부 체위/배치</b>를 자동 로테이션해. 매회 전체 목록을 프롬프트에 쏟지 않고, 최근 미사용·저사용 후보 소수만 골라 AI가 장소/감정선에 맞는 하나를 쓰게 해서 반복과 프롬프트 과밀을 같이 줄여.</div>
+        <div class="v40-note">V4.4.32은 위 큰 구도 선택 안에서 <b>${POSITION_CATALOG.length}종 세부 체위/배치</b>를 자동 로테이션해. 매회 전체 목록을 프롬프트에 쏟지 않고, 최근 미사용·저사용 후보 소수만 골라 AI가 장소/감정선에 맞는 하나를 쓰게 해서 반복과 프롬프트 과밀을 같이 줄여.</div>
         <div class="v40-field" style="margin-top:9px"><label>비삽입/오럴 플레이 풀 · 체위와 별개로 자동 로테이션</label><div class="v40-checks" id="v4412PlayChecks">${PLAY_CATALOG.map(x=>`<label class="v40-chip"><input type="checkbox" value="${x.id}"${(state.adultPlayTypes||[]).includes(x.id)?' checked':''}>${esc(x.label)}</label>`).join('')}</div></div>
         <div class="v40-note">선택한 항목은 <b>성인 장면이 해금된 뒤</b>에만 후보로 전달해. 매번 전부 나열하지 않고 최근 미사용·저사용 후보 2개만 제시해서, 파이즈리·커닐링구스·오럴 등이 체위와 독립적으로 자연스럽게 섞이도록 해. 선택했다고 매 성인 장면에 반드시 넣지는 않아.</div>
         <div class="v40-grid" style="margin-top:11px">
@@ -845,7 +845,7 @@
     const quick=p.querySelector('#v41Quick'); if(quick) quick.innerHTML=`<span class="v41-pill">${esc(worldLabel())}</span><span class="v41-pill">${esc(relationshipLabel())}</span><span class="v41-pill">${esc(state.occupationA)} × ${esc(state.occupationB)}</span><span class="v41-pill">EP.${unlockEpisode()} 이후 본격 진전</span>`;
     const s=p.querySelector('#v4Status'); if(s){
       const last=state.runtime.scenes?.slice(-1)[0];
-      s.innerHTML=`<b>V4.4.38 BUILDUP LOCK ACTIVE</b> · ${esc(worldLabel())} · ${esc(relationshipLabel())} → ${esc(trajectoryLabel())}<br>`+
+      s.innerHTML=`<b>V4.4.32 BUILDUP LOCK ACTIVE</b> · ${esc(worldLabel())} · ${esc(relationshipLabel())} → ${esc(trajectoryLabel())}<br>`+
         `A ${esc(state.occupationA)} / B ${esc(state.occupationB)} · 첫 성인 장면 EP.${unlockEpisode()} · 해금 후 ${postUnlockPaceLabel()} · 성적 대사 ${state.sexualDialogueMode==='auto'?'AUTO':'CUSTOM'} · 쿨다운 ${Number(state.cooldown||0)}화<br>`+
         `3층 메모리 영구 ${state.runtime.durableFacts?.length||0} · 아크 ${state.runtime.arcSummaries?.length||0} · 최근 ${state.runtime.timeline.length} · 미회수 ${state.runtime.openThreads.length} · 장면 ${state.runtime.scenes.length} · 세부 체위풀 ${POSITION_CATALOG.length}종 · 플레이풀 ${(state.adultPlayTypes||[]).length}/${PLAY_CATALOG.length}종${last?.position?` · 최근 ${esc(last.position)}`:(last?.pattern?` · 최근 ${esc(last.pattern)}`:'')}`;
     }
@@ -1489,10 +1489,9 @@ ${playRotationDirective(ep)}`;
   function metadataDirective(){
     return `
 [머신 메타 — 본문 뒤 1회, 코드블록 금지]
-[[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","adultScene":false,"sexualDialogueLevel":0,"expressionViolation":false,"professionalBoundaryViolation":false,"timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","pattern":"none","position":"none","plays":[],"initiation":"","control":"","dialogueTone":"","ending":"","relationshipState":"","durableFacts":[],"foreplayDepth":"none","kissPresence":"none","bodyPraiseUsed":false,"lightSpankingUsed":false,"bodyFocuses":[],"bodyAngles":[],"bodyDescriptionRepeatRisk":"low","openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false,"ageStageViolation":false,"residenceViolation":false}[[/VELOUR_V4_META]]
+[[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","adultScene":false,"sexualDialogueLevel":0,"expressionViolation":false,"professionalBoundaryViolation":false,"timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","pattern":"none","position":"none","plays":[],"initiation":"","control":"","dialogueTone":"","ending":"","relationshipState":"","durableFacts":[],"foreplayDepth":"none","kissPresence":"none","bodyPraiseUsed":false,"lightSpankingUsed":false,"bodyFocuses":[],"bodyAngles":[],"bodyDescriptionRepeatRisk":"low","openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false}[[/VELOUR_V4_META]]
 - beatPhase setup/build/payoff, beatProgress 0~100. beatComplete는 현재 단계의 payoff가 실제 본문에서 충분히 완료된 경우만 true.
 - 미래 단계 선행은 futureBeatLeak, 캐논/단계 위반은 해당 boolean, 연결 생략은 causalBridge/setupMissing/openingBridge로 보수적으로 표시한다.
-- 현재 연령/학년 단계를 임의로 바꾸거나 대학생·직장인 시점으로 점프했으면 ageStageViolation=true. 현재 거주 캐논을 이사 사건 없이 바꿨으면 residenceViolation=true.
 - timeline/causalCarry/openThreads/closedThreads/관계·장면 메모는 짧은 한 문장 또는 짧은 배열만 쓴다.
 - durableFacts는 이번 화에서 실제로 확정되어 이후에도 계속 참이어야 하는 비성적 핵심 사실만 0~3개 기록한다. 예: 정체 공개, 관계 합의, 거주/직업 변화, 장기 약속·규칙. 일시적 감정·장면 동작·친밀 장면의 세부 행위는 넣지 않는다.
 - sexualDialogueLevel 0~4. 장면 관련 필드는 실제 발생한 경우만 기록하고 내부 id는 만들지 않는다.
@@ -1530,7 +1529,7 @@ ${playRotationDirective(ep)}`;
 
   function compactLegacyContext(text,isContinue=false){
     let out=String(text||'');
-    // V3.5 and the pinned base each inject raw story history. V4.4.38 already supplies a compact
+    // V3.5 and the pinned base each inject raw story history. V4.4.32 already supplies a compact
     // handoff + structured longform memory, so duplicate raw-history blocks only bloat the request.
     out=out.replace(/\n\[이전 줄거리 요약 및 연결점\][\s\S]*?지시사항:\s*위 이전 줄거리[^\n]*\n?/g,'\n');
     out=out.replace(/\n\[장기 연속성 보강 — 최근 이야기\][\s\S]*?- 이미 일어난 사건과 관계 진척을 되돌리거나 처음처럼 다시 설명하지 않는다\.\s*/g,'\n');
@@ -1556,14 +1555,14 @@ ${playRotationDirective(ep)}`;
       const legacyRaw=legacyActiveTagsSuppressed(()=>previousBuild(isContinue));
       const cleaned=cleanLegacyPrompt(legacyRaw);
       const base=compactLegacyContext(cleaned,isContinue); const ep=epNumber();
-      const prompt=`${base}\n\n===== VELOUR STORY ENGINE V4.4.38 · CAUSAL BUILDUP OVERRIDE =====
-[우선순위] V4.4.38 HARD LOCK(금지/확정 캐논/현재 실행 단계) > 인과적 빌드업과 직전 확정 상태 > 사용자 현재 화 지시 > 취향·생활밀착·외형·친밀 장면 질감 > 기존 자동 디렉터.
+      const prompt=`${base}\n\n===== VELOUR STORY ENGINE V4.4.32 · CAUSAL BUILDUP OVERRIDE =====
+[우선순위] V4.4.32 HARD LOCK(금지/확정 캐논/현재 실행 단계) > 인과적 빌드업과 직전 확정 상태 > 사용자 현재 화 지시 > 취향·생활밀착·외형·친밀 장면 질감 > 기존 자동 디렉터.
 - 설정 UI에서 OFF/금지로 둔 항목과 현재 CANON STORYLINE 단계는 단순 취향 제안이 아니라 HARD LOCK이다. 이번 화 추가 지시보다 우선한다.
-- 위쪽 기존 프롬프트에 남아 있을 수 있는 옛 ‘배경 세계관/서사 단계/관계성/2~4화 페이싱’ 값은 레거시 호환 정보일 뿐이다. 충돌하면 아래 V4.4.38 값만 따른다.
-- 기존 V3.5 관계 태그는 V4.4.38 관계축과 중복되므로 이번 프롬프트에서는 비활성화했다.
+- 위쪽 기존 프롬프트에 남아 있을 수 있는 옛 ‘배경 세계관/서사 단계/관계성/2~4화 페이싱’ 값은 레거시 호환 정보일 뿐이다. 충돌하면 아래 V4.4.32 값만 따른다.
+- 기존 V3.5 관계 태그는 V4.4.32 관계축과 중복되므로 이번 프롬프트에서는 비활성화했다.
 - 분량 목표는 반드시 독자가 읽는 실제 소설 본문으로 채운다. 머신 META, 규칙 문구, 종료 안내문은 본문 분량으로 계산하지 않는다.
 - '본문이 끝났습니다', '이상입니다' 같은 종료 안내문을 소설 본문 대신 출력하지 않는다. 본문을 충분히 완성한 뒤 META를 마지막에 붙인다.
-[연령 안전 원칙] 과거의 유년기·청소년기 등 성인 이전 성장 단계는 비성적 관계/일상/감정 서사로 그대로 묘사할 수 있다. 성적·친밀한 행동과 노골적 성적 묘사는 모든 당사자가 21세 이상인 성인 시기에만 허용한다.
+모든 인물은 명백한 성인(21세 이상)이며 친밀한 관계는 상호 선택과 동의가 분명한 상황에서만 진행한다.
 [현재 문체 상한] ${currentIntensityMode().label}. 이 선택은 자동으로 R-15로 강등하지 않는다. 이 값은 묘사 상세도의 상한이며 성인 관계 장면의 존재/빈도와는 별개다. 실제 표현 시점은 페이싱 게이트가 결정한다.
 ${canonDirective()}
 ${historicalDirective()}
@@ -1585,370 +1584,9 @@ ${varietyDirective(ep)}
 ${languageDirective(ep)}
 ${retryDirective()}
 ${metadataDirective()}
-===== END VELOUR V4.4.38 =====`;
+===== END VELOUR V4.4.32 =====`;
       window.__VELOUR_PROMPT_COMPACTION__={before:Number(legacyRaw.length||0),cleaned:Number(cleaned.length||0),legacy:Number(base.length||0),final:Number(prompt.length||0),episode:ep,at:new Date().toISOString()};
       return prompt;
-    };
-  }
-
-
-  /* =========================================================
-     V4.4.38 STAGE-ISOLATED PROMPT FIREWALL
-     - Keep adult-detail preferences in local state, but do not inject them into every episode.
-     - PRE_UNLOCK / UNLOCKED_IDLE use a romance-safe compact prompt.
-     - Explicit detail blocks activate only when the current adult gate is open AND this episode is actually due/requested.
-     - Any sexualized minor-history line is never sent to Gemini; it remains only in local user state.
-     ========================================================= */
-  function currentUserDirectionText(){
-    return String(document.getElementById('v33Next')?.value||'').trim();
-  }
-
-  function explicitAdultTopicText(text){
-    return /(?:성관계|섹스|정사|베드\s*씬|베드씬|성인\s*장면|성인씬|관계\s*장면|잠자리|더티\s*톡|자위|성기|발기|삽입|사정|오르가즘|체위|팬티|브라(?:지어)?|노브라|노팬티|유두|가슴골|보지|자지|좆|젖통|핥(?:아|기)|빨(?:아|기)|박아|박히|성적\s*흥분)/i.test(String(text||''));
-  }
-
-  function minorContextText(text){
-    return /(?:미성년|아동|청소년|중학생|중학교|고등학생|고등학교|초등학생|초등학교|사춘기|교복|성교육|만\s*(?:1[0-7]|[0-9])\s*세)/i.test(String(text||''));
-  }
-
-  function userRequestsAdultSceneNow(){
-    const raw=currentUserDirectionText();
-    if(!raw || userBlocksAdultScene()) return false;
-    const topic=/(?:성인\s*장면|성인씬|베드\s*씬|베드씬|잠자리|성관계|섹스|정사|관계\s*장면)/i;
-    const positive=/(?:넣|진행|이어|발생|해줘|원해|이번\s*화|가자|시작)/i;
-    return topic.test(raw) && (positive.test(raw)||!/(?:금지|없이|빼|미루|나중|다음\s*화)/i.test(raw));
-  }
-
-  function currentBeatRequestsAdultScene(){
-    const active=activeStorylineBeat();
-    return !!(active?.current && /(?:첫\s*관계|성인\s*장면|성인씬|베드\s*씬|잠자리|성관계|정사)/i.test(String(active.current)));
-  }
-
-  function promptStagePhase(ep){
-    const stage=currentNarrativeStage();
-    const gate=expressionGate(ep);
-
-    // V4.4.38 CREDIT FIREWALL: episode-number unlock can never outrank the current
-    // age/timeline stage. While the active beat is child/middle/high-school, adult-detail
-    // preferences stay local-only even if the unlock counter says they are due.
-    if(['child','middle','high'].includes(stage.id)){
-      return {id:'PRE_UNLOCK',label:`${stage.label} · 성장 단계 CLEAN ROOM`,ep,gate:Math.min(gate.allowedLevel,1),requested:false,beatDue:false,due:false,overdue:false,ageForced:true};
-    }
-
-    const ps=postUnlockState(ep);
-    const requested=userRequestsAdultSceneNow();
-    const beatDue=currentBeatRequestsAdultScene();
-    const detailActive=gate.allowedLevel>=4 && ps.unlocked && !ps.cooldownLocked && !userBlocksAdultScene() && (requested||beatDue||ps.due||ps.overdue);
-    if(detailActive) return {id:'ADULT_DETAIL_ACTIVE',label:'현재 화 친밀 상세 활성',ep,gate:gate.allowedLevel,requested,beatDue,due:!!ps.due,overdue:!!ps.overdue,ageForced:false};
-    if(gate.allowedLevel>=4 || ps.unlocked || establishedSexualRelationship()) return {id:'UNLOCKED_IDLE',label:'해금됨 · 이번 화 상세 비활성',ep,gate:gate.allowedLevel,requested,beatDue,due:!!ps.due,overdue:!!ps.overdue,ageForced:false};
-    return {id:'PRE_UNLOCK',label:'빌드업 · 친밀 상세 격리',ep,gate:gate.allowedLevel,requested,beatDue,due:false,overdue:false,ageForced:false};
-  }
-
-  function safeAppearanceForInactivePhase(){
-    if(state.appearanceEnabled===false) return `[CHARACTER APPEARANCE — 단계 격리]\n- 기본 외형 프리셋 OFF. 사용자가 직접 지정한 비성적 외형만 유지한다.`;
-    const f=state.appearance?.female||DEFAULT.appearance.female;
-    const m=state.appearance?.male||DEFAULT.appearance.male;
-    return `[CHARACTER APPEARANCE — 단계 격리]\n- 여주 외형 앵커: 피부톤 ${optionLabel(SKIN_TONES,f.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,f.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,f.eyes)}, 전체 인상 ${optionLabel(FEMALE_IMPRESSIONS,f.impression)}, 헤어 ${optionLabel(FEMALE_HAIR_LENGTHS,f.hairLength)} · ${optionLabel(FEMALE_HAIR_STYLES,f.hairStyle)} · ${optionLabel(HAIR_COLORS,f.hairColor)}.${f.vibe?` 분위기 ${f.vibe}.`:''}\n- 남주 외형 앵커: 피부톤 ${optionLabel(SKIN_TONES,m.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,m.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,m.eyes)}, 전체 인상 ${optionLabel(MALE_IMPRESSIONS,m.impression)}, 헤어 ${optionLabel(MALE_HAIR_LENGTHS,m.hairLength)} · ${optionLabel(MALE_HAIR_STYLES,m.hairStyle)} · ${optionLabel(HAIR_COLORS,m.hairColor)}.${m.vibe?` 분위기 ${m.vibe}.`:''}\n- 체형·치수·친밀 장면용 신체 상세값은 앱에 그대로 저장하지만, 현재 화에는 필요하지 않으므로 API 프롬프트에 주입하지 않는다.`;
-  }
-
-  function replaceBracketSection(text,headerRegex,replacement=''){
-    const re=new RegExp(`\\n?\\[${headerRegex}\\][\\s\\S]*?(?=\\n\\[[^\\n]+\\]|\\n===== END VELOUR|$)`,'g');
-    return String(text||'').replace(re,replacement?`\n${replacement}\n`:'\n');
-  }
-
-  function minorStageLabel(row){
-    const s=String(row||'');
-    const age=s.match(/만\s*(?:1[0-7]|[0-9])\s*세/i);
-    if(age) return age[0].replace(/\s+/g,' ');
-    if(/초등학생|초등학교/i.test(s)) return '초등학생 시기';
-    if(/중학생|중학교/i.test(s)) return '중학생 시기';
-    if(/고등학생|고등학교/i.test(s)) return '고등학생 시기';
-    if(/사춘기|청소년/i.test(s)) return '사춘기/청소년기';
-    if(/미성년|아동/i.test(s)) return '성인 이전 시기';
-    return '성인 이전 시기';
-  }
-
-  function narrativeStageFromText(text){
-    const s=String(text||'');
-    if(/(?:유년|어린\s*시절|어릴\s*때|초등학생|초등학교)/i.test(s)) return {id:'child',label:'유년/초등학생'};
-    if(/(?:중학생|중학교)/i.test(s)) return {id:'middle',label:'중학생'};
-    if(/(?:고등학생|고등학교)/i.test(s)) return {id:'high',label:'고등학생'};
-    if(/(?:대학생|대학교|대학\s*\d+학년|직장인|성인\s*시기|21\s*세|스물(?:한)?\s*살)/i.test(s)) return {id:'adult',label:'성인'};
-    return {id:'unknown',label:'명시 없음'};
-  }
-
-  function currentNarrativeStage(){
-    const active=activeStorylineBeat();
-    const current=String(active?.current||'');
-    const byBeat=narrativeStageFromText(current);
-    if(byBeat.id!=='unknown') return {...byBeat,source:'currentBeat',currentBeat:current};
-
-    // V4.4.38: inherit from the MOST RECENT completed beat. Joining all completed
-    // beats and then scanning child→adult can incorrectly snap back to the earliest stage.
-    const completed=Array.isArray(active?.completed)?active.completed:[];
-    for(let i=completed.length-1;i>=0;i--){
-      const byRecent=narrativeStageFromText(String(completed[i]||''));
-      if(byRecent.id!=='unknown') return {...byRecent,source:'latestCompletedBeat',currentBeat:current};
-    }
-
-    const byDirection=narrativeStageFromText(currentUserDirectionText());
-    if(byDirection.id!=='unknown') return {...byDirection,source:'userDirection',currentBeat:current};
-
-    // Plot fallback only when it contains one unambiguous stage. Multi-era synopsis text
-    // must never decide the current scene's age by whichever word appears first.
-    const plot=String(document.getElementById('inputPlot')?.value||'');
-    const ids=[];
-    if(/(?:유년|어린\s*시절|어릴\s*때|초등학생|초등학교)/i.test(plot)) ids.push('child');
-    if(/(?:중학생|중학교)/i.test(plot)) ids.push('middle');
-    if(/(?:고등학생|고등학교)/i.test(plot)) ids.push('high');
-    if(/(?:대학생|대학교|대학\s*\d+학년|직장인|성인\s*시기|21\s*세|스물(?:한)?\s*살)/i.test(plot)) ids.push('adult');
-    if(ids.length===1){
-      const byPlot=narrativeStageFromText(plot);
-      if(byPlot.id!=='unknown') return {...byPlot,source:'plotSingleStage',currentBeat:current};
-    }
-    return {id:'unknown',label:'명시 없음',source:'none',currentBeat:current};
-  }
-
-  function safeMinorDevelopmentLine(row){
-    const label=minorStageLabel(row);
-    return `- [연령 단계 유지 · ${label}] 이 시기의 학교·가정·친구 관계, 성장 변화, 어색함, 호감, 질투, 사생활 경계와 거리감 변화를 자연스럽게 이어간다. 현재 단계가 충분히 진행되기 전에는 이후 연령 단계의 사건을 앞당기지 않는다.`;
-  }
-
-  function ageTimelineContinuityLock(){
-    // IMPORTANT: inspect only user canon/roadmap/plot. Never inspect the whole generated prompt,
-    // because adult occupation profiles and safety boilerplate falsely made every episode look adult.
-    const canonSource=[String(state.hardCanon||''),String(state.storyline||''),String(document.getElementById('inputPlot')?.value||'')].join('\n');
-    const hasChild=/(?:유년|어린\s*시절|어릴\s*때|초등학생|초등학교)/i.test(canonSource);
-    const hasMiddle=/(?:중학생|중학교)/i.test(canonSource);
-    const hasHigh=/(?:고등학생|고등학교)/i.test(canonSource);
-    const hasAdult=/(?:성인\s*시기|대학생|대학교|직장인|21\s*세|스물(?:한)?\s*살)/i.test(canonSource);
-    const stages=[];
-    if(hasChild) stages.push('유년/초등학생');
-    if(hasMiddle) stages.push('중학생');
-    if(hasHigh) stages.push('고등학생');
-    if(hasAdult) stages.push('성인');
-    const current=currentNarrativeStage();
-    const active=activeStorylineBeat();
-    return `[AGE/TIMELINE HARD LOCK — 현재 장면 기준]
-- 사용자 CANON 시간축${stages.length?`(${stages.join(' → ')})`:''}을 순서대로 유지한다.
-- 현재 실행 단계: ${active?.current||'스토리라인 현재 단계'}.
-- 현재 장면의 연령/학년 앵커: ${current.label} (${current.source}). 이 앵커는 이번 화 전체에서 유지한다.
-- 현재가 유년/중학생/고등학생 단계면 UI에 저장된 21세·대학생·직장 같은 성인 프로필은 '미래 성인 시점 참고값'일 뿐, 이번 화의 현재 신분/학년으로 적용하지 않는다.
-- 현재 단계가 성인 이전이면 대학생, 대학교 수업/학과 생활, 취업·직장 생활 등 성인 시점 사건을 선행하지 않는다.
-- 안전 격리는 민감 상세만 비성적으로 치환하는 규칙이다. 그 때문에 해당 시기를 삭제하거나 성인 시기로 점프하지 않는다.
-- 사용자 지시나 현재 CANON 단계에 졸업/입학/몇 년 후 같은 전환이 명시되지 않았다면 대규모 시간점프를 만들지 않는다.`;
-  }
-
-  function residenceCanonAnchor(){
-    const sources=[
-      String(state.hardCanon||''),
-      String(document.getElementById('inputPlot')?.value||''),
-      String(document.getElementById('inputChars')?.value||''),
-      ...(Array.isArray(state.runtime?.durableFacts)?state.runtime.durableFacts.map(String):[])
-    ];
-    const rows=sources.join('\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);
-    // V4.4.38: an explicitly labelled CURRENT residence outranks generic family background.
-    const explicitCurrent=rows.find(r=>/(?:현재\s*(?:거주|사는\s*곳|사는\s*집|주거)|거주지\s*[:：]|사는\s*곳\s*[:：])/i.test(r));
-    if(explicitCurrent) return explicitCurrent.slice(0,260);
-    const strong=rows.find(r=>/(?:부모님|부모|가족).{0,18}(?:집|본가|함께\s*살|같이\s*살|거주)|(?:집|본가).{0,18}(?:부모님|부모|가족)/i.test(r));
-    if(strong) return strong.slice(0,260);
-    const explicit=rows.find(r=>/(?:현재\s*)?(?:거주|사는\s*곳|사는\s*집|주거|본가|자취방|원룸|기숙사|오피스텔)/i.test(r));
-    return explicit?explicit.slice(0,260):'';
-  }
-
-  function residenceCanonLock(){
-    const anchor=residenceCanonAnchor();
-    if(!anchor) return '';
-    return `[RESIDENCE HARD LOCK]
-- 현재 거주/주거 캐논: ${anchor}
-- 이번 화에서 사용자가 이사·독립·기숙사 입주·자취 시작을 직접 지시하거나 현재 CANON 단계가 그 사건이 아닌 한 이 거주 상태를 바꾸지 않는다.
-- 특히 부모님 집/본가 거주 캐논이 있으면 임의로 자취방·원룸·오피스텔·기숙사에 혼자 사는 설정을 새로 만들지 않는다.
-- 장소를 바꾸는 장면과 '거주지가 바뀌었다'는 캐논 변경을 구분한다. 외출·방문은 가능하지만 집 주소/주거 상태를 새로 만들지 않는다.`;
-  }
-
-  function stageProfileIsolation(text){
-    const stage=currentNarrativeStage();
-    let out=String(text||'');
-    if(['child','middle','high'].includes(stage.id)){
-      // Current adult occupations are future profile anchors during childhood/teen arcs.
-      out=out.replace(/^- A:\s*(.*?)\s*\/\s*신분\s*(.*?)\.$/gm,'- A 성인 시기 프로필(미래 참고값 · 현재 단계 적용 금지): $1 / 신분 $2.');
-      out=out.replace(/^- B:\s*(.*?)\s*\/\s*신분\s*(.*?)\.$/gm,'- B 성인 시기 프로필(미래 참고값 · 현재 단계 적용 금지): $1 / 신분 $2.');
-      out=out.replace(/^.*(?:인물 구도|등장인물|캐릭터|남주|여주).*?(?:21\s*세|스물(?:한)?\s*살|대학생|대학교|대학\s*\d+학년|학과).*$/gmi,m=>`[미래 성인 프로필 참고 · 현재 ${stage.label} 단계 적용 금지] ${m}`);
-      out=out.replace(/^\[직업은 이름표가 아니라 사건 생성 장치\][\s\S]*?(?=\n\[[^\n]+\]|\n===== END VELOUR|$)/gm,
-`[직업 프로필 단계 격리]
-- 현재는 ${stage.label} 단계다. UI의 성인 직업/대학 전공은 미래 프로필 참고값이며 이번 화의 현재 생활로 실행하지 않는다.
-- 현재 단계의 학교·가정·친구·동네·가족 일상을 사건 생성 장치로 사용한다.
-`);
-      out=out.replace(/^.*모든 등장인물은 명백한 성인이며.*$/gmi,'- 현재는 성인 이전 성장 단계일 수 있다. 이 단계에서는 비성적 일상·감정·관계 변화만 묘사하며 성적/친밀 행동은 성인 시기까지 잠근다.');
-    }
-    return out;
-  }
-
-  function scrubMinorSexualHistory(text){
-    const rows=String(text||'').split('\n');
-    const out=[];
-    let lastSafe='';
-    for(const row of rows){
-      if(minorContextText(row) && explicitAdultTopicText(row)){
-        const safe=safeMinorDevelopmentLine(row);
-        if(safe!==lastSafe) out.push(safe);
-        lastSafe=safe;
-        continue;
-      }
-      out.push(row);
-      if(String(row).trim()) lastSafe='';
-    }
-    return out.join('\n');
-  }
-
-  function scrubInactiveAdultDetails(text,phase){
-    let out=String(text||'');
-    // Entire detail-heavy blocks are not useful outside an actually active intimate episode.
-    out=replaceBracketSection(out,'INTIMACY TEXTURE[^\\]]*','');
-    out=replaceBracketSection(out,'성인 장면 다양성[^\\]]*','');
-    out=replaceBracketSection(out,'BODY PROSE VARIATION[^\\]]*',`[BODY PROSE VARIATION — 단계 격리]\n- 현재 화는 관계/감정 빌드업을 우선한다. 외형은 얼굴·표정·자세·옷차림·거리감처럼 비성적 장면 정보 위주로 자연스럽게 변주한다.`);
-    out=replaceBracketSection(out,'CHARACTER APPEARANCE[^\\]]*',safeAppearanceForInactivePhase());
-    out=replaceBracketSection(out,'LANGUAGE CONTROL',`[LANGUAGE CONTROL — 단계 격리]\n- 일반 욕설 강도 ${Number(state.profanity||0)}/100.\n- 상대 비하형 욕설은 ${state.insultMode==='off'?'HARD OFF':state.insultMode==='light'?'성별 비하형 멸칭 HARD OFF, 약한 일반 욕설만 허용':'사용자 HARD CANON 우선'}.\n- 저장된 친밀 대사/직접 어휘 설정은 현재 화 프롬프트에는 주입하지 않는다.`);
-    out=replaceBracketSection(out,'POST-UNLOCK RELATIONSHIP PACE[^\\]]*',`[RELATIONSHIP PACE — 단계 격리]\n- 현재 화는 ${phase.id==='PRE_UNLOCK'?'첫 관계 이전 빌드업':'해금 이후의 비친밀 장면'}이다. 저장된 친밀 장면 빈도/세부 취향은 이번 요청에 주입하지 않는다.\n- 현재 CANON 단계와 직전 인과, 감정 변화, 일상 후폭풍을 우선한다.`);
-    out=replaceBracketSection(out,'PACING STATE MACHINE',`[PACING STATE MACHINE — 단계 격리]\n- 현재 EP.${phase.ep}, 관계 표현 게이트 ${phase.gate}/4.\n- 현재 단계에서 허용된 관계·감정 진전만 실행하고, 이후 단계의 상세 행동을 선행하지 않는다.\n- SLOW/ULTRA SLOW에서는 원인→반응→망설임/선택→결과를 충분히 쌓는다.`);
-    out=replaceBracketSection(out,'DESIRE ≠ EXPRESSION[^\\]]*',`[ROMANCE EXPRESSION GATE]\n- 현재 EP.${phase.ep}, 관계 표현 게이트 ${phase.gate}/4.\n- 끌림의 발생, 자각, 표현, 관계 선택은 서로 다른 단계다. 현재 단계보다 앞선 행동/대사를 선행하지 않는다.\n- 긴장감은 시선·거리·말의 여운·질투의 싹·회피·망설임 등으로 축적한다.`);
-    // Remove lifestyle-only adult preference lines while keeping the useful neighbor/job routines.
-    out=out.replace(/^.*선택된 성인 취향:.*$/gmi,'');
-    out=out.replace(/^.*합의된 관찰\/노출 취향.*$/gmi,'');
-    out=out.replace(/^.*노팬티\/노브라.*$/gmi,'');
-    out=out.replace(/^.*특정 성인 상대만 알고 있는 설정.*$/gmi,'');
-    // The global prose ceiling is stored locally; early/idle episodes only need the active stage style.
-    out=out.replace(/^\[현재 문체 상한\].*$/gmi,`[현재 문체 상한] 관계·감정선 중심. 저장된 고수위 상세 문체 설정은 현재 화에 주입하지 않는다.`);
-
-    // Remove explicit adult-detail lines from roadmap, hard canon, prior raw handoff and user direction while inactive.
-    const rows=out.split('\n');
-    const clean=[];
-    let adultRedactionAdded=false;
-    for(const row of rows){
-      if(minorContextText(row) && explicitAdultTopicText(row)){
-        clean.push(safeMinorDevelopmentLine(row));
-        continue;
-      }
-      if(explicitAdultTopicText(row)){
-        // keep diagnostic/meta schema machinery; it is not story content and contains no explicit vocabulary list.
-        if(/VELOUR_V4_META|adultScene|sexualDialogueLevel/.test(row)){ clean.push(row); continue; }
-        if(!adultRedactionAdded){ clean.push('- [단계 격리] 후속 친밀 관계의 상세 설정은 앱에 저장되어 있으며 실제 해당 단계에서만 활성화한다.'); adultRedactionAdded=true; }
-        continue;
-      }
-      clean.push(row);
-    }
-    out=clean.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-    return out;
-  }
-
-  // V4.4.38 MINOR-STAGE CLEAN ROOM.
-  // When the CURRENT canon stage is child/middle/high school, build a prompt that contains
-  // only age-appropriate continuity. Future adult profiles/preferences stay local and are not
-  // sent at all. This avoids the false-positive pattern "minor stage + adult-detail safety text".
-  function minorStageCleanRoomSensitiveLine(row){
-    const s=String(row||'');
-    if(explicitAdultTopicText(s)) return true;
-    return /(?:R-?19|adultScene|sexualDialogueLevel|sexual|sex\b|intimacy|foreplay|spanking|dirty\s*talk|position\b|plays\b|성적|성행위|친밀|욕망|노출|고수위|노골적|수위\s*상한|체위|플레이\s*로테이션|직접\s*어휘|신체\s*상세)/i.test(s);
-  }
-
-  function futureProfileLineDuringMinor(row){
-    const s=String(row||'');
-    return /(?:21\s*세|스물(?:한)?\s*살|대학생|대학교|대학\s*\d+학년|학과|직장인|성인|직업\s*프로필)/i.test(s);
-  }
-
-  function minorAgeTimelineContinuityLock(stage){
-    const active=activeStorylineBeat();
-    return `[AGE/TIMELINE HARD LOCK — 현재 단계 전용]
-- 현재 실행 단계: ${active?.current||'사용자 스토리라인의 현재 단계'}.
-- 현재 연령/학년 앵커: ${stage.label}. 이번 화 전체에서 이 시점을 유지한다.
-- 학교·가정·친구·동네·가족 등 현재 시기의 생활 반경 안에서 사건을 전개한다.
-- 현재 단계의 완료 조건이 충분히 쌓이기 전에는 다음 연령/학년 단계로 건너뛰지 않는다.
-- UI에 저장된 이후 시점의 나이·대학·직업 프로필은 이번 요청에 사용하지 않는다.
-- 사용자가 현재 단계에서 직접 시간 전환을 지시하지 않았다면 몇 년 뒤로 점프하지 않는다.`;
-  }
-
-  function minorSafeMetadataDirective(){
-    return `[머신 메타 — 본문 뒤 1회, 코드블록 금지]
-[[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","relationshipState":"","durableFacts":[],"openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false,"ageStageViolation":false,"residenceViolation":false}[[/VELOUR_V4_META]]
-- beatPhase setup/build/payoff, beatProgress 0~100. 현재 단계가 실제 본문에서 충분히 완료된 경우만 beatComplete=true.
-- 미래 단계 선행은 futureBeatLeak, 현재 단계/캐논 위반은 해당 boolean으로 표시한다.
-- timeline/causalCarry/openThreads/closedThreads/relationshipState는 짧게 기록한다.
-- 현재 연령/학년을 임의로 바꾸면 ageStageViolation=true. 이사 사건 없이 현재 거주 상태를 바꾸면 residenceViolation=true.
-- 메타는 앱이 제거하므로 본문에 설명하거나 반복하지 않는다.`;
-  }
-
-  function stripMinorUnsafeMetaBlock(text){
-    let out=String(text||'');
-    const re=/\[머신 메타[^\n]*\][\s\S]*?\[\[\/VELOUR_V4_META\]\][\s\S]*?(?=\n===== END VELOUR|$)/g;
-    if(re.test(out)) out=out.replace(re,minorSafeMetadataDirective());
-    else out+=`\n\n${minorSafeMetadataDirective()}`;
-    return out;
-  }
-
-  function minorCleanRoomPrompt(text,phase,stage){
-    let out=String(text||'');
-    // First remove all inactive adult-detail blocks, then replace the machine meta with a
-    // non-adult schema so even field names do not create mixed-context safety signals.
-    out=scrubInactiveAdultDetails(out,phase);
-    out=stripMinorUnsafeMetaBlock(out);
-    out=out.replace(/^\[연령 안전 원칙\].*$/gmi,'');
-    out=out.replace(/^\[현재 문체 상한\].*$/gmi,'[현재 문체] 감정선·대화·행동·일상 묘사를 중심으로 자연스럽게 쓴다.');
-
-    const rows=out.split('\n');
-    const clean=[];
-    let replacedDevelopment=false;
-    let removedSensitive=0, removedFutureProfile=0;
-    for(const raw of rows){
-      const row=String(raw||'');
-      if(minorContextText(row) && minorStageCleanRoomSensitiveLine(row)){
-        if(!replacedDevelopment){clean.push(safeMinorDevelopmentLine(row));replacedDevelopment=true;}
-        removedSensitive++; continue;
-      }
-      if(minorStageCleanRoomSensitiveLine(row)){
-        removedSensitive++; continue;
-      }
-      if(futureProfileLineDuringMinor(row)){
-        removedFutureProfile++; continue;
-      }
-      // Drop empty section labels left behind after detail removal.
-      if(/^\s*\[(?:직업 프로필 단계 격리|RELATIONSHIP PACE — 단계 격리|ROMANCE EXPRESSION GATE|PACING STATE MACHINE — 단계 격리)\]\s*$/.test(row)) continue;
-      clean.push(row);
-    }
-    out=clean.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-    window.__VELOUR_MINOR_CLEAN_ROOM__={enabled:true,stage:stage.id,label:stage.label,removedSensitive,removedFutureProfile,at:new Date().toISOString()};
-    return out;
-  }
-
-  function stageIsolatePrompt(text,ep){
-    const phase=promptStagePhase(ep);
-    const residenceLock=residenceCanonLock();
-    const stage=currentNarrativeStage();
-    const minorNow=['child','middle','high'].includes(stage.id);
-    const ageLock=minorNow?minorAgeTimelineContinuityLock(stage):ageTimelineContinuityLock();
-    let out;
-    if(minorNow){
-      // Clean-room mode deliberately does NOT send future adult profiles/preferences at all.
-      // We preserve the age timeline by locking only the current stage, not by mentioning later
-      // adult content in the same request.
-      out=minorCleanRoomPrompt(text,phase,stage);
-    } else {
-      window.__VELOUR_MINOR_CLEAN_ROOM__={enabled:false,stage:stage.id,label:stage.label,removedSensitive:0,removedFutureProfile:0,at:new Date().toISOString()};
-      out=scrubMinorSexualHistory(text);
-      if(phase.id!=='ADULT_DETAIL_ACTIVE') out=scrubInactiveAdultDetails(out,phase);
-      out=stageProfileIsolation(out);
-    }
-    const locks=[ageLock,residenceLock].filter(Boolean).join('\n\n');
-    if(locks) out=`${locks}\n\n${out}`;
-    window.__VELOUR_PROMPT_PHASE__={...phase,beforeChars:String(text||'').length,afterChars:String(out||'').length,ageTimelineLocked:!!ageLock,residenceLocked:!!residenceLock,currentNarrativeStage:stage.id,currentNarrativeStageLabel:stage.label,residenceAnchor:residenceCanonAnchor(),minorCleanRoom:minorNow,minorCleanRoomRemovedSensitive:Number(window.__VELOUR_MINOR_CLEAN_ROOM__?.removedSensitive||0),minorCleanRoomRemovedFutureProfile:Number(window.__VELOUR_MINOR_CLEAN_ROOM__?.removedFutureProfile||0),at:new Date().toISOString()};
-    if(window.__VELOUR_PROMPT_COMPACTION__) window.__VELOUR_PROMPT_COMPACTION__.stageIsolation=clone(window.__VELOUR_PROMPT_PHASE__);
-    return out;
-  }
-
-  const stageBaseBuild=window.buildPrompt;
-  if(typeof stageBaseBuild==='function'){
-    window.buildPrompt=function(isContinue=false){
-      const raw=stageBaseBuild(isContinue);
-      return stageIsolatePrompt(raw,epNumber());
     };
   }
 
@@ -2021,7 +1659,7 @@ ${metadataDirective()}
     };
   }
 
-  // V4.4.38 RESPONSE VAULT + TOKEN USAGE LEDGER.
+  // V4.4.32 RESPONSE VAULT + TOKEN USAGE LEDGER.
   // A Gemini candidate is copied to a separate IndexedDB vault BEFORE the legacy/base generator
   // can render, validate, retry, rollback, or overwrite the reader. This is deliberately outside
   // the story draft database so generation rollback can never erase the received raw response.
@@ -2080,32 +1718,6 @@ ${metadataDirective()}
         const req=tx.objectStore(store).getAll();
         req.onsuccess=()=>resolve(req.result||[]);
         req.onerror=()=>reject(req.error||new Error('응답 금고 목록 읽기 실패'));
-      }catch(e){reject(e)}
-    });
-  }
-
-  async function responseVaultDelete(store,id){
-    const db=await responseVaultOpen();
-    return new Promise((resolve,reject)=>{
-      try{
-        const tx=db.transaction(store,'readwrite');
-        tx.objectStore(store).delete(id);
-        tx.oncomplete=()=>resolve(true);
-        tx.onerror=()=>reject(tx.error||new Error('응답 금고 삭제 실패'));
-        tx.onabort=()=>reject(tx.error||new Error('응답 금고 삭제 중단'));
-      }catch(e){reject(e)}
-    });
-  }
-
-  async function responseVaultClear(store){
-    const db=await responseVaultOpen();
-    return new Promise((resolve,reject)=>{
-      try{
-        const tx=db.transaction(store,'readwrite');
-        tx.objectStore(store).clear();
-        tx.oncomplete=()=>resolve(true);
-        tx.onerror=()=>reject(tx.error||new Error('응답 금고 비우기 실패'));
-        tx.onabort=()=>reject(tx.error||new Error('응답 금고 비우기 중단'));
       }catch(e){reject(e)}
     });
   }
@@ -2238,7 +1850,7 @@ ${metadataDirective()}
       modal.style.cssText='position:fixed;inset:0;z-index:920;background:rgba(5,1,3,.95);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:13px';
       modal.innerHTML=`<div style="width:100%;max-width:480px;max-height:88vh;display:flex;flex-direction:column;background:#190812;border:1px solid rgba(245,196,107,.3);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.75)">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid rgba(245,196,107,.16)"><div><b style="color:#ffebaa;font-size:14px">🛟 Gemini 응답 금고</b><div style="color:#a9939e;font-size:9.5px;margin-top:3px">API 응답 도착 즉시 별도 IndexedDB에 원문 보관 · 자동삭제 안 함</div></div><button id="velourVaultClose" style="border:0;background:transparent;color:#c9b1bd;font-size:24px">×</button></div>
-        <div style="padding:10px 12px;border-bottom:1px solid rgba(245,196,107,.12);display:flex;gap:7px;flex-wrap:wrap"><button id="velourVaultExport" style="flex:1;min-width:150px;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.08);color:#ffdf98;border-radius:9px;padding:8px;font-size:10px;font-weight:750">⬇️ 금고 JSON 백업</button><button id="velourVaultClear" style="border:1px solid rgba(255,125,145,.25);background:rgba(255,100,125,.06);color:#ffb7c2;border-radius:9px;padding:8px 10px;font-size:10px">🧹 본문 전체 비우기</button><button id="velourVaultRefresh" style="border:1px solid rgba(245,196,107,.17);background:transparent;color:#d6c2cc;border-radius:9px;padding:8px 10px;font-size:10px">새로고침</button></div>
+        <div style="padding:10px 12px;border-bottom:1px solid rgba(245,196,107,.12);display:flex;gap:7px"><button id="velourVaultExport" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.08);color:#ffdf98;border-radius:9px;padding:8px;font-size:10px;font-weight:750">⬇️ 금고 JSON 백업</button><button id="velourVaultRefresh" style="border:1px solid rgba(245,196,107,.17);background:transparent;color:#d6c2cc;border-radius:9px;padding:8px 10px;font-size:10px">새로고침</button></div>
         <div id="velourVaultList" style="padding:11px;overflow:auto;-webkit-overflow-scrolling:touch"></div>
       </div>`;
       document.body.appendChild(modal);
@@ -2247,7 +1859,6 @@ ${metadataDirective()}
       modal.addEventListener('click',e=>{if(e.target===modal)close();});
       modal.querySelector('#velourVaultRefresh').onclick=()=>window.showVelourResponseVault();
       modal.querySelector('#velourVaultExport').onclick=()=>window.exportVelourResponseVault();
-      modal.querySelector('#velourVaultClear').onclick=()=>window.clearVelourResponseVault();
     }
     return modal;
   }
@@ -2267,7 +1878,7 @@ ${metadataDirective()}
         <div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#fff0c4;font-size:11px">EP.${String(r.attemptedEpisode||'-').padStart(2,'0')} · ${vaultEscape(r.model||'Gemini')}</b><span style="font-size:9px;color:#9f8794">${vaultEscape(r.receivedAt?new Date(r.receivedAt).toLocaleString('ko-KR'):'')}</span></div>
         <div style="font-size:9.5px;color:#bca7b2;margin-top:5px">${vaultEscape(usageTokenLine(r.usage||{}))} · 본문 ${Number(r.outputChars||text.length).toLocaleString()}자 · finish=${vaultEscape(r.finishReason||'-')}</div>
         <div style="white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:auto;background:#10070b;border-radius:8px;padding:8px;margin-top:7px;color:#dfd0d8;font:10.5px/1.6 Georgia,'Noto Serif KR',serif">${vaultEscape(preview)}${text.length>900?'…':''}</div>
-        <div style="display:flex;gap:6px;margin-top:7px"><button type="button" onclick="copyVelourVaultResponse('${vaultEscape(r.id)}')" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.07);color:#ffdf98;border-radius:8px;padding:7px;font-size:9.5px;font-weight:750">📋 본문 복사</button><button type="button" onclick="downloadVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(245,196,107,.16);background:transparent;color:#d6c2cc;border-radius:8px;padding:7px 9px;font-size:9.5px">⬇️ TXT</button><button type="button" onclick="deleteVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(255,125,145,.22);background:transparent;color:#ffb7c2;border-radius:8px;padding:7px 9px;font-size:9.5px">🗑</button></div>
+        <div style="display:flex;gap:6px;margin-top:7px"><button type="button" onclick="copyVelourVaultResponse('${vaultEscape(r.id)}')" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.07);color:#ffdf98;border-radius:8px;padding:7px;font-size:9.5px;font-weight:750">📋 본문 복사</button><button type="button" onclick="downloadVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(245,196,107,.16);background:transparent;color:#d6c2cc;border-radius:8px;padding:7px 9px;font-size:9.5px">⬇️ TXT</button></div>
       </div>`;
     }).join('');
   }
@@ -2285,24 +1896,10 @@ ${metadataDirective()}
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`VELOUR-EP${String(r.attemptedEpisode||'X').padStart(2,'0')}-${String(r.receivedAt||'').slice(0,19).replace(/[:T]/g,'-')}.txt`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1200);
   }
 
-  async function deleteVelourVaultResponse(id){
-    const r=await responseVaultGet(RESPONSE_VAULT_STORE,id);
-    if(!r) return alert('응답을 찾지 못했어.');
-    if(!confirm(`EP.${String(r.attemptedEpisode||'-').padStart(2,'0')} 금고 본문을 삭제할까?\n\nAPI 사용량 기록은 남겨서 오늘 누적 토큰 수치는 정확하게 유지해.`)) return;
-    try{await responseVaultDelete(RESPONSE_VAULT_STORE,id); await showVelourResponseVault();}
-    catch(e){alert('금고 본문 삭제 실패: '+String(e?.message||e));}
-  }
-
-  async function clearVelourResponseVault(){
-    if(!confirm('응답 금고의 보관 본문을 전부 비울까?\n\n소설 저장함/임시저장/사용량 기록은 건드리지 않아. 오늘 누적 토큰 수치도 그대로 유지돼.')) return;
-    try{await responseVaultClear(RESPONSE_VAULT_STORE); await showVelourResponseVault();}
-    catch(e){alert('응답 금고 비우기 실패: '+String(e?.message||e));}
-  }
-
   async function exportVelourResponseVault(){
     try{
       const responses=await responseVaultAll(RESPONSE_VAULT_STORE),usage=await responseVaultAll(RESPONSE_USAGE_STORE);
-      const payload={format:'VELOUR_RESPONSE_VAULT_V1',engine:'V4.4.38',exportedAt:new Date().toISOString(),responses,usage};
+      const payload={format:'VELOUR_RESPONSE_VAULT_V1',engine:'V4.4.32',exportedAt:new Date().toISOString(),responses,usage};
       const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`VELOUR-response-vault-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1200);
     }catch(e){alert('응답 금고 백업 실패: '+String(e?.message||e));}
   }
@@ -2311,8 +1908,6 @@ ${metadataDirective()}
   window.copyVelourVaultResponse=copyVelourVaultResponse;
   window.downloadVelourVaultResponse=downloadVelourVaultResponse;
   window.exportVelourResponseVault=exportVelourResponseVault;
-  window.deleteVelourVaultResponse=deleteVelourVaultResponse;
-  window.clearVelourResponseVault=clearVelourResponseVault;
 
   function primeGenerationDiagnostic(isContinue=false,attemptedEpisode=0,retry=false){
     let promptChars=0,buildError='';
@@ -2467,13 +2062,13 @@ ${metadataDirective()}
   }
 
   function markGenerationOutcome(status,detail={}){
-    window.__VELOUR_LAST_GENERATION_OUTCOME__=Object.assign({status,at:Date.now(),engine:'4.4.38'},detail||{});
+    window.__VELOUR_LAST_GENERATION_OUTCOME__=Object.assign({status,at:Date.now(),engine:'4.4.32'},detail||{});
     try{renderUsageSummary();}catch(e){}
     return window.__VELOUR_LAST_GENERATION_OUTCOME__;
   }
 
 
-  // V4.4.38: CONFIRMED EPISODE LEDGER.
+  // V4.4.32: CONFIRMED EPISODE LEDGER.
   // episodeCount is a mutable legacy UI counter and increments BEFORE the request.
   // It must never be the authority after a failed request. The confirmed ledger only
   // advances after a fully committed episode and every continuation starts from it.
@@ -2620,8 +2215,8 @@ ${metadataDirective()}
     const count=clean.length,target=selectedLengthTarget(),ok=count>=target;
     counter.style.color=ok?'#bca7b2':'#ffd08a';
     counter.textContent=ok
-      ? `본문 ${count.toLocaleString()}자 · 목표 충족 · ${modelLabelForCounter()} · ENGINE V4.4.38`
-      : `본문 ${count.toLocaleString()}자 · 목표 ${target.toLocaleString()}자+보다 짧음 · ${modelLabelForCounter()} · ENGINE V4.4.38`;
+      ? `본문 ${count.toLocaleString()}자 · 목표 충족 · ${modelLabelForCounter()} · ENGINE V4.4.32`
+      : `본문 ${count.toLocaleString()}자 · 목표 ${target.toLocaleString()}자+보다 짧음 · ${modelLabelForCounter()} · ENGINE V4.4.32`;
   }
 
   function safetyCategoryLabel(category){
@@ -2666,7 +2261,6 @@ ${metadataDirective()}
     if(k==='API_ERROR') return d?.apiError?`Gemini API 오류: ${d.apiError}`:(d?.httpStatus?`Gemini API가 HTTP ${d.httpStatus}를 반환함`:'Gemini API 오류');
     if(k==='MODEL_REFUSAL') return 'HTTP 응답은 왔지만 모델이 답변 본문에서 요청을 거절함';
     if(k==='EMPTY_RESPONSE') return '요청 응답은 처리됐지만 정상 소설 본문이 반환되지 않음';
-    if(k==='HARD_LOCK') return 'Gemini 응답은 정상 수신됐지만 VELOUR 설정/진행 단계 검증에서 미확정 처리됨. V4.4.38는 자동 재생성을 하지 않는다.';
     return likelySafetyCause(d);
   }
 
@@ -2683,7 +2277,7 @@ ${metadataDirective()}
     const connection=[d.connectionEffectiveType?`effectiveType=${d.connectionEffectiveType}`:'',d.connectionType?`type=${d.connectionType}`:'',d.downlink!=null?`downlink=${d.downlink}Mbps`:'',d.rtt!=null?`rtt=${d.rtt}ms`:'',d.saveData===true?'saveData=true':''].filter(Boolean).join(' · ');
     const lines=[
       'VELOUR GENERATION DIAGNOSTIC',
-      `ENGINE: V4.4.38`,
+      `ENGINE: V4.4.32`,
       `RESULT: ${kind}`,
       `EP: ${ep}`,
       `MODEL: ${d.model||localStorage.getItem('VELOUR_MODEL')||'unknown'}`,
@@ -2703,15 +2297,9 @@ ${metadataDirective()}
       `BuildPrompt error: ${d.buildPromptError||'-'}`,
       `Candidate returned: ${d.hasCandidate===true?'yes':d.hasCandidate===false?'no':'-'}`,
       `Prompt chars: ${Number(d.promptChars||0).toLocaleString()}`,
-      `Prompt phase: ${window.__VELOUR_PROMPT_PHASE__?.id||'-'} · ${window.__VELOUR_PROMPT_PHASE__?.label||'-'} · ${Number(window.__VELOUR_PROMPT_PHASE__?.beforeChars||0).toLocaleString()}→${Number(window.__VELOUR_PROMPT_PHASE__?.afterChars||0).toLocaleString()} chars`,
-      `Narrative stage lock: ${window.__VELOUR_PROMPT_PHASE__?.currentNarrativeStageLabel||'-'} · ${window.__VELOUR_PROMPT_PHASE__?.currentNarrativeStage||'-'}${window.__VELOUR_PROMPT_PHASE__?.ageForced?' · AGE FIREWALL':''}`,
-      `Minor prompt clean-room: ${window.__VELOUR_PROMPT_PHASE__?.minorCleanRoom===true?'ON':'OFF'} · removed sensitive ${Number(window.__VELOUR_PROMPT_PHASE__?.minorCleanRoomRemovedSensitive||0)} · future profile ${Number(window.__VELOUR_PROMPT_PHASE__?.minorCleanRoomRemovedFutureProfile||0)}`,
-      `Residence lock: ${window.__VELOUR_PROMPT_PHASE__?.residenceAnchor||'-'}`,
       `Output chars: ${Number(d.outputChars||0).toLocaleString()}`,
       `Token usage: ${usageTokenLine(d.usageMetadata||{})}`,
       `Response vault: ${d.responseVaultSaved===true?'SAVED':d.hasCandidate===true&&Number(d.outputChars||0)>0?'NOT_SAVED':'-' }${d.responseVaultId?` · ${d.responseVaultId}`:''}${d.responseVaultError?` · error=${d.responseVaultError}`:''}`,
-      `Validation lock: ${outcome.validationReason||'-'}`,
-      `Automatic repair retry: OFF (one user tap = at most one Gemini request)`,
       `Current intensity: ${currentIntensityMode().label}`,
       `Pacing: ${state.pacing||'-'} · adultFrequency: ${state.adultFrequency||'-'} · cooldown: ${state.cooldown??'-'}`,
       `Dirty talk: ${state.dirtyTalk??'-'}/100 · profanity: ${state.profanity??'-'}/100 · insultMode: ${state.insultMode||'-'}`,
@@ -2776,7 +2364,7 @@ ${metadataDirective()}
       const novel=document.getElementById('novelText');
       if(novel) novel.insertAdjacentElement('afterend',row); else panel.appendChild(row);
     }
-    const show=['API_FILTER','API_ERROR','NETWORK_ERROR','MODEL_REFUSAL','EMPTY_RESPONSE','GENERATION_ERROR','HARD_LOCK'].includes(String(kind||''));
+    const show=['API_FILTER','API_ERROR','NETWORK_ERROR','MODEL_REFUSAL','EMPTY_RESPONSE','GENERATION_ERROR'].includes(String(kind||''));
     row.style.display=show?'flex':'none';
     if(show) row.innerHTML='<button type="button" style="flex:1;min-width:130px;border:1px solid rgba(245,196,107,.28);background:rgba(245,196,107,.09);color:#ffebaa;border-radius:11px;padding:9px 11px;font-size:11px;font-weight:700" onclick="showVelourGenerationDiagnostic()">🔎 생성 진단 보기</button><button type="button" style="flex:1;min-width:130px;border:1px solid rgba(245,196,107,.18);background:rgba(255,255,255,.035);color:#e7d7df;border-radius:11px;padding:9px 11px;font-size:11px;font-weight:700" onclick="copyVelourGenerationDiagnostic()">📋 진단 복사</button>';
     renderUsageSummary();
@@ -2786,38 +2374,7 @@ ${metadataDirective()}
   window.copyVelourGenerationDiagnostic=copyVelourGenerationDiagnostic;
   window.__VELOUR_GENERATION_DIAGNOSTIC_TEXT__=generationDiagnosticText;
 
-  function clearHardLockReviewNotice(){
-    const old=document.getElementById('velourHardLockReviewNotice');
-    if(old) old.remove();
-  }
-
-  function showHardLockReview(reason,attemptedEp,text=''){
-    clearHardLockReviewNotice();
-    const clean=String(stripMetaText(text||'')||'').trim();
-    const el=document.getElementById('novelText');
-    if(el) el.innerText=clean;
-    setUnconfirmedTitle(attemptedEp);
-    const counter=document.getElementById('v35CharCount');
-    const len=readerBodyLength(clean);
-    if(counter){
-      counter.style.color='#ffd08a';
-      counter.textContent=`⚠️ 설정 검토 필요 · 본문 ${len.toLocaleString()}자 · 자동 재생성 OFF · EP.${String(attemptedEp).padStart(2,'0')} 미확정 · ENGINE V4.4.38`;
-    }
-    const panel=document.getElementById('resultPanel');
-    if(panel){
-      const note=document.createElement('div');
-      note.id='velourHardLockReviewNotice';
-      note.style.cssText='margin:14px 0 4px;padding:12px 13px;border:1px solid rgba(245,196,107,.28);background:rgba(245,196,107,.075);border-radius:12px;color:#eadde3;font-size:11px;line-height:1.65;white-space:pre-wrap';
-      note.textContent=`⚠️ 설정 검토 필요 · EP.${String(attemptedEp).padStart(2,'0')} 미확정\n본문은 Gemini에서 정상 수신되어 응답 금고에 보관됐어. 다만 현재 설정/진행 단계와 충돌 가능성이 있어 정식 저장·장기 메모리 반영만 보류했어.\n감지: ${violationSummary(reason)||'설정 잠금'}\n자동으로 두 번째 API 요청은 보내지 않아. 아래 ‘EP.${String(attemptedEp).padStart(2,'0')} 다시 생성’을 직접 누를 때만 새 요청이 나가.`;
-      const usage=document.getElementById('velourUsageSummary');
-      if(usage) usage.insertAdjacentElement('beforebegin',note);
-      else { const novel=document.getElementById('novelText'); if(novel) novel.insertAdjacentElement('afterend',note); else panel.appendChild(note); }
-    }
-    renderGenerationDiagnosticActions('HARD_LOCK');
-  }
-
   function showIncompleteOutput(reason,attemptedEp,text=''){
-    clearHardLockReviewNotice();
     renderGenerationDiagnosticActions('');
     const el=document.getElementById('novelText');
     const len=readerBodyLength(text);
@@ -2827,11 +2384,10 @@ ${reason}
 같은 EP에서 다시 생성해줘.`;
     setUnconfirmedTitle(attemptedEp);
     const counter=document.getElementById('v35CharCount');
-    if(counter){ counter.style.color='#ffd08a'; counter.textContent=`출력 미완료 · 독자 본문 ${len.toLocaleString()}자 · EP.${String(attemptedEp).padStart(2,'0')} 미확정 · ENGINE V4.4.38`; }
+    if(counter){ counter.style.color='#ffd08a'; counter.textContent=`출력 미완료 · 독자 본문 ${len.toLocaleString()}자 · EP.${String(attemptedEp).padStart(2,'0')} 미확정 · ENGINE V4.4.32`; }
   }
 
   function showGenerationFailure(failure,attemptedEp){
-    clearHardLockReviewNotice();
     const kind=String(failure?.kind||'GENERATION_ERROR');
     const copy={
       API_FILTER:['⚠️ API FILTER BLOCK','이번 요청이 API 안전 필터 단계에서 중단됐어.'],
@@ -2847,7 +2403,7 @@ ${copy[1]}
 EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시저장/이어저장에 새 기록을 추가하지 않았어. 같은 번호로 다시 시도할 수 있어.${diagSummary}`;
     setUnconfirmedTitle(attemptedEp);
     const counter=document.getElementById('v35CharCount');
-    if(counter){ counter.style.color='#ffd08a'; counter.textContent=`${kind.replaceAll('_',' ')} · EP.${String(attemptedEp).padStart(2,'0')} 미확정 · ENGINE V4.4.38`; }
+    if(counter){ counter.style.color='#ffd08a'; counter.textContent=`${kind.replaceAll('_',' ')} · EP.${String(attemptedEp).padStart(2,'0')} 미확정 · ENGINE V4.4.32`; }
     renderGenerationDiagnosticActions(kind);
   }
 
@@ -3090,7 +2646,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     if(!isContinue) return '';
     const bridge=String(meta?.openingBridge||'').toLowerCase();
     const jumpRequested=/(?:며칠|몇\s*주|몇\s*달|수\s*개월|다음\s*날|다음날|그날\s*밤|시간이\s*흐|시간\s*경과|후일|일주일\s*후|한달\s*후|한\s*달\s*후)/.test(String(userInstruction||''));
-    // V4.4.38: continuity META is an advisory self-review signal, not proof by itself.
+    // V4.4.32: continuity META is an advisory self-review signal, not proof by itself.
     // Missing/unknown openingBridge must never be treated as a violation. Only an explicit
     // self-report of a real skip asks for one repair retry.
     if(meta?.startsMidEvent || (!jumpRequested && (meta?.unauthorizedTimeJump || bridge==='jumped'))){
@@ -3099,58 +2655,10 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     return '';
   }
 
-  function userExplicitlyRequestsLifeStageJump(){
-    const u=currentUserDirectionText();
-    const b=String(activeStorylineBeat()?.current||'');
-    const explicitTransition=/(?:졸업(?:하고|한\s*뒤|\s*후)|입학(?:하고|한\s*뒤|\s*후|한다)|진학|몇\s*년\s*(?:후|뒤)|시간이\s*흐른\s*뒤|성인이\s*된\s*(?:후|뒤)|(?:중학생|고등학생|대학생|성인)\s*시점으로\s*(?:넘|이동|전환))/i.test(u);
-    if(explicitTransition) return true;
-
-    // A current roadmap beat that is itself adult is legitimate. Merely mentioning
-    // a future college/adult phase inside a teen beat is not permission to jump.
-    const beatStage=narrativeStageFromText(b);
-    const current=currentNarrativeStage();
-    return beatStage.id==='adult' && current.source==='currentBeat';
-  }
-
-  function ageStageTextViolationReason(text){
-    const stage=currentNarrativeStage();
-    if(!['child','middle','high'].includes(stage.id) || userExplicitlyRequestsLifeStageJump()) return '';
-    const t=String(text||'').replace(/\[\[VELOUR_V4_META\]\][\s\S]*$/,'');
-    const laterStagePattern={
-      child:/(?:중학생|중학교|고등학생|고등학교|대학생|대학교|대학\s*\d+학년|캠퍼스\s*생활|직장인|회사에\s*출근|성인이\s*되|성인\s*시기|21\s*세|스물(?:한)?\s*살)/i,
-      middle:/(?:고등학생|고등학교|대학생|대학교|대학\s*\d+학년|캠퍼스\s*생활|직장인|회사에\s*출근|성인이\s*되|성인\s*시기|21\s*세|스물(?:한)?\s*살)/i,
-      high:/(?:대학생|대학교|대학\s*\d+학년|캠퍼스\s*생활|직장인|회사에\s*출근|성인이\s*되|성인\s*시기|21\s*세|스물(?:한)?\s*살)/i
-    }[stage.id];
-    const timeJump=/(?:몇\s*년(?:이)?\s*(?:흘렀|흐른|후|뒤)|수년\s*(?:후|뒤)|세월이\s*흘|어느덧\s*(?:성인|대학생|고등학생|중학생)|졸업한\s*(?:후|뒤)|성인이\s*된\s*(?:후|뒤))/i.test(t);
-    if(laterStagePattern?.test(t) || timeJump){
-      return `현재 CANON 연령 단계는 ${stage.label}인데 본문이 다음 연령/학년 단계 또는 큰 시간점프로 넘어갔다. 사용자나 현재 CANON 단계가 전환을 지시하기 전까지 ${stage.label} 시점을 유지할 것.`;
-    }
-    return '';
-  }
-
-  function residenceTextViolationReason(text){
-    const anchor=residenceCanonAnchor();
-    if(!anchor) return '';
-    const parentsHome=/(?:부모님|부모|가족).{0,18}(?:집|본가|함께\s*살|같이\s*살|거주)|(?:집|본가).{0,18}(?:부모님|부모|가족)/i.test(anchor);
-    if(!parentsHome) return '';
-    const u=currentUserDirectionText();
-    const b=String(activeStorylineBeat()?.current||'');
-    if(/(?:이사|독립|자취\s*시작|원룸\s*계약|기숙사\s*입주|오피스텔\s*입주)/i.test(`${u}\n${b}`)) return '';
-    const t=String(text||'').replace(/\[\[VELOUR_V4_META\]\][\s\S]*$/,'');
-    if(/(?:자취방|자취\s*(?:중|생활|를\s*하)|혼자\s*(?:사는|살던|지내는)\s*(?:방|집|아파트)|자기\s*(?:원룸|오피스텔|아파트)|자신의\s*(?:원룸|오피스텔|아파트)|원룸으로\s*돌아|오피스텔로\s*돌아|기숙사\s*방으로\s*돌아|독립해서\s*(?:사는|살고))/i.test(t)){
-      return `현재 거주 캐논(${anchor})과 달리 독립/자취 거주를 새로 만들었다. 이사 사건이 없으므로 기존 부모님 집/본가 거주를 유지할 것.`;
-    }
-    return '';
-  }
-
   function retryReason(meta,text,ep,isContinue=false,userInstruction=''){
     const reasons=[];
     const bodyHard=bodyIntegrityReason(text); if(bodyHard) reasons.push(bodyHard);
     else { const bodyAdvisory=bodyLengthAdvisoryReason(text); if(bodyAdvisory) reasons.push(bodyAdvisory); }
-    const ageStageHard=ageStageTextViolationReason(text); if(ageStageHard) reasons.push(ageStageHard);
-    const residenceHard=residenceTextViolationReason(text); if(residenceHard) reasons.push(residenceHard);
-    if(meta?.ageStageViolation) reasons.push('현재 연령/학년 단계를 임의로 변경했다. 현재 CANON 단계의 나이·학년을 유지할 것.');
-    if(meta?.residenceViolation) reasons.push('현재 거주 캐논을 이사 사건 없이 변경했다. 기존 거주 상태를 유지할 것.');
     if(meta?.canonViolation)reasons.push('HARD CANON을 위반했다. 캐릭터 신분·직업·과거·호칭을 원래 설정으로 복구할 것.');
     if(meta?.storylineSkipped)reasons.push('CANON STORYLINE의 현재 단계를 건너뛰었다. 현재 단계 밖의 관계 이정표를 제거하고 현재 단계만 진행할 것.');
     if(meta?.futureBeatLeak) reasons.push('READ-ONLY ROADMAP의 미래 단계를 현재 화에서 선행 실행했다. 미래 단계 사건/관계 이정표를 제거하고 현재 단계의 빌드업만 남길 것.');
@@ -3204,16 +2712,12 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     return [...new Set(reasons)].join('\n');
   }
 
-  // V4.4.38: distinguish true HARD violations from advisory/self-review flags.
+  // V4.4.32: distinguish true HARD violations from advisory/self-review flags.
   // Gemini's own META can be over-cautious (especially beatComplete/setupMissing),
   // so an advisory flag may trigger one repair retry but must not permanently block a valid episode.
   function blockingRetryReason(meta,text,ep,isContinue=false,userInstruction=''){
     const reasons=[];
     const bodyHard=bodyIntegrityReason(text); if(bodyHard) reasons.push(bodyHard);
-    const ageStageHard=ageStageTextViolationReason(text); if(ageStageHard) reasons.push(ageStageHard);
-    const residenceHard=residenceTextViolationReason(text); if(residenceHard) reasons.push(residenceHard);
-    if(meta?.ageStageViolation) reasons.push('연령/학년 HARD LOCK 위반');
-    if(meta?.residenceViolation) reasons.push('거주 HARD LOCK 위반');
     if(meta?.canonViolation) reasons.push('HARD CANON 위반');
     if(meta?.storylineSkipped) reasons.push('현재 CANON 단계 건너뜀');
     if(meta?.futureBeatLeak) reasons.push('미래 단계 선행 실행');
@@ -3270,7 +2774,6 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   const previousGenerate=window.generateStory;
   if(typeof previousGenerate==='function'){
     window.generateStory=async function(isContinue=false){
-      clearHardLockReviewNotice();
       if(isContinue){
         pinCounterToConfirmed();
       } else {
@@ -3330,76 +2833,89 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
 
       const reason=retryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
       if(reason){
-        // V4.4.38: NEVER spend a second API call automatically. One tap = one Gemini request.
-        // Advisory-only issues are accepted with guarded META. True blocking issues stay visible
-        // as an unconfirmed review draft; the user decides whether to retry the same EP.
-        const blocking=blockingRetryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
-        const incomplete=bodyIntegrityReason(parsed.clean);
-        if(incomplete){
+        // 실패본은 장기 메모리뿐 아니라 base storyHistory/sessionEpisodes에서도 제거한 뒤 같은 EP를 재생성한다.
+        rollbackBase();
+        state.runtime.retryDirective=`${reason}${userNext?`\n사용자가 이번 화에 추가로 준 지시도 유지: ${userNext}`:''}`;
+        state.runtime.retryCount=1; save(state);
+        primeGenerationDiagnostic(isContinue,attemptedEpisode,true);
+        try{
+          await previousGenerate(isContinue);
+        }catch(err){
+          augmentDiagnosticFromThrown(err);
+          const rawNow=document.getElementById('novelText')?.innerText||'';
+          const thrown=thrownFailureKind(err,rawNow);
           rollbackBase();
           forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
           state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
-          showIncompleteOutput(incomplete,attemptedEpisode,parsed.clean);
-          markGenerationOutcome('failed',{kind:'INCOMPLETE_OUTPUT',attemptedEpisode,autoRetry:false,reviewTextAvailable:!!parsed.clean,validationReason:violationSummary(incomplete)});
+          markGenerationOutcome('failed',{kind:thrown.kind,attemptedEpisode,detail:thrown.detail,thrown:true,retry:true});
+          showGenerationFailure(thrown,attemptedEpisode);
           syncUI(false);
           return;
         }
-        if(!blocking){
-          const guarded=guardMetaAfterAdvisory(parsed.meta);
-          console.info('VELOUR V4.4.38: advisory flags detected; prose accepted without automatic repair retry', reason);
-          rememberConfirmedEpisode(ep,false);
-          clearPendingRetryEpisode();
-          updateMemory(guarded,ep);
-          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state); patchDraft(); refreshReaderCharCounter();
-          clearHardLockReviewNotice();
-          markGenerationOutcome('committed',{episode:ep,attemptedEpisode,advisory:true,autoRetry:false});
-          renderGenerationDiagnosticActions(''); syncUI(false);
-          return;
+        raw=document.getElementById('novelText')?.innerText||''; parsed=extractMeta(raw);
+        const retryFailure=generationFailureKind(parsed.clean||raw);
+        if(retryFailure){
+          rollbackBase();
+          forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
+          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
+          markGenerationOutcome('failed',{kind:retryFailure.kind,attemptedEpisode}); showGenerationFailure(retryFailure,attemptedEpisode); syncUI(false); return;
         }
-        // Keep the received prose on screen and in the response vault, but do not poison
-        // confirmed history/memory/save slots. The next request happens only on explicit user tap.
-        const reviewText=String(parsed.clean||'').trim();
-        rollbackBase();
-        forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
-        state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
-        showHardLockReview(blocking,attemptedEpisode,reviewText);
-        markGenerationOutcome('failed',{kind:'HARD_LOCK',attemptedEpisode,autoRetry:false,reviewTextAvailable:!!reviewText,validationReason:violationSummary(blocking)});
-        renderUsageSummary();
-        syncUI(false);
-        return;
+        if(parsed.clean&&document.getElementById('novelText'))document.getElementById('novelText').innerText=parsed.clean;
+        stripMetaEverywhere();
+        const secondEp=epNumber(); const secondReason=retryReason(parsed.meta,parsed.clean,secondEp,isContinue,userNext);
+        if(appearanceMeasurementLeakReason(parsed.clean)){
+          const softened=softenLeakedBodySpecs(parsed.clean);
+          parsed.clean=softened;
+          const novelEl=document.getElementById('novelText'); if(novelEl) novelEl.innerText=softened;
+          try{ if(typeof storyHistory!=='undefined'&&storyHistory) storyHistory=softenLeakedBodySpecs(storyHistory); }catch(e){}
+        }
+        const secondBlocking=blockingRetryReason(parsed.meta,parsed.clean,secondEp,isContinue,userNext);
+        if(!secondReason){
+          rememberConfirmedEpisode(secondEp,false);
+          clearPendingRetryEpisode();
+          updateMemory(parsed.meta,secondEp);
+          state.runtime.retryDirective=''; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:secondEp,attemptedEpisode}); renderGenerationDiagnosticActions(''); syncUI(false);
+        } else if(!secondBlocking){
+          // The repair draft is usable; only advisory/self-review issues remain.
+          // Accept the prose, but freeze suspicious beat advancement instead of throwing the whole episode away.
+          const guarded=guardMetaAfterAdvisory(parsed.meta);
+          console.info('VELOUR V4.4.32: advisory flags remain after retry; prose accepted with beat guard', secondReason);
+          rememberConfirmedEpisode(secondEp,false);
+          clearPendingRetryEpisode();
+          updateMemory(guarded,secondEp);
+          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:secondEp,attemptedEpisode,advisory:true}); renderGenerationDiagnosticActions(''); syncUI(false);
+        } else {
+          console.warn('VELOUR V4.4.32: retry still has a HARD violation; output rejected', secondBlocking);
+          const incomplete=bodyIntegrityReason(parsed.clean);
+          rollbackBase();
+          forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
+          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
+          if(incomplete){
+            showIncompleteOutput(incomplete,attemptedEpisode,parsed.clean);
+          } else {
+            const novel=document.getElementById('novelText');
+            if(novel) novel.innerText=`[설정 잠금 위반 · EP.${String(attemptedEpisode).padStart(2,'0')} 미확정]
+재생성본에도 실제 HARD 위반이 남아서 이번 화를 저장하지 않았어.
+감지: ${violationSummary(secondBlocking)||'HARD 설정 위반'}
+같은 EP에서 다시 생성해줘.`;
+            setUnconfirmedTitle(attemptedEpisode);
+            const counter=document.getElementById('v35CharCount'); if(counter){counter.style.color='#ffd08a';counter.textContent=`HARD LOCK · EP.${String(attemptedEpisode).padStart(2,'0')} 미확정 · ENGINE V4.4.32`;}
+          }
+          markGenerationOutcome('failed',{kind:incomplete?'INCOMPLETE_OUTPUT':'HARD_LOCK',attemptedEpisode});
+          syncUI(false);
+        }
       } else {
-        clearHardLockReviewNotice();
         rememberConfirmedEpisode(ep,false);
         clearPendingRetryEpisode();
         updateMemory(parsed.meta,ep); save(state); patchDraft(); refreshReaderCharCounter();
-        markGenerationOutcome('committed',{episode:ep,attemptedEpisode,autoRetry:false}); renderGenerationDiagnosticActions('');
+        markGenerationOutcome('committed',{episode:ep,attemptedEpisode}); renderGenerationDiagnosticActions('');
       }
     };
   }
 
-
-  // V4.4.38: final single-flight guard. A fast double tap cannot launch two
-  // overlapping Gemini requests. Retry is available again only after the first request
-  // and its validation/storage pipeline have completely finished.
-  const v4438SingleFlightGenerate=window.generateStory;
-  let v4438GenerationInFlight=false;
-  if(typeof v4438SingleFlightGenerate==='function'){
-    window.generateStory=async function(...args){
-      if(v4438GenerationInFlight){
-        console.warn('VELOUR V4.4.38: duplicate generation tap ignored while request is in flight');
-        return;
-      }
-      v4438GenerationInFlight=true;
-      try{
-        return await v4438SingleFlightGenerate.apply(this,args);
-      } finally {
-        v4438GenerationInFlight=false;
-      }
-    };
-  }
 
   /* =========================================================
-     V4.4.10 STORAGE ENGINE (bundled into V4.4.38)
+     V4.4.10 STORAGE ENGINE (bundled into V4.4.32)
      - Full stories/draft in IndexedDB, not localStorage.
      - Existing V2 localStorage data is COPIED and verified, never auto-deleted.
      - Per-story 3-generation backups avoid cloning the whole library every save.
@@ -3482,7 +2998,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   }
 
   async function migrateLegacyStorage(){
-    // V4.4.38 STORAGE RECONCILE:
+    // V4.4.32 STORAGE RECONCILE:
     // NEVER assume a non-empty IndexedDB means it is complete. Safari/iOS can leave a partial DB,
     // or users can open a different install context. Every startup non-destructively rechecks all
     // surviving VELOUR sources and restores only missing main-story rows. Existing rows are never overwritten.
@@ -3524,7 +3040,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       // Absolute no-overwrite rule. If an ID collision appears late, mint a rescue ID instead.
       if(await idbGet(IDB_STORIES,id)) id=`recovered-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       item.id=id;
-      item.recoveredBy='V4.4.38';
+      item.recoveredBy='V4.4.32';
       item.recoveredFrom=c.source;
       item.recoveredAt=new Date().toISOString();
       await idbPut(IDB_STORIES,item);
@@ -3540,7 +3056,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     const ids=new Set(after.map(x=>String(x.id)));
     const fps=new Set(after.map(storyRecoveryFingerprint));
     const verified=primary.every(x=>(x.id&&ids.has(String(x.id)))||fps.has(storyRecoveryFingerprint(x)));
-    const rec={key:'legacyMigrationV2',verified:!!verified,legacyCount:primary.length,idbCount:after.length,copied:restored,at:new Date().toISOString(),legacyPreserved:true,reconcileVersion:'4.4.38',restoredSources};
+    const rec={key:'legacyMigrationV2',verified:!!verified,legacyCount:primary.length,idbCount:after.length,copied:restored,at:new Date().toISOString(),legacyPreserved:true,reconcileVersion:'4.4.32',restoredSources};
     await idbPut(IDB_META,rec);
     await idbPut(IDB_META,{key:'storageReconcileV4431',beforeCount:existing.length,afterCount:after.length,restored,skippedExisting,restoredSources,at:new Date().toISOString(),nonDestructive:true});
     return rec;
@@ -3595,7 +3111,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     // Legacy/base wrappers try to autosave immediately after Gemini returns, before V4 validation.
     // Never let an unvalidated attempt enter IndexedDB; the final generation wrapper performs the only commit.
     if(outcome.status==='running') return await idbGet(IDB_DRAFTS,'current');
-    if(outcome.status==='failed') return await idbGet(IDB_DRAFTS,'current');
+    if(outcome.status==='failed' && isFailureScreenText(document.getElementById('novelText')?.innerText||'')) return await idbGet(IDB_DRAFTS,'current');
     const old=await idbGet(IDB_DRAFTS,'current')||{};
     const base=cleanStoryObject(Object.assign({},old,incoming||{}));
     const d=await makeCurrentDraftForIDB(base);
@@ -3622,127 +3138,6 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     let estimate=null,persisted=null; try{estimate=await navigator.storage?.estimate?.();}catch(e){} try{persisted=await navigator.storage?.persisted?.();}catch(e){}
     return {stories,appBytes,estimate,persisted};
   }
-  function episodeRowsThrough(item,keepThrough){
-    return (Array.isArray(item?.episodes)?item.episodes:[])
-      .filter(ep=>Number(ep?.episode||0)>0 && Number(ep.episode)<=Number(keepThrough))
-      .map(ep=>({episode:Number(ep.episode),text:stripMetaText(ep.text||'')}))
-      .filter(ep=>ep.text.trim())
-      .sort((a,b)=>a.episode-b.episode);
-  }
-  function historyFromEpisodeRows(rows){
-    return (rows||[]).map(ep=>stripMetaText(ep?.text||'').trim()).filter(Boolean).join('\n\n');
-  }
-  function derivedBranchRuntimeSnapshot(snapshot,keepThrough){
-    const s=clone(snapshot||state||DEFAULT);
-    s.runtime=Object.assign({},DEFAULT.runtime,s.runtime||{});
-    const keep=Math.max(0,Number(keepThrough||0));
-    s.runtime.timeline=(Array.isArray(s.runtime.timeline)?s.runtime.timeline:[]).filter(line=>{
-      const n=parseTimelineEpisode(line,0); return n>0 && n<=keep;
-    });
-    s.runtime.scenes=(Array.isArray(s.runtime.scenes)?s.runtime.scenes:[]).filter(x=>Number(x?.episode||0)>0&&Number(x.episode)<=keep).slice(-MAX_SCENES);
-    s.runtime.arcBuffer=(Array.isArray(s.runtime.arcBuffer)?s.runtime.arcBuffer:[]).filter(x=>Number(x?.episode||0)>0&&Number(x.episode)<=keep).slice(-ARC_WINDOW);
-    s.runtime.arcSummaries=(Array.isArray(s.runtime.arcSummaries)?s.runtime.arcSummaries:[]).filter(x=>Number(x?.endEpisode||0)>0&&Number(x.endEpisode)<=keep).slice(-MAX_ARC_SUMMARIES);
-    // durableFacts/openThreads have no reliable per-episode provenance in old saves.
-    // Clearing them is safer than leaking facts from discarded future episodes into the branch.
-    s.runtime.durableFacts=[];
-    s.runtime.openThreads=[];
-    s.runtime.relationshipState=[...s.runtime.arcBuffer].reverse().map(x=>String(x?.relationshipState||'').trim()).find(Boolean)||'';
-    s.runtime.causalCarry='';
-    s.runtime.retryCount=0;
-    s.runtime.lastSuggestedPositions=[];
-    s.runtime.lastSuggestedPlays=[];
-    s.runtime.positionUsage={};
-    s.runtime.playUsage={};
-    s.runtime.lastAdultEpisode=0;
-    for(const scene of s.runtime.scenes){
-      if(scene?.adultScene) s.runtime.lastAdultEpisode=Math.max(s.runtime.lastAdultEpisode,Number(scene.episode||0));
-      const pid=String(scene?.positionId||'').trim(); if(scene?.adultScene&&pid) s.runtime.positionUsage[pid]=Number(s.runtime.positionUsage[pid]||0)+1;
-      for(const playId of (Array.isArray(scene?.playIds)?scene.playIds:[])) if(scene?.adultScene&&playId) s.runtime.playUsage[playId]=Number(s.runtime.playUsage[playId]||0)+1;
-    }
-    s.runtime.confirmedEpisode=keep;
-    // Without an exact old snapshot, beat progress cannot be safely attributed by episode.
-    // Reset only the execution cursor; HARD CANON / storyline text itself is preserved.
-    s.beatIndex=0;
-    s.runtime.beatTracker=Object.assign({},clone(DEFAULT.runtime.beatTracker),{index:0,phase:'setup',episodes:0,lastProgress:0,evidence:[]});
-    return s;
-  }
-  async function exactBranchSnapshotFor(story,keepThrough){
-    const keep=Number(keepThrough||0);
-    const candidates=[story];
-    try{
-      const backups=await idbBackupsFor(String(story.id));
-      for(const row of backups) if(row?.story) candidates.push(row.story);
-    }catch(e){}
-    const exact=candidates.filter(x=>Number(x?.episodeCount||0)===keep && episodeRowsThrough(x,keep).some(ep=>ep.episode===keep));
-    exact.sort((a,b)=>String(b?.updatedAt||b?.savedAt||b?.date||'').localeCompare(String(a?.updatedAt||a?.savedAt||a?.date||'')));
-    return exact[0]||null;
-  }
-  async function branchStoryFromEpisodeIDB(id,restartEpisode=null){
-    try{
-      await storageReady;
-      const source=await idbGet(IDB_STORIES,String(id));
-      if(!source) return alert('분기할 작품을 찾지 못했어.');
-      const rowsAll=(Array.isArray(source.episodes)?source.episodes:[]).filter(ep=>Number(ep?.episode||0)>0).sort((a,b)=>Number(a.episode)-Number(b.episode));
-      const maxEp=Math.max(Number(source.episodeCount||0),...rowsAll.map(ep=>Number(ep.episode||0)),1);
-      let restart=restartEpisode;
-      if(restart==null){
-        const raw=prompt(`몇 화부터 다시 쓸까?\\n기존 작품은 그대로 보존하고 새 분기를 만들 거야.\\n현재 저장본: EP${maxEp}`,'2');
-        if(raw===null) return;
-        restart=Number(String(raw).replace(/[^0-9]/g,''));
-      }
-      restart=Math.floor(Number(restart||0));
-      if(!Number.isFinite(restart)||restart<2||restart>maxEp) return alert(`EP2 ~ EP${maxEp} 사이로 입력해줘.`);
-      const keep=restart-1;
-      if(!confirm(`EP${restart}부터 다시 쓸까?\\n\\n✅ 기존 “${source.title||'VELOUR Story'}” EP1~${maxEp} 저장본은 그대로 보존\\n✅ 새 분기는 EP1~${keep}까지만 가진 상태로 생성\\n✅ 다음 생성은 EP${restart}\\n\\n원본을 덮어쓰지 않아.`)) return;
-
-      const exact=await exactBranchSnapshotFor(source,keep);
-      let keptRows=episodeRowsThrough(exact||source,keep);
-      if(!keptRows.some(ep=>ep.episode===keep)) keptRows=episodeRowsThrough(source,keep);
-      if(!keptRows.some(ep=>ep.episode===keep)) return alert(`EP${keep} 본문을 저장본/롤링백업에서 찾지 못해서 안전 분기를 만들지 않았어.`);
-
-      const history=exact&&String(exact.storyHistory||'').trim()?stripMetaText(exact.storyHistory):historyFromEpisodeRows(keptRows);
-      const last=keptRows.at(-1);
-      let branchState=exact?.v4State?clone(exact.v4State):derivedBranchRuntimeSnapshot(source.v4State||state,keep);
-      branchState.runtime=Object.assign({},DEFAULT.runtime,branchState.runtime||{});
-      branchState.runtime.confirmedEpisode=keep;
-      branchState.runtime.retryCount=0;
-
-      const newId=crypto.randomUUID?crypto.randomUUID():`branch-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      const baseTitle=String(source.title||'VELOUR Story').replace(/\\s*·\\s*EP\\d+\\s*재작성.*$/,'');
-      const newTitle=`${baseTitle} · EP${restart} 재작성`;
-      const now=new Date().toISOString();
-      const branch=cleanStoryObject({
-        ...source,
-        id:newId,
-        title:newTitle,
-        date:new Date().toLocaleString('ko-KR'),
-        createdAt:now,
-        updatedAt:now,
-        episodeCount:keep,
-        episodes:keptRows,
-        storyHistory:history,
-        currentText:last?.text||'',
-        v4State:branchState,
-        activeStoryId:newId,
-        activeStoryTitle:newTitle,
-        branchOf:String(source.id),
-        branchSourceTitle:source.title||'',
-        branchRestartEpisode:restart,
-        branchedAt:now,
-        branchSnapshotSource:exact?'rolling/exact':'derived-safe'
-      });
-      await idbPut(IDB_STORIES,branch);
-      await restoreStoryIDB(newId);
-      renderStoryLibraryIDB();
-      alert(`↩️ 새 분기 생성 완료\\n\\n원본: EP1~${maxEp} 그대로 보존\\n새 분기: EP1~${keep}\\n다음 생성: EP${restart}\\n${exact?'EP'+keep+' 시점 저장 스냅샷을 사용했어.':'정확한 과거 스냅샷이 없어 미래 메모리를 제거한 안전 상태로 만들었어.'}`);
-      return branch;
-    }catch(e){
-      console.error('VELOUR branch failed',e);
-      alert('분기 생성 실패: '+String(e.message||e));
-      return null;
-    }
-  }
-
   async function renderStoryLibraryIDB(){
     const list=document.getElementById('velourLibraryList');if(!list)return;
     list.innerHTML='<div class="velour-empty">저장함 읽는 중…</div>';
@@ -3755,7 +3150,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
         count.textContent=`저장 ${items.length}개 · VELOUR 약 ${prettyBytes(sum.appBytes)}${origin}${q?` · 검색 ${filtered.length}개`:''}`;
       }
       if(!filtered.length){list.innerHTML=`<div class="velour-empty">${items.length?'검색 결과가 없어.':'저장된 스토리가 아직 없어.<br>생성 결과의 💾 저장 버튼을 눌러줘.'}</div>`;return;}
-      list.innerHTML=filtered.map(item=>{const s=item.settings||{},preview=(item.currentText||item.storyHistory||'').slice(0,240);return `<article class="velour-story-card"><div class="velour-story-top"><h4>${esc(item.title||'VELOUR Story')}${String(item.id)===String(storageActiveStoryId)?' <small style="color:#f5c46b;font-size:9px">● 이어쓰는 중</small>':''}</h4><span class="velour-story-date">${esc(item.date||'')}</span></div><div class="velour-story-meta">${esc(s.chars||'인물 설정 없음')}<br>${esc((s.tropes||[]).join(' · '))}<br>EP ${esc(item.episodeCount||1)}</div><div class="velour-story-preview">${esc(preview)}${preview.length>=240?'…':''}</div><div class="velour-story-actions"><button onclick="restoreStory('${esc(item.id)}')">이어쓰기 복구</button><button onclick="branchStoryFromEpisode('${esc(item.id)}')">↩ 특정 화부터</button><button onclick="copyStory('${esc(item.id)}')">전체 복사</button><button class="danger" onclick="deleteStory('${esc(item.id)}')">삭제</button></div></article>`;}).join('');
+      list.innerHTML=filtered.map(item=>{const s=item.settings||{},preview=(item.currentText||item.storyHistory||'').slice(0,240);return `<article class="velour-story-card"><div class="velour-story-top"><h4>${esc(item.title||'VELOUR Story')}${String(item.id)===String(storageActiveStoryId)?' <small style="color:#f5c46b;font-size:9px">● 이어쓰는 중</small>':''}</h4><span class="velour-story-date">${esc(item.date||'')}</span></div><div class="velour-story-meta">${esc(s.chars||'인물 설정 없음')}<br>${esc((s.tropes||[]).join(' · '))}<br>EP ${esc(item.episodeCount||1)}</div><div class="velour-story-preview">${esc(preview)}${preview.length>=240?'…':''}</div><div class="velour-story-actions"><button onclick="restoreStory('${esc(item.id)}')">이어쓰기 복구</button><button onclick="copyStory('${esc(item.id)}')">전체 복사</button><button class="danger" onclick="deleteStory('${esc(item.id)}')">삭제</button></div></article>`;}).join('');
     }catch(e){list.innerHTML=`<div class="velour-empty">저장함을 읽지 못했어.<br>${esc(e.message||e)}</div>`;}
   }
   async function saveCurrentStoryIDB(){
@@ -3763,7 +3158,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       await storageReady;
       const outcome=window.__VELOUR_LAST_GENERATION_OUTCOME__||{};
       if(outcome.status==='running') return alert('아직 생성 중이야. 본문 확정이 끝난 뒤 저장해줘.');
-      if(outcome.status==='failed') return alert('이 본문은 아직 미확정이라 저장하지 않았어. 마지막 확정 에피소드는 기존 저장함에 그대로 있어. 같은 EP를 다시 생성하거나 응답 금고에서 원문을 확인해줘.');
+      if(outcome.status==='failed' && isFailureScreenText(document.getElementById('novelText')?.innerText||'')) return alert('방금 생성은 실패해서 저장하지 않았어. 마지막 확정 에피소드는 기존 저장함에 그대로 있어. 같은 EP에서 다시 생성해줘.');
       let d=await makeCurrentDraftForIDB();
       if(!d.currentText&&!d.storyHistory)return alert('저장할 스토리가 아직 없어. 먼저 한 화를 생성해줘.');
       if(storageActiveStoryId){
@@ -3793,7 +3188,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   async function clearStoryLibraryIDB(){const stories=await storageStories();if(!stories.length)return;if(!confirm('저장된 스토리를 전부 삭제할까? IndexedDB 저장함의 작품과 작품별 롤링백업이 삭제돼. 기존 V2 레거시 안전백업은 자동 삭제하지 않아.'))return;await idbClear(IDB_STORIES);await idbClear(IDB_BACKUPS);storageActiveStoryId=null;storageActiveStoryTitle='';updateStorageSaveButton();renderStoryLibraryIDB();}
   async function copyStoryIDB(id){const item=await idbGet(IDB_STORIES,String(id));if(!item)return;const body=item.episodes?.length?item.episodes.map(ep=>`[EPISODE ${String(ep.episode).padStart(2,'0')}]\n${stripMetaText(ep.text||'')}`).join('\n\n'):stripMetaText(item.storyHistory||'');navigator.clipboard.writeText(`${item.title||'VELOUR Story'}\n\n${body}`).then(()=>alert('📋 작품 전체를 복사했어.'));}
   async function copyStoryLibraryIDB(){const items=await storageStories();if(!items.length)return alert('복사할 스토리가 없어.');const text=items.map(item=>`[${item.title||'VELOUR Story'}]\n${stripMetaText(item.storyHistory||'')}`).join('\n\n══════════\n\n');navigator.clipboard.writeText(text).then(()=>alert('📋 저장함 전체를 복사했어.'));}
-  async function exportLibraryIDB(){try{const stories=await storageStories();const draft=await idbGet(IDB_DRAFTS,'current');const payload={format:'VELOUR_LIBRARY_EXPORT_V1',engine:'V4.4.38',exportedAt:new Date().toISOString(),stories,draft};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`VELOUR-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1200);}catch(e){alert('백업 내보내기 실패: '+String(e.message||e));}}
+  async function exportLibraryIDB(){try{const stories=await storageStories();const draft=await idbGet(IDB_DRAFTS,'current');const payload={format:'VELOUR_LIBRARY_EXPORT_V1',engine:'V4.4.32',exportedAt:new Date().toISOString(),stories,draft};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`VELOUR-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1200);}catch(e){alert('백업 내보내기 실패: '+String(e.message||e));}}
   async function importLibraryIDB(file){if(!file)return;try{const raw=await file.text();const data=JSON.parse(raw);const incoming=Array.isArray(data)?data:(Array.isArray(data.stories)?data.stories:[]);if(!incoming.length)return alert('가져올 VELOUR 작품을 찾지 못했어.');if(!confirm(`백업에서 ${incoming.length}개 작품을 현재 저장함에 병합할까? 같은 ID면 더 최근 수정본을 우선해.`))return;await storageReady;let added=0,updated=0;for(const rawItem of dedupeStoryObjects(incoming)){const item=cleanStoryObject(rawItem);if(!item.id)item.id=crypto.randomUUID?crypto.randomUUID():`import-${Date.now()}-${Math.random()}`;const old=await idbGet(IDB_STORIES,String(item.id));if(!old){await idbPut(IDB_STORIES,item);added++;}else{const newT=Date.parse(item.updatedAt||item.savedAt||item.date||0)||0,oldT=Date.parse(old.updatedAt||old.savedAt||old.date||0)||0;if(newT>oldT){await backupPreviousStory(old);await idbPut(IDB_STORIES,item);updated++;}}}if(data.draft&&confirm('백업에 임시 이어쓰기 상태도 있어. 현재 임시저장을 이 백업의 임시저장으로 교체할까?'))await idbPut(IDB_DRAFTS,cleanStoryObject(Object.assign({id:'current'},data.draft)));alert(`⬆️ 복원 완료 · 새 작품 ${added}개 · 업데이트 ${updated}개`);renderStoryLibraryIDB();refreshDraftBannerIDB();}catch(e){alert('백업 복원 실패: '+String(e.message||e));}}
   async function recoverStoryLibraryIDB(){
     await storageReady;
@@ -3819,7 +3214,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     for(const c of missing){
       const item=cleanStoryObject(c.story); let id=String(item.id||'').trim();
       if(!id || await idbGet(IDB_STORIES,id)) id=crypto.randomUUID?crypto.randomUUID():`recover-${Date.now()}-${Math.random()}`;
-      item.id=id; item.recoveredBy='V4.4.38'; item.recoveredFrom=c.source; item.recoveredAt=new Date().toISOString();
+      item.id=id; item.recoveredBy='V4.4.32'; item.recoveredFrom=c.source; item.recoveredAt=new Date().toISOString();
       await idbPut(IDB_STORIES,item); n++;
     }
     alert(`🛟 ${n}개를 추가 복구했어. 기존 작품은 건드리지 않았어.`);renderStoryLibraryIDB();
@@ -3848,14 +3243,13 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   window.__VELOUR_IDB_PATCH_DRAFT_V4__=patchDraftV4IDB;
   window.__VELOUR_V4_STATE_SNAPSHOT__=()=>clone(state);
   window.__VELOUR_V4_STATE_RESTORE__=restoreV4StateSnapshot;
-  window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,promptStagePhase,stageIsolatePrompt,ageTimelineContinuityLock,minorAgeTimelineContinuityLock,minorCleanRoomPrompt,safeMinorDevelopmentLine,branchStoryFromEpisodeIDB,derivedBranchRuntimeSnapshot,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,responseVaultDelete,responseVaultClear,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
+  window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
 
   function installStorageOverrides(){
     window.saveCurrentStory=saveCurrentStoryIDB;
     window.restoreStory=restoreStoryIDB;
     window.restoreDraftStory=restoreDraftStoryIDB;
     window.renderStoryLibrary=renderStoryLibraryIDB;
-    window.branchStoryFromEpisode=branchStoryFromEpisodeIDB;
     window.deleteStory=deleteStoryIDB;
     window.clearStoryLibrary=clearStoryLibraryIDB;
     window.copyStory=copyStoryIDB;
@@ -4014,5 +3408,5 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   stripMetaEverywhere();
   patchDraft();
   setTimeout(()=>{try{renderUsageSummary();}catch(e){}},250);
-  console.info('✦ VELOUR Story Engine V4.4.38 Causal Buildup Lock + Response Vault loaded');
+  console.info('✦ VELOUR Story Engine V4.4.32 Causal Buildup Lock + Response Vault loaded');
 })();
