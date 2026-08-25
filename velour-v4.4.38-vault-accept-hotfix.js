@@ -64,9 +64,6 @@
 
     const pending = pendingEpisode();
     const confirmed = confirmedEpisode();
-    // A pre-hotfix/reloaded draft can lose the volatile pending marker while its
-    // received prose remains in the vault. With no marker, only the exact next
-    // episode is eligible. A live pending marker must still match the record.
     return ep === confirmed + 1 && (pending === 0 || pending === ep);
   }
 
@@ -84,7 +81,6 @@
       m.professionalBoundaryViolation
     );
 
-    // “본문 채택”은 허용하되, 의심스러운 META가 CANON 단계를 건너뛰게 하지는 않는다.
     if (hard) m.beatComplete = false;
 
     if (m.storylineSkipped || m.futureBeatLeak || m.canonViolation) {
@@ -130,7 +126,6 @@
     )) return;
 
     try {
-      // 1) 확정 history에 본문 편입
       let history = '';
       try { history = String(storyHistory || ''); } catch (_) {}
 
@@ -145,13 +140,11 @@
       try { storyHistory = history; } catch (_) {}
       try { episodeCount = ep; } catch (_) {}
 
-      // 2) V4 memory는 보수적으로 반영 — 본문은 채택하지만 의심 META로 단계 점프 금지
       const meta = guardedMeta(parseMeta(r.rawText || ''));
       qa.rememberConfirmedEpisode?.(ep, false);
       qa.clearPendingRetryEpisode?.();
       if (meta) qa.updateMemory?.(meta, ep);
 
-      // 3) 화면을 정식 확정 상태로 복구
       const novel = document.getElementById('novelText');
       const title = document.getElementById('resultTitle');
       const panel = document.getElementById('resultPanel');
@@ -189,7 +182,6 @@
           : `본문 ${clean.length.toLocaleString()}자 · 사용자 채택 확정 · 목표 ${target.toLocaleString()}자 · ENGINE V4.4.38`;
       }
 
-      // 4) 정상 생성 성공 때와 같은 IndexedDB draft commit
       try {
         await window.__VELOUR_IDB_SAVE_DRAFT__?.();
       } catch (e) {
@@ -219,7 +211,6 @@
 
   window.acceptVelourVaultResponse = acceptVelourVaultResponse;
 
-  // 응답 금고를 연 뒤 “현재 pending EP”에 해당하는 카드에만 채택 버튼 추가
   const originalShowVault = window.showVelourResponseVault;
   if (typeof originalShowVault === 'function') {
     window.showVelourResponseVault = async function() {
@@ -259,7 +250,6 @@
     };
   }
 
-  // HARD LOCK 검토 안내에도 바로 채택 버튼 추가
   const observer = new MutationObserver(() => {
     const note = document.getElementById('velourHardLockReviewNotice');
     if (!note || note.querySelector('[data-vault-accept-review]')) return;
@@ -294,7 +284,6 @@
       if (!rows.length) return window.showVelourResponseVault?.();
       if (rows.length === 1) return acceptVelourVaultResponse(rows[0].id);
 
-      // 같은 EP를 여러 번 생성했다면 금고에서 마음에 드는 버전을 직접 고르게 함
       window.showVelourResponseVault?.();
     };
 
@@ -303,6 +292,124 @@
   });
 
   observer.observe(document.body, { subtree: true, childList: true });
+
+  /*
+   * Canon / timeline prompt stabilizer.
+   * This does NOT add content filtering, blocking, automatic retry or prose validation.
+   * It only fixes final-prompt priority after V4.4.38 has already built the request.
+   */
+  if (!window.__VELOUR_CANON_PROMPT_STABILIZER__) {
+    window.__VELOUR_CANON_PROMPT_STABILIZER__ = true;
+    const priorBuildPrompt = window.buildPrompt;
+
+    const beatsFromState = s => String(s?.storyline || '')
+      .split(/\n+/)
+      .map(x => x.replace(/^\s*(?:\d+[.)]|[-*•])\s*/, '').trim())
+      .filter(Boolean);
+
+    const explicitCanonStage = (text, max) => {
+      const s = String(text || '');
+      const patterns = [
+        /(?:캐논|CANON)(?:\s*스토리라인)?[^\d]{0,18}(\d+)\s*단계/i,
+        /(?:스토리라인|storyline)[^\d]{0,18}(\d+)\s*단계/i,
+        /(\d+)\s*단계\s*(?:캐논|CANON)/i
+      ];
+      for (const rx of patterns) {
+        const m = s.match(rx);
+        const n = Number(m?.[1] || 0);
+        if (n >= 1 && n <= max) return n - 1;
+      }
+      return -1;
+    };
+
+    const removeAgeHardLock = prompt => {
+      const lines = String(prompt || '').split('\n');
+      const out = [];
+      let skipping = false;
+      for (const line of lines) {
+        if (/^\[AGE\/TIMELINE HARD LOCK\b/i.test(line.trim())) {
+          skipping = true;
+          continue;
+        }
+        if (skipping) {
+          if (!line.trim()) {
+            skipping = false;
+            continue;
+          }
+          if (/^\[[^\]]+\]/.test(line.trim())) {
+            skipping = false;
+            out.push(line);
+          }
+          continue;
+        }
+        out.push(line);
+      }
+      return out.join('\n');
+    };
+
+    const restoreNeutralAdultProfiles = prompt => String(prompt || '')
+      .replace(/^- ([AB]) 성인 시기 프로필\(미래 참고값 · 현재 단계 적용 금지\): (.*?) \/ 신분 (.*?)\.$/gm, '- $1: $2 / 신분 $3.');
+
+    const compactRepeatedAnchorLines = prompt => {
+      const seen = new Set();
+      return String(prompt || '').split('\n').filter(line => {
+        const t = line.trim();
+        if (!t) return true;
+        if (!/^(?:- )?(?:현재 실행 단계|현재 CANON 단계|이번 화의 주목적|사용자 다음 화 지시|READ-ONLY ROADMAP)/i.test(t)) return true;
+        if (seen.has(t)) return false;
+        seen.add(t);
+        return true;
+      }).join('\n');
+    };
+
+    if (typeof priorBuildPrompt === 'function') {
+      window.buildPrompt = function(isContinue = false) {
+        let prompt = String(priorBuildPrompt(isContinue) || '');
+        let snapshot = null;
+        try { snapshot = window.__VELOUR_V4_STATE_SNAPSHOT__?.() || null; } catch (_) {}
+
+        const userNext = String(document.getElementById('v33Next')?.value || '').trim();
+        const beats = beatsFromState(snapshot || {});
+        const storedIndex = Math.max(0, Number(snapshot?.beatIndex || 0));
+        const requestedIndex = explicitCanonStage(userNext, beats.length);
+        const effectiveIndex = requestedIndex >= 0
+          ? requestedIndex
+          : Math.min(storedIndex, Math.max(0, beats.length - 1));
+        const currentBeat = beats[effectiveIndex] || '';
+
+        const beforeChars = prompt.length;
+        prompt = removeAgeHardLock(prompt);
+        prompt = restoreNeutralAdultProfiles(prompt);
+        prompt = compactRepeatedAnchorLines(prompt);
+
+        const anchor = [
+          '[CURRENT CANON PRIORITY — 생성 방향 정리]',
+          userNext ? `- 사용자 다음 화 지시: ${userNext}` : '',
+          currentBeat ? `- 이번 화의 현재 CANON 단계: ${effectiveIndex + 1}/${beats.length} · ${currentBeat}` : '',
+          requestedIndex >= 0 ? '- 사용자가 이번 요청에서 단계 번호를 직접 지정했으므로 저장된 진행 커서보다 이 요청의 단계 지정을 우선한다.' : '',
+          '- 최근 장면 메모·열린 떡밥·이전 화의 자생 사건은 현재 CANON 단계와 사용자 지시를 보조하는 참고자료다. 충돌하면 현재 CANON 단계와 사용자 지시를 따른다.',
+          '- 과거 시절 언급이나 회상은 현재 시점을 자동으로 되돌리는 근거로 사용하지 않는다. 현재 시점은 이번 요청과 현재 CANON 단계의 문맥으로 판단한다.',
+          '- 이 지시는 생성 방향을 정리하기 위한 것이며 본문을 검열·차단하거나 자동 재생성을 요구하지 않는다.'
+        ].filter(Boolean).join('\n');
+
+        prompt = `${anchor}\n\n${prompt}`.trim();
+
+        window.__VELOUR_CANON_PROMPT_STABILIZER_LAST__ = {
+          beforeChars,
+          afterChars: prompt.length,
+          savedChars: Math.max(0, beforeChars - prompt.length),
+          storedBeatIndex: storedIndex,
+          effectiveBeatIndex: effectiveIndex,
+          explicitBeatOverride: requestedIndex >= 0,
+          currentBeat,
+          userDirectionPresent: !!userNext,
+          at: new Date().toISOString()
+        };
+
+        return prompt;
+      };
+    }
+  }
 
   console.info('✦ VELOUR V4.4.38 Response Vault acceptance hotfix loaded');
 })();
