@@ -62,7 +62,10 @@
 
     const pending = pendingEpisode();
     const confirmed = confirmedEpisode();
-    return pending === ep && ep === confirmed + 1;
+    // A pre-hotfix/reloaded draft can lose the volatile pending marker while its
+    // received prose remains in the vault. With no marker, only the exact next
+    // episode is eligible. A live pending marker must still match the record.
+    return ep === confirmed + 1 && (pending === 0 || pending === ep);
   }
 
   function currentMinorSafetyReason(text, ep) {
