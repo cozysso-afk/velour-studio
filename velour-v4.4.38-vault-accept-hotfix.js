@@ -54,9 +54,18 @@
     }
   }
 
+  function isModelRefusalText(text) {
+    const t = String(text || '').trim();
+    if (!t || t.length > 1600) return false;
+    const refusal = /(?:진행할 수 없(?:습니다|어요)?|생성(?:이)? 불가능|생성할 수 없(?:습니다|어요)?|작성할 수 없(?:습니다|어요)?|제공할 수 없(?:습니다|어요)?|도와드릴 수 없(?:습니다|어요)?|지원하지 않(?:습니다|아요)?|지원할 수 없(?:습니다|어요)?|허용되지 않(?:습니다|아요)?|요청을 수행할 수 없(?:습니다|어요)?|응답할 수 없(?:습니다|어요)?|I (?:can(?:not|'t)|am unable to) (?:help|assist|provide|generate|write))/i;
+    const context = /(?:미성년|아동|청소년|성적|노골적|신체 부위|콘텐츠|지침|정책|sexual|explicit|policy|guideline)/i;
+    return refusal.test(t) && context.test(t);
+  }
+
   function isAcceptableRecord(r) {
     const ep = nEp(r?.attemptedEpisode);
-    if (!ep || !String(r?.readerText || r?.rawText || '').trim()) return false;
+    const text = String(r?.readerText || r?.rawText || '').trim();
+    if (!ep || !text || isModelRefusalText(text)) return false;
     if (String(r?.finishReason || '').toUpperCase() === 'SAFETY') return false;
     if (String(r?.promptBlock || '').trim()) return false;
 
@@ -73,7 +82,10 @@
     try { phase = qa.promptStagePhase?.(ep) || null; } catch (_) {}
     if (!phase?.ageForced) return '';
 
-    const explicit = /(?:성관계|섹스|정사|베드\s*씬|성인\s*장면|잠자리|성기|발기|삽입|사정|오르가즘|체위|보지|자지|좆|젖통)/i;
+    // Do not treat ordinary Korean prose such as “자지 못했다” or “보지도
+    // 못했다” as genital slang. Only high-confidence explicit sexual wording
+    // blocks a pre-adult narrative; non-sexual crush/daily-life prose remains valid.
+    const explicit = /(?:성관계|성행위|성교|섹스|정사|베드\s*씬|성인\s*장면|자위\s*(?:행위|를|가|했|한|하)|오르가즘|구강\s*성교|질내\s*사정|정액|몽정|음경|클리토리스|좆|젖통|성기\s*(?:를|가|에|의)|발기\s*(?:했|한|하|되|된|를|가)|삽입\s*(?:했|한|하|되|된|을|이)|(?:휴지|속옷)[\s\S]{0,60}(?:희멀건|끈적(?:한|하게)?\s*(?:흔적|얼룩)))/i;
     return explicit.test(String(text || ''))
       ? '현재 CANON이 성인 이전 단계라 이 응답은 안전 잠금을 우회해 확정할 수 없어.'
       : '';
