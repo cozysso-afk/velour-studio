@@ -172,3 +172,12 @@
 
   console.info('✦ VELOUR Response Vault acceptance helper loaded');
 })();
+
+(() => {
+  if (window.__VELOUR_QUALITY_RESTORE_LOADER__) return;
+  window.__VELOUR_QUALITY_RESTORE_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-quality-restore.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
