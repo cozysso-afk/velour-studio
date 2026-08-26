@@ -179,7 +179,7 @@
   if (window.__VELOUR_QUALITY_RESTORE_LOADER__) return;
   window.__VELOUR_QUALITY_RESTORE_LOADER__ = true;
   const script = document.createElement('script');
-  script.src = './velour-v4.4.38-quality-restore.js?v=2';
+  script.src = './velour-v4.4.38-quality-restore.js?v=3';
   script.async = false;
   document.head.appendChild(script);
 })();
