@@ -526,11 +526,20 @@
     return beats.length && idx<beats.length ? {beats,idx,current:beats[idx],future:beats.slice(idx+1),completed:beats.slice(0,idx)} : null;
   }
   function hasActiveStorylineBeat(){ return !!activeStorylineBeat(); }
-  // Pacing controls prose and relationship tempo, not a hidden minimum number of
-  // episodes per user-authored CANON line. A complete episode may show the full
-  // causal chain and finish exactly one current beat without skipping the next.
-  function minBeatEpisodes(){ return 1; }
-  function maxBeatPhaseJump(){ return 2; }
+  function userRequestsBeatCompletion(userInstruction=''){
+    const raw=String(userInstruction||document.getElementById('v33Next')?.value||'').trim();
+    if(!raw) return false;
+    return /(?:현재\s*(?:캐논\s*)?단계(?:를|는|에서)?\s*(?:마무리|완료|끝내)|다음\s*(?:캐논\s*)?단계(?:로|를)?|다음\s*캐논|캐논\s*(?:단계\s*)?(?:전진|진행|넘어)|스토리라인\s*(?:다음|전진|진행)|이번\s*화(?:에서|에)?[^\n]{0,24}(?:단계\s*)?(?:마무리|완료|끝내))/i.test(raw);
+  }
+  // Slow pacing keeps at least one BUILD episode by default. The user can still
+  // explicitly finish the current beat in this episode; even then advancement is
+  // capped to the next single CANON line.
+  function minBeatEpisodes(userInstruction=''){
+    return ['ultra','slow'].includes(state.pacing) && !userRequestsBeatCompletion(userInstruction) ? 2 : 1;
+  }
+  function maxBeatPhaseJump(userInstruction=''){
+    return ['ultra','slow'].includes(state.pacing) && !userRequestsBeatCompletion(userInstruction) ? 1 : 2;
+  }
 
   function unlockEpisode(){
     if(state.pacing==='ultra') return 12;
@@ -1295,7 +1304,7 @@ ${next?`- 다음 단계의 목적지(계획만): ${next}`:'- 현재가 마지막
 - SETUP(원인·상황 구축): 왜 이 사건/감정이 시작되는지 일상, 직업, 약속, 오해, 욕구, 외부 압력 등 원인을 실제 장면으로 만든다.
 - BUILD(축적·전개): 같은 결론을 반복하지 말고 작은 행동→상대 반응→내면 변화→다음 선택을 여러 비트로 누적한다. 확신이 생기기 전의 망설임과 오해도 서사다.
 - PAYOFF(현재 단계의 결실): 앞에서 쌓은 원인과 반응 때문에 현재 단계의 사건/선택이 발생한다. PAYOFF는 ‘다음 단계 실행’이 아니다.
-- 페이싱이 느려도 CANON 한 줄을 기계적으로 여러 화에 묶지 않는다. 이번 화 안에서 SETUP→BUILD→PAYOFF의 인과가 충분하고 사용자 지시가 현재 단계를 마무리하라고 하면, 현재 단계 하나는 이번 화에 완료할 수 있다.
+- SLOW/ULTRA SLOW에서는 기본적으로 현재 CANON 단계에 최소 한 번의 BUILD 화를 둔다. 다만 사용자가 이번 화 지시로 현재 단계 마무리나 다음 캐논 단계 진행을 직접 요구했고, 이번 화 안에서 SETUP→BUILD→PAYOFF의 인과가 충분하면 현재 단계 하나만 완료할 수 있다.
 - 새로운 외부 사건을 넣을 때는 ‘갑자기 벌어졌다’로 중반부터 시작하지 말고, 호출/약속/업무/연락/이동/목격 등 발생 계기를 먼저 보여준다.
 - 현재 단계가 이미 진행 중이면 처음부터 다시 소개하지 말고, 직전 결과가 만든 다음 원인부터 이어간다.
 - 빌드업 화는 큰 사건이 없어도 된다. 관계·사건을 억지로 한 단계 올리는 것보다 인과와 감정 축적이 우선이다.
@@ -2566,7 +2575,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     try { if(typeof storyHistory!=='undefined'&&storyHistory) storyHistory=stripMetaText(storyHistory); } catch(e){}
   }
 
-  function updateMemory(meta,ep){
+  function updateMemory(meta,ep,userInstruction=''){
     if(!meta||typeof meta!=='object')return;
     const timelineNow=meta.timeline&&String(meta.timeline).trim()?memoryClip(meta.timeline,180):'';
     if(timelineNow) state.runtime.timeline.push(`EP${ep}: ${timelineNow}`);
@@ -2614,7 +2623,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       const tracker=ensureBeatTracker();
       tracker.episodes=Math.max(0,Number(tracker.episodes||0))+1;
       const reported=String(meta.beatPhase||tracker.phase||'setup').toLowerCase();
-      const allowedRank=Math.min(2,beatPhaseRank(tracker.phase)+maxBeatPhaseJump());
+      const allowedRank=Math.min(2,beatPhaseRank(tracker.phase)+maxBeatPhaseJump(userInstruction));
       const acceptedRank=Math.min(allowedRank,Math.max(beatPhaseRank(tracker.phase),beatPhaseRank(reported)));
       tracker.phase=['setup','build','payoff'][acceptedRank]||tracker.phase;
       tracker.lastProgress=Math.max(Number(tracker.lastProgress||0),Math.max(0,Math.min(100,Number(meta.beatProgress||0))));
@@ -2622,7 +2631,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       if(evidence && !tracker.evidence.includes(evidence)) tracker.evidence.push(evidence);
       tracker.evidence=tracker.evidence.slice(-6);
       const completeByEvidence=tracker.phase==='payoff' && tracker.lastProgress>=95 && tracker.evidence.length>0;
-      const canAdvance=(meta.beatComplete===true || completeByEvidence) && tracker.phase==='payoff' && tracker.lastProgress>=90 && tracker.evidence.length>0 && tracker.episodes>=minBeatEpisodes() && !meta.futureBeatLeak && String(meta.causalBridge||'ok').toLowerCase()!=='broken' && !meta.setupMissing;
+      const canAdvance=(meta.beatComplete===true || completeByEvidence) && tracker.phase==='payoff' && tracker.lastProgress>=90 && tracker.evidence.length>0 && tracker.episodes>=minBeatEpisodes(userInstruction) && !meta.futureBeatLeak && String(meta.causalBridge||'ok').toLowerCase()!=='broken' && !meta.setupMissing;
       if(canAdvance){
         state.beatIndex=Math.min(beats.length,Number(state.beatIndex||0)+1);
         resetBeatTracker(state.beatIndex);
@@ -2780,7 +2789,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       const tracker=ensureBeatTracker();
       const reported=String(meta?.beatPhase||'setup').toLowerCase();
       const currentRank=beatPhaseRank(tracker.phase), reportedRank=beatPhaseRank(reported);
-      if(reportedRank>currentRank+maxBeatPhaseJump()) reasons.push(`현재 단계 내부 빌드업을 ${beatPhaseLabel(tracker.phase)}에서 ${beatPhaseLabel(reported)}로 건너뛰었다. 현재 단계의 중간 BUILD를 실제 장면으로 먼저 쌓을 것.`);
+      if(reportedRank>currentRank+maxBeatPhaseJump(userInstruction)) reasons.push(`현재 단계 내부 빌드업을 ${beatPhaseLabel(tracker.phase)}에서 ${beatPhaseLabel(reported)}로 건너뛰었다. 현재 단계의 중간 BUILD를 실제 장면으로 먼저 쌓을 것.`);
       if(meta?.beatComplete && (reported!=='payoff' || Number(meta?.beatProgress||0)<90 || !String(meta?.beatEvidence||'').trim())) reasons.push('beatComplete를 너무 일찍 선언했다. 현재 단계의 결실(payoff), 90% 이상 진행, 실제 본문 근거가 모두 있을 때만 완료로 판정할 것.');
     }
     const langHard=forbiddenGenderedInsultReason(text); if(langHard) reasons.push(langHard);
@@ -2842,7 +2851,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     return [...new Set(reasons)].join('\n');
   }
 
-  function hasStructuralAdvisory(meta){
+  function hasStructuralAdvisory(meta,userInstruction=''){
     if(!meta||typeof meta!=='object') return false;
     if(String(meta.causalBridge||'').toLowerCase()==='broken' || meta.setupMissing) return true;
     if(String(meta.openingBridge||'').toLowerCase()==='jumped' || meta.unauthorizedTimeJump || meta.startsMidEvent) return true;
@@ -2850,17 +2859,17 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     if(active){
       const tracker=ensureBeatTracker();
       const reported=String(meta.beatPhase||'setup').toLowerCase();
-      if(beatPhaseRank(reported)>beatPhaseRank(tracker.phase)+maxBeatPhaseJump()) return true;
+      if(beatPhaseRank(reported)>beatPhaseRank(tracker.phase)+maxBeatPhaseJump(userInstruction)) return true;
       if(meta.beatComplete && (reported!=='payoff' || Number(meta.beatProgress||0)<90 || !String(meta.beatEvidence||'').trim())) return true;
     }
     return false;
   }
 
-  function guardMetaAfterAdvisory(meta){
+  function guardMetaAfterAdvisory(meta,userInstruction=''){
     const m=clone(meta&&typeof meta==='object'?meta:{});
     // Never let a suspicious self-review advance the canonical beat. Keep the prose,
     // but preserve the current build-up state so the next episode continues rather than skipping.
-    if(hasStructuralAdvisory(m)){
+    if(hasStructuralAdvisory(m,userInstruction)){
       const tracker=ensureBeatTracker();
       m.beatComplete=false;
       m.beatPhase=tracker.phase||'setup';
@@ -2964,11 +2973,11 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
         // for an explicit user retry.
         const blocking=blockingRetryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
         if(!blocking){
-          const guarded=guardMetaAfterAdvisory(parsed.meta);
+          const guarded=guardMetaAfterAdvisory(parsed.meta,userNext);
           console.info('VELOUR: advisory flags kept without automatic duplicate generation', reason);
           rememberConfirmedEpisode(ep,false);
           clearPendingRetryEpisode();
-          updateMemory(guarded,ep);
+          updateMemory(guarded,ep,userNext);
           state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:ep,attemptedEpisode,advisory:true,automaticRetrySuppressed:true}); renderGenerationDiagnosticActions(''); syncUI(false);
         } else {
           console.warn('VELOUR: blocking fault kept pending for explicit user retry', blocking);
@@ -2993,7 +3002,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       } else {
         rememberConfirmedEpisode(ep,false);
         clearPendingRetryEpisode();
-        updateMemory(parsed.meta,ep); save(state); patchDraft(); refreshReaderCharCounter();
+        updateMemory(parsed.meta,ep,userNext); save(state); patchDraft(); refreshReaderCharCounter();
         markGenerationOutcome('committed',{episode:ep,attemptedEpisode}); renderGenerationDiagnosticActions('');
       }
     };

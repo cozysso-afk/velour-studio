@@ -91,9 +91,10 @@
       try { episodeCount = ep; } catch (_) {}
 
       const meta = guardedMeta(parseMeta(r.rawText || ''));
+      const acceptedDirection = String(document.getElementById('v33Next')?.value || '').trim();
       qa.rememberConfirmedEpisode?.(ep, false);
       qa.clearPendingRetryEpisode?.();
-      if (meta) qa.updateMemory?.(meta, ep);
+      if (meta) qa.updateMemory?.(meta, ep, acceptedDirection);
 
       const novel = document.getElementById('novelText');
       const title = document.getElementById('resultTitle');
