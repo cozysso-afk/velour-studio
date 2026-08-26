@@ -2833,59 +2833,25 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
 
       const reason=retryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
       if(reason){
-        // 실패본은 장기 메모리뿐 아니라 base storyHistory/sessionEpisodes에서도 제거한 뒤 같은 EP를 재생성한다.
-        rollbackBase();
-        state.runtime.retryDirective=`${reason}${userNext?`\n사용자가 이번 화에 추가로 준 지시도 유지: ${userNext}`:''}`;
-        state.runtime.retryCount=1; save(state);
-        primeGenerationDiagnostic(isContinue,attemptedEpisode,true);
-        try{
-          await previousGenerate(isContinue);
-        }catch(err){
-          augmentDiagnosticFromThrown(err);
-          const rawNow=document.getElementById('novelText')?.innerText||'';
-          const thrown=thrownFailureKind(err,rawNow);
-          rollbackBase();
-          forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
-          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
-          markGenerationOutcome('failed',{kind:thrown.kind,attemptedEpisode,detail:thrown.detail,thrown:true,retry:true});
-          showGenerationFailure(thrown,attemptedEpisode);
-          syncUI(false);
-          return;
-        }
-        raw=document.getElementById('novelText')?.innerText||''; parsed=extractMeta(raw);
-        const retryFailure=generationFailureKind(parsed.clean||raw);
-        if(retryFailure){
-          rollbackBase();
-          forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
-          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state);
-          markGenerationOutcome('failed',{kind:retryFailure.kind,attemptedEpisode}); showGenerationFailure(retryFailure,attemptedEpisode); syncUI(false); return;
-        }
-        if(parsed.clean&&document.getElementById('novelText'))document.getElementById('novelText').innerText=parsed.clean;
-        stripMetaEverywhere();
-        const secondEp=epNumber(); const secondReason=retryReason(parsed.meta,parsed.clean,secondEp,isContinue,userNext);
+        // One user action must issue exactly one Gemini request. Advisory quality
+        // flags keep the first usable prose; only true blocking faults stay pending
+        // for an explicit user retry.
+        const blocking=blockingRetryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
         if(appearanceMeasurementLeakReason(parsed.clean)){
           const softened=softenLeakedBodySpecs(parsed.clean);
           parsed.clean=softened;
           const novelEl=document.getElementById('novelText'); if(novelEl) novelEl.innerText=softened;
           try{ if(typeof storyHistory!=='undefined'&&storyHistory) storyHistory=softenLeakedBodySpecs(storyHistory); }catch(e){}
         }
-        const secondBlocking=blockingRetryReason(parsed.meta,parsed.clean,secondEp,isContinue,userNext);
-        if(!secondReason){
-          rememberConfirmedEpisode(secondEp,false);
-          clearPendingRetryEpisode();
-          updateMemory(parsed.meta,secondEp);
-          state.runtime.retryDirective=''; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:secondEp,attemptedEpisode}); renderGenerationDiagnosticActions(''); syncUI(false);
-        } else if(!secondBlocking){
-          // The repair draft is usable; only advisory/self-review issues remain.
-          // Accept the prose, but freeze suspicious beat advancement instead of throwing the whole episode away.
+        if(!blocking){
           const guarded=guardMetaAfterAdvisory(parsed.meta);
-          console.info('VELOUR V4.4.32: advisory flags remain after retry; prose accepted with beat guard', secondReason);
-          rememberConfirmedEpisode(secondEp,false);
+          console.info('VELOUR: advisory flags kept without automatic duplicate generation', reason);
+          rememberConfirmedEpisode(ep,false);
           clearPendingRetryEpisode();
-          updateMemory(guarded,secondEp);
-          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:secondEp,attemptedEpisode,advisory:true}); renderGenerationDiagnosticActions(''); syncUI(false);
+          updateMemory(guarded,ep);
+          state.runtime.retryDirective=''; state.runtime.retryCount=0; save(state); patchDraft(); refreshReaderCharCounter(); markGenerationOutcome('committed',{episode:ep,attemptedEpisode,advisory:true,automaticRetrySuppressed:true}); renderGenerationDiagnosticActions(''); syncUI(false);
         } else {
-          console.warn('VELOUR V4.4.32: retry still has a HARD violation; output rejected', secondBlocking);
+          console.warn('VELOUR: blocking fault kept pending for explicit user retry', blocking);
           const incomplete=bodyIntegrityReason(parsed.clean);
           rollbackBase();
           forceCounterAfterFailure(attemptedEpisode,beforeEpisode);
@@ -2895,8 +2861,8 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
           } else {
             const novel=document.getElementById('novelText');
             if(novel) novel.innerText=`[설정 잠금 위반 · EP.${String(attemptedEpisode).padStart(2,'0')} 미확정]
-재생성본에도 실제 HARD 위반이 남아서 이번 화를 저장하지 않았어.
-감지: ${violationSummary(secondBlocking)||'HARD 설정 위반'}
+첫 응답에 실제 HARD 위반이 있어 이번 화를 저장하지 않았어.
+감지: ${violationSummary(blocking)||'HARD 설정 위반'}
 같은 EP에서 다시 생성해줘.`;
             setUnconfirmedTitle(attemptedEpisode);
             const counter=document.getElementById('v35CharCount'); if(counter){counter.style.color='#ffd08a';counter.textContent=`HARD LOCK · EP.${String(attemptedEpisode).padStart(2,'0')} 미확정 · ENGINE V4.4.32`;}
