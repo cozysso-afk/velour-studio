@@ -106,6 +106,7 @@
       if (panel) panel.style.display = 'block';
       if (next) next.style.display = 'block';
       if (dir) dir.value = '';
+      try { localStorage.removeItem('VELOUR_NEXT_DIRECTIVE_V33'); } catch (_) {}
       document.getElementById('velourHardLockReviewNotice')?.remove();
       const actions = document.getElementById('velourGenerationDiagnosticActions');
       if (actions) actions.style.display = 'none';

@@ -365,7 +365,7 @@
     bodyDescriptionWindow:3,
     bodyDescriptionRotation:true,
     bodyPraiseVariety:true,
-    runtime:{timeline:[],openThreads:[],scenes:[],durableFacts:[],arcSummaries:[],arcBuffer:[],relationshipState:'',causalCarry:'',lastAdultEpisode:0,retryCount:0,positionUsage:{},lastSuggestedPositions:[],playUsage:{},lastSuggestedPlays:[],beatTracker:{index:0,phase:'setup',episodes:0,lastProgress:0,evidence:[]}}
+    runtime:{timeline:[],openThreads:[],scenes:[],durableFacts:[],arcSummaries:[],arcBuffer:[],relationshipState:'',causalCarry:'',lastAdultEpisode:0,retryCount:0,positionUsage:{},lastSuggestedPositions:[],playUsage:{},lastSuggestedPlays:[],beatTracker:{index:0,beatKey:'',phase:'setup',episodes:0,lastProgress:0,evidence:[]}}
   };
 
   function clone(x){ return JSON.parse(JSON.stringify(x)); }
@@ -398,6 +398,7 @@
       cfg.runtime.causalCarry=String(cfg.runtime.causalCarry||'').trim();
       cfg.runtime.beatTracker=Object.assign({},DEFAULT.runtime.beatTracker,(saved.runtime&&saved.runtime.beatTracker)||{});
       cfg.runtime.beatTracker.index=Math.max(0,Number(cfg.runtime.beatTracker.index||0));
+      cfg.runtime.beatTracker.beatKey=String(cfg.runtime.beatTracker.beatKey||'').trim();
       cfg.runtime.beatTracker.phase=['setup','build','payoff'].includes(String(cfg.runtime.beatTracker.phase))?String(cfg.runtime.beatTracker.phase):'setup';
       cfg.runtime.beatTracker.episodes=Math.max(0,Number(cfg.runtime.beatTracker.episodes||0));
       cfg.runtime.beatTracker.lastProgress=Math.max(0,Math.min(100,Number(cfg.runtime.beatTracker.lastProgress||0)));
@@ -503,24 +504,33 @@
 
   function beatPhaseRank(phase){ return ({setup:0,build:1,payoff:2})[String(phase||'').toLowerCase()] ?? 0; }
   function beatPhaseLabel(phase){ return ({setup:'원인·상황 구축',build:'축적·전개',payoff:'현재 단계의 결실'})[String(phase||'').toLowerCase()] || '원인·상황 구축'; }
+  function storylineBeatKey(index=Number(state.beatIndex||0)){
+    return String(storylineBeats()[Math.max(0,Number(index||0))]||'').replace(/\s+/g,' ').trim().slice(0,240);
+  }
   function ensureBeatTracker(){
     const idx=Math.max(0,Number(state.beatIndex||0));
+    const beatKey=storylineBeatKey(idx);
     if(!state.runtime.beatTracker || typeof state.runtime.beatTracker!=='object') state.runtime.beatTracker=clone(DEFAULT.runtime.beatTracker);
-    if(Number(state.runtime.beatTracker.index)!==idx){
-      state.runtime.beatTracker={index:idx,phase:'setup',episodes:0,lastProgress:0,evidence:[]};
-    }
+    const storedBeatKey=String(state.runtime.beatTracker.beatKey||'');
+    if(Number(state.runtime.beatTracker.index)!==idx || (storedBeatKey && storedBeatKey!==beatKey)){
+      state.runtime.beatTracker={index:idx,beatKey,phase:'setup',episodes:0,lastProgress:0,evidence:[]};
+    } else state.runtime.beatTracker.beatKey=beatKey;
     return state.runtime.beatTracker;
   }
   function resetBeatTracker(index=Number(state.beatIndex||0)){
-    state.runtime.beatTracker={index:Math.max(0,Number(index||0)),phase:'setup',episodes:0,lastProgress:0,evidence:[]};
+    const idx=Math.max(0,Number(index||0));
+    state.runtime.beatTracker={index:idx,beatKey:storylineBeatKey(idx),phase:'setup',episodes:0,lastProgress:0,evidence:[]};
   }
   function activeStorylineBeat(){
     const beats=storylineBeats(); const idx=Math.max(0,Number(state.beatIndex||0));
     return beats.length && idx<beats.length ? {beats,idx,current:beats[idx],future:beats.slice(idx+1),completed:beats.slice(0,idx)} : null;
   }
   function hasActiveStorylineBeat(){ return !!activeStorylineBeat(); }
-  function minBeatEpisodes(){ return ['ultra','slow'].includes(state.pacing)?2:1; }
-  function maxBeatPhaseJump(){ return ['fast','balanced'].includes(state.pacing)?2:1; }
+  // Pacing controls prose and relationship tempo, not a hidden minimum number of
+  // episodes per user-authored CANON line. A complete episode may show the full
+  // causal chain and finish exactly one current beat without skipping the next.
+  function minBeatEpisodes(){ return 1; }
+  function maxBeatPhaseJump(){ return 2; }
 
   function unlockEpisode(){
     if(state.pacing==='ultra') return 12;
@@ -934,12 +944,17 @@ ${directVocabularyRelevant&&allowed.length?`- 현재 해금 구간에서 사용�
     const current=completed?'':(beats[idx]||'');
     const dynamicLabels=(state.dynamics||[]).map(id=>(DYNAMICS.find(x=>x[0]===id)||['',id])[1]).filter(Boolean);
     const tracker=ensureBeatTracker();
+    const characterSheet=String(document.getElementById('inputChars')?.value||'').trim();
+    const selectedStage=String(document.getElementById('selectStage')?.value||'').trim();
     const roadmap=beats.map((beat,i)=>{
       const tag=i<rawIdx?'완료':i===rawIdx?'현재 실행':i===rawIdx+1?'다음 목적지 · 계획만':'후속 로드맵 · 계획만';
       return `${i+1}. [${tag}] ${beat}`;
     }).join('\n');
     return `
 [HARD CANON — 최우선. 임의 변경 금지]
+- 사용자 인물 설정 원문(가장 구체적인 신원 기준):
+${characterSheet||'(인물 설정 원문 미입력)'}
+- 기본 서사/관계 단계: ${selectedStage||'(별도 선택 없음)'}
 - 세계관: ${worldLabel()}.
 - 현재 관계: ${relationshipLabel()}.
 - 관계 변화 방향: ${trajectoryLabel()}.
@@ -948,7 +963,9 @@ ${dynamicLabels.length?`- 추가 관계 다이내믹: ${dynamicLabels.join(', ')
 - B: ${state.occupationB} / 신분 ${socialLabel(state.socialB)}.
 ${state.militaryStatus?`- 군 관련 현재 상태: ${state.militaryStatus}.`:''}
 ${state.hardCanon?`- 사용자 잠금 설정:\n${state.hardCanon}`:'- 사용자 추가 잠금 설정 없음.'}
-- 위 이름/나이/가족/출신/직업/신분/과거관계/첫 만남/호칭/이미 밝혀진 사실은 사용자가 명시적으로 바꾸지 않는 한 반전 소재로도 변경하지 않는다.
+- 인물 설정 원문의 이름·성씨·나이·학년·가족·출신·직업·신분·관계·첫 만남·호칭·이미 밝혀진 사실은 철자와 역할까지 그대로 유지한다. 사용자가 이번 화 지시에서 명시적으로 바꾼 항목만 변경한다.
+- 구체적인 인물 설정 원문과 사용자 잠금 설정은 넓은 장르/관계 프리셋보다 우선한다. 이름을 바꾸거나, 두 사람의 역할을 뒤집거나, 관계를 처음으로 되돌리거나, 없는 가족·신분·과거를 보충해서 만들지 않는다.
+- 나이·학년·현재 시점도 사용자 캐논 그대로 따른다. 학생 시기를 자동으로 성인 시점으로 바꾸거나, 성인 시점을 과거 학생 시기로 되감지 않는다. 명시적인 성적 관계 장면은 관련 인물이 성인인 시점에서만 다룬다.
 - “소꿉친구였다가 갑자기 재벌 도련님/왕족/귀족이었다” 같은 설정 추가를 금지한다. 단, HARD CANON에 그 반전이 처음부터 적힌 경우만 허용한다.
 ${beats.length?(completed?`
 [CANON STORYLINE — 전체 완료]
@@ -1278,7 +1295,7 @@ ${next?`- 다음 단계의 목적지(계획만): ${next}`:'- 현재가 마지막
 - SETUP(원인·상황 구축): 왜 이 사건/감정이 시작되는지 일상, 직업, 약속, 오해, 욕구, 외부 압력 등 원인을 실제 장면으로 만든다.
 - BUILD(축적·전개): 같은 결론을 반복하지 말고 작은 행동→상대 반응→내면 변화→다음 선택을 여러 비트로 누적한다. 확신이 생기기 전의 망설임과 오해도 서사다.
 - PAYOFF(현재 단계의 결실): 앞에서 쌓은 원인과 반응 때문에 현재 단계의 사건/선택이 발생한다. PAYOFF는 ‘다음 단계 실행’이 아니다.
-- SLOW/ULTRA SLOW에서는 한 화 만에 SETUP에서 PAYOFF로 직행하지 않는다. 최소 한 번의 BUILD가 있어야 한다.
+- 페이싱이 느려도 CANON 한 줄을 기계적으로 여러 화에 묶지 않는다. 이번 화 안에서 SETUP→BUILD→PAYOFF의 인과가 충분하고 사용자 지시가 현재 단계를 마무리하라고 하면, 현재 단계 하나는 이번 화에 완료할 수 있다.
 - 새로운 외부 사건을 넣을 때는 ‘갑자기 벌어졌다’로 중반부터 시작하지 말고, 호출/약속/업무/연락/이동/목격 등 발생 계기를 먼저 보여준다.
 - 현재 단계가 이미 진행 중이면 처음부터 다시 소개하지 말고, 직전 결과가 만든 다음 원인부터 이어간다.
 - 빌드업 화는 큰 사건이 없어도 된다. 관계·사건을 억지로 한 단계 올리는 것보다 인과와 감정 축적이 우선이다.
@@ -1301,6 +1318,10 @@ ${isContinue?'- 이어쓰기에서는 직전 화의 결과가 이번 화 첫 장
     // living/work status changes and lasting promises/rules. Keep transient scene mechanics out.
     if(/(?:이번\s*화|현재\s*장면|방금|잠시|순간|체위|삽입|사정|오르가즘|자위|성기|보지|자지|좆|젖통)/i.test(s)) return false;
     if(/\b(?:position|playId|adultScene|bodyFocus|sexualDialogue)\b/i.test(s)) return false;
+    // Model-authored memory may remember events, agreements and reveals, but it
+    // may not become a second character sheet. Protected identity/timeline facts
+    // come only from the user's settings and HARD CANON.
+    if(/(?:이름|본명|성씨|나이|\d{1,2}\s*(?:세|살)|학년|중학생|고등학생|대학생|미성년|성인\s*시점|직업|신분|가족|부모|형제|자매|출신|고향|호칭)/i.test(s)) return false;
     return true;
   }
 
@@ -1378,7 +1399,7 @@ ${isContinue?'- 이어쓰기에서는 직전 화의 결과가 이번 화 첫 장
     return `
 [LONGFORM MEMORY — 3-TIER]
 [TIER 1 · PERMANENT CANON / DURABLE FACTS]
-- UI의 HARD CANON과 CANON STORYLINE은 위 별도 블록이 영구 기준이다. 아래 확정 사실도 이후 화에서 모순시키지 않는다.
+- UI의 인물 설정 원문, HARD CANON, CANON STORYLINE이 영구 기준이다. 아래 모델 생성 메모가 이름·나이·학년·관계·직업·신분·과거와 충돌하면 해당 메모를 버리고 UI 설정을 따른다.
 ${durable.length?durable.map(x=>`- ${x}`).join('\n'):'- 추가 영구 사실 없음.'}
 
 [TIER 2 · ARCHIVED ARC MEMORY]
@@ -1391,7 +1412,7 @@ ${timeline.length?`확정 타임라인(최근 핵심 ${timeline.length}건):\n${
 - 직전 인과 연결고리: ${memoryClip(state.runtime.causalCarry||'없음',220)}
 ${threads.length?`미회수 복선/약속/갈등(${threads.length}건):\n${threads.map(x=>`- ${x}`).join('\n')}`:'미회수 복선/약속/갈등: 없음.'}
 ${scenes.length?`최근 장면 지문(${scenes.length}건):\n${scenes.map(s=>`- EP${s.episode||'?'} | ${memoryClip(s.location||'?',50)} | 목적 ${memoryClip(s.purpose||'?',80)} | 엔딩 ${memoryClip(s.ending||'?',70)} | 구도 ${memoryClip(s.pattern||'없음',45)} | 체위 ${memoryClip(s.position||'없음',45)}`).join('\n')}`:'최근 장면 지문: 없음.'}
-- 우선순위: HARD CANON > 영구 확정 사실 > 과거 아크 역사 > 최근 활성 메모리 > 즉흥적 새 아이디어.
+- 우선순위: 사용자 인물 설정/HARD CANON > CANON STORYLINE 순서 > 이번 화 사용자 지시 > 영구 확정 사실 > 과거 아크 역사 > 최근 활성 메모리 > 즉흥적 새 아이디어.
 - 이미 해결된 사건을 새 사건처럼 재사용하지 말고 최근 장소/갈등/엔딩 조합의 반복을 피한다.`;
   }
 
@@ -1495,6 +1516,18 @@ ${playRotationDirective(ep)}`;
 - 현재 단계의 결과가 아직 무르익지 않았다면 결론을 미루고 BUILD를 더 쌓는다.`;
   }
 
+  function currentEpisodeDirectionDirective(){
+    const direction=String(document.getElementById('v33Next')?.value||'').trim();
+    if(!direction) return '';
+    return `
+[CURRENT EPISODE USER DIRECTION — 이번 화 필수 실행]
+${direction}
+- 이 문장은 이번 화의 장소·사건·행동·정서 초점을 정하는 직접 집필 명령이다. HARD CANON과 현재 CANON 단계의 순서를 깨지 않는 범위에서 자동 페이싱·자동 사건 제안·최근 메모보다 우선한다.
+- 지시의 핵심을 서두나 중심 장면에서 실제 사건과 행동으로 실행한다. 분위기만 비슷하게 만들고 핵심 사건을 다음 화로 미루거나, 무관한 자동 사건으로 대체하지 않는다.
+- 지시가 현재 CANON 단계의 마무리 또는 다음 단계로의 진행을 요구하면, 현재 단계의 원인→반응→선택→결과를 이번 화에서 완결한 뒤 beatComplete를 정확히 기록한다. 한 번에 둘 이상의 미래 단계는 실행하지 않는다.
+- 이 지시를 따르면서도 인물 이름·관계·직업·과거·호칭을 바꾸거나 이미 확정된 사건을 취소하지 않는다.`;
+  }
+
   function retryDirective(){
     const r=state.runtime.retryDirective||'';
     return r?`\n[자동 재검토 후 재생성 지시]\n${r}\n- 이전 실패본의 장면과 문장을 복사하지 말고 위 오류를 수정해 다시 쓴다.`:'';
@@ -1505,6 +1538,7 @@ ${playRotationDirective(ep)}`;
 [머신 메타 — 본문 뒤 1회, 코드블록 금지]
 [[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","adultScene":false,"sexualDialogueLevel":0,"expressionViolation":false,"professionalBoundaryViolation":false,"timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","pattern":"none","position":"none","plays":[],"initiation":"","control":"","dialogueTone":"","ending":"","relationshipState":"","durableFacts":[],"foreplayDepth":"none","kissPresence":"none","bodyPraiseUsed":false,"lightSpankingUsed":false,"bodyFocuses":[],"bodyAngles":[],"bodyDescriptionRepeatRisk":"low","openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false}[[/VELOUR_V4_META]]
 - beatPhase setup/build/payoff, beatProgress 0~100. beatComplete는 현재 단계의 payoff가 실제 본문에서 충분히 완료된 경우만 true.
+- 현재 단계의 핵심 사건/선택이 본문에서 실제로 마무리됐으면 예시의 false를 그대로 복사하지 말고 반드시 beatComplete=true로 기록한다. payoff·95% 이상·본문 근거가 일치하면 완료다.
 - 미래 단계 선행은 futureBeatLeak, 캐논/단계 위반은 해당 boolean, 연결 생략은 causalBridge/setupMissing/openingBridge로 보수적으로 표시한다.
 - timeline/causalCarry/openThreads/closedThreads/관계·장면 메모는 짧은 한 문장 또는 짧은 배열만 쓴다.
 - durableFacts는 이번 화에서 실제로 확정되어 이후에도 계속 참이어야 하는 비성적 핵심 사실만 0~3개 기록한다. 예: 정체 공개, 관계 합의, 거주/직업 변화, 장기 약속·규칙. 일시적 감정·장면 동작·친밀 장면의 세부 행위는 넣지 않는다.
@@ -1525,6 +1559,13 @@ ${playRotationDirective(ep)}`;
     // V4가 따로 관리하는 옛 stage 문장은 중복·과잉 지시가 되므로 제거한다.
     out=out.replace(/^\s*- 이번 화 서사 단계:.*$/gm,'');
     out=out.replace(/^\s*1\. 이번 화 서사 단계.*$/gm,'');
+    // Legacy layers used a blanket all-adult rewrite which can override an
+    // explicitly authored school-age backstory or force an unwanted time jump.
+    // V4 preserves the user's age/timeline and limits explicit adult scenes at
+    // the final canon block instead.
+    out=out.replace(/등장인물은 모두 성인이며,\s*/g,'');
+    out=out.replace(/^\s*- 모든 등장인물은 명백한 성인이며,[^\n]*$/gm,'');
+    out=out.replace(/^\s*- 두 주연은 모두 21세 이상 성인이다\.\s*$/gm,'');
     // 원본 UI의 장문 수위 설명 대신 짧은 스타일 상한만 전달한다. 출력 가능 범위를 낮추는 변경이 아니다.
     out=out.replace(/^\s*- 묘사 톤 및 수위:.*$/gm,`- 문체/수위 상한: ${mode.label}`);
     out=out.replace(/^\s*3\. 시각, 청각, 촉각.*$/gm,'3. 감각 묘사는 장면의 감정과 분위기를 강화하는 범위에서 구체적으로 쓴다.');
@@ -1570,13 +1611,13 @@ ${playRotationDirective(ep)}`;
       const cleaned=cleanLegacyPrompt(legacyRaw);
       const base=compactLegacyContext(cleaned,isContinue); const ep=epNumber();
       const prompt=`${base}\n\n===== VELOUR STORY ENGINE V4.4.32 · CAUSAL BUILDUP OVERRIDE =====
-[우선순위] V4.4.32 HARD LOCK(금지/확정 캐논/현재 실행 단계) > 인과적 빌드업과 직전 확정 상태 > 사용자 현재 화 지시 > 취향·생활밀착·외형·친밀 장면 질감 > 기존 자동 디렉터.
-- 설정 UI에서 OFF/금지로 둔 항목과 현재 CANON STORYLINE 단계는 단순 취향 제안이 아니라 HARD LOCK이다. 이번 화 추가 지시보다 우선한다.
+[우선순위] 사용자 인물 설정/HARD LOCK > CANON STORYLINE 순서 > 사용자 현재 화 지시 > 인과적 빌드업과 직전 확정 상태 > 취향·생활밀착·외형·친밀 장면 질감 > 기존 자동 디렉터.
+- 설정 UI의 인물 원문·금지·확정 캐논과 CANON STORYLINE의 순서는 HARD LOCK이다. 사용자 현재 화 지시는 그 순서 안에서 자동 페이싱과 자동 사건 제안보다 우선한다.
 - 위쪽 기존 프롬프트에 남아 있을 수 있는 옛 ‘배경 세계관/서사 단계/관계성/2~4화 페이싱’ 값은 레거시 호환 정보일 뿐이다. 충돌하면 아래 V4.4.32 값만 따른다.
 - 기존 V3.5 관계 태그는 V4.4.32 관계축과 중복되므로 이번 프롬프트에서는 비활성화했다.
 - 분량 목표는 반드시 독자가 읽는 실제 소설 본문으로 채운다. 머신 META, 규칙 문구, 종료 안내문은 본문 분량으로 계산하지 않는다.
 - '본문이 끝났습니다', '이상입니다' 같은 종료 안내문을 소설 본문 대신 출력하지 않는다. 본문을 충분히 완성한 뒤 META를 마지막에 붙인다.
-모든 인물은 명백한 성인(21세 이상)이며 친밀한 관계는 상호 선택과 동의가 분명한 상황에서만 진행한다.
+인물의 나이·학년·현재 시점은 사용자 인물 설정과 캐논을 그대로 유지한다. 명시적인 성적 관계 장면은 관련 인물이 성인인 시점에서만, 상호 선택과 동의가 분명한 상황에서 진행한다.
 [현재 문체 상한] ${currentIntensityMode().label}. 이 선택은 자동으로 R-15로 강등하지 않는다. 이 값은 묘사 상세도의 상한이며 성인 관계 장면의 존재/빈도와는 별개다. 실제 표현 시점은 페이싱 게이트가 결정한다.
 ${canonDirective()}
 ${historicalDirective()}
@@ -1596,6 +1637,7 @@ ${continuityDirective()}
 ${episodePurposeDirective()}
 ${varietyDirective(ep)}
 ${languageDirective(ep)}
+${currentEpisodeDirectionDirective()}
 ${retryDirective()}
 ${metadataDirective()}
 ===== END VELOUR V4.4.32 =====`;
@@ -2579,7 +2621,8 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       const evidence=String(meta.beatEvidence||'').trim();
       if(evidence && !tracker.evidence.includes(evidence)) tracker.evidence.push(evidence);
       tracker.evidence=tracker.evidence.slice(-6);
-      const canAdvance=!!meta.beatComplete && tracker.phase==='payoff' && tracker.lastProgress>=90 && tracker.evidence.length>0 && tracker.episodes>=minBeatEpisodes() && !meta.futureBeatLeak && String(meta.causalBridge||'ok').toLowerCase()!=='broken' && !meta.setupMissing;
+      const completeByEvidence=tracker.phase==='payoff' && tracker.lastProgress>=95 && tracker.evidence.length>0;
+      const canAdvance=(meta.beatComplete===true || completeByEvidence) && tracker.phase==='payoff' && tracker.lastProgress>=90 && tracker.evidence.length>0 && tracker.episodes>=minBeatEpisodes() && !meta.futureBeatLeak && String(meta.causalBridge||'ok').toLowerCase()!=='broken' && !meta.setupMissing;
       if(canAdvance){
         state.beatIndex=Math.min(beats.length,Number(state.beatIndex||0)+1);
         resetBeatTracker(state.beatIndex);
@@ -2739,7 +2782,6 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       const currentRank=beatPhaseRank(tracker.phase), reportedRank=beatPhaseRank(reported);
       if(reportedRank>currentRank+maxBeatPhaseJump()) reasons.push(`현재 단계 내부 빌드업을 ${beatPhaseLabel(tracker.phase)}에서 ${beatPhaseLabel(reported)}로 건너뛰었다. 현재 단계의 중간 BUILD를 실제 장면으로 먼저 쌓을 것.`);
       if(meta?.beatComplete && (reported!=='payoff' || Number(meta?.beatProgress||0)<90 || !String(meta?.beatEvidence||'').trim())) reasons.push('beatComplete를 너무 일찍 선언했다. 현재 단계의 결실(payoff), 90% 이상 진행, 실제 본문 근거가 모두 있을 때만 완료로 판정할 것.');
-      if(meta?.beatComplete && ['ultra','slow'].includes(state.pacing) && tracker.episodes+1<minBeatEpisodes()) reasons.push(`현재 페이스는 ${state.pacing.toUpperCase()}라 한 화 만에 현재 단계를 완료하지 않는다. 최소 한 번의 BUILD 화를 더 쌓은 뒤 payoff로 갈 것.`);
     }
     const langHard=forbiddenGenderedInsultReason(text); if(langHard) reasons.push(langHard);
     if(meta?.hardLanguageViolation) reasons.push('HARD OFF 언어 설정을 위반했다. 금지된 성별 비하형 멸칭을 모두 제거할 것.');
@@ -2810,7 +2852,6 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       const reported=String(meta.beatPhase||'setup').toLowerCase();
       if(beatPhaseRank(reported)>beatPhaseRank(tracker.phase)+maxBeatPhaseJump()) return true;
       if(meta.beatComplete && (reported!=='payoff' || Number(meta.beatProgress||0)<90 || !String(meta.beatEvidence||'').trim())) return true;
-      if(meta.beatComplete && ['ultra','slow'].includes(state.pacing) && tracker.episodes+1<minBeatEpisodes()) return true;
     }
     return false;
   }
@@ -2868,6 +2909,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
         const novel=document.getElementById('novelText'); if(novel) novel.innerText=isContinue?beforeText:'';
         const title=document.getElementById('resultTitle'); if(title&&beforeTitle) title.innerText=beforeTitle;
         const nextEl=document.getElementById('v33Next'); if(nextEl&&userNext&&!nextEl.value.trim()) nextEl.value=userNext;
+        try{ if(userNext) localStorage.setItem('VELOUR_NEXT_DIRECTIVE_V33',userNext); }catch(e){}
         try{ restoreV4StateSnapshot(beforeV4State); }catch(e){}
       };
       primeGenerationDiagnostic(isContinue,attemptedEpisode,false);
