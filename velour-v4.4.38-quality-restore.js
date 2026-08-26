@@ -7,7 +7,7 @@
   'use strict';
   if (window.__VELOUR_QUALITY_RESTORE__) return;
   window.__VELOUR_QUALITY_RESTORE__ = true;
-  window.__VELOUR_QUALITY_RESTORE_VERSION__ = '1.0.0';
+  window.__VELOUR_QUALITY_RESTORE_VERSION__ = '1.1.0';
 
   const previousBuild = window.buildPrompt;
   if (typeof previousBuild !== 'function') {
@@ -32,6 +32,22 @@
     return mentions && asks && !denies;
   }
 
+  function asksLongForeplay(text){
+    const raw = String(text || '');
+    return /(?:애무|전희|키스)[^\n]{0,18}(?:길게|오래|충분히|천천히|짧지\s*않게)|(?:길게|오래|충분히|천천히)[^\n]{0,18}(?:애무|전희|키스)/i.test(raw);
+  }
+
+  function foreplayDirective(foreplay, dir, caress){
+    const forceLong = asksLongForeplay(dir) || String(foreplay).toLowerCase() === 'long';
+    if (forceLong) {
+      return `- 애무 길이=LONG 강제. 친밀 장면이 시작되면 초반 키스·애무·반응 축적 구간을 요약 몇 문장으로 건너뛰지 않는다. 본격적인 다음 단계로 넘어가기 전까지 친밀 장면 서술의 최소 40% 안팎을 이 빌드업에 배정하고, 최소 3개의 서로 다른 감각/반응 비트가 누적된 뒤 전환한다. 같은 행동을 반복해 글자만 늘리지 말고 접촉 방식, 호흡, 시선, 대사, 자세, 감정 반응을 변화시키며 점진적으로 고조한다.${caress ? ' 다음 단계로 전환한 뒤에도 애무와 접촉을 갑자기 끊지 말고 장면 전체에 자연스럽게 이어간다.' : ''}`;
+    }
+    if (String(foreplay).toLowerCase() === 'medium') {
+      return `- 애무 길이=MEDIUM. 친밀 장면의 초반 빌드업을 한두 문장으로 압축하지 말고 최소 2개의 반응 비트를 보여준 뒤 다음 단계로 전환한다.${caress ? ' 전환 후에도 접촉을 자연스럽게 이어간다.' : ''}`;
+    }
+    return `- 애무 길이=${String(foreplay).toUpperCase()}. 선택값보다 길게 억지로 늘이지 않되, 장면 연결이 끊기지 않게 자연스럽게 전환한다.${caress ? ' 전환 후에도 접촉을 자연스럽게 이어간다.' : ''}`;
+  }
+
   function qualityDirective(s){
     const dir = userDirection();
     const exact = asksExactMeasurements(dir);
@@ -41,8 +57,9 @@
     const dirty = Math.max(0, Math.min(100, Number(s?.dirtyTalk ?? 70)));
     const richness = String(s?.bodyDescriptionRichness || 'rich');
     const variety = String(s?.variety || 'high');
+    const foreplayRule = foreplayDirective(foreplay, dir, caress);
 
-    return `\n[PROSE QUALITY RESTORE — CANON을 바꾸지 않는 문체 품질 지시]\n- HARD CANON, 현재 CANON STORYLINE 단계, 이번 화 사용자 지시가 항상 우선이다. 이 블록은 사건·연령·직업·관계를 새로 만들지 않는다.\n- 신체 설정값은 외형 일관성을 위한 내부 참고값이다. ${exact ? '이번 화 사용자가 정확한 수치 언급을 직접 요구했으므로 필요한 범위에서만 수치를 사용할 수 있다.' : '저장된 컵 문자는 본문에 그대로 쓰지 않는다. 컵사이즈·cm·정확한 신체 치수를 설정표처럼 낭독하거나 반복하지 말고, 실루엣·비율·촉감·움직임·옷맵시 등 자연스럽고 문학적인 묘사로 변환한다.'}\n- 신체 묘사 풍부도=${richness}. 같은 부위·같은 형용사·같은 문장 구조를 반복하지 말고 시선, 동작, 촉감, 온도, 호흡, 자세 변화, 옷과 피부의 대비 등 묘사 초점을 장면마다 회전한다.\n- 키스 밀도=${kissing}, 애무 길이=${foreplay}, 장면 중 지속 애무=${caress ? 'ON' : 'OFF'}. 친밀 장면에서는 키스와 애무를 짧게 통과 의례처럼 처리하지 말고 선택값에 맞게 충분한 비중으로 전개한다.\n- 더티톡 강도=${dirty}/100. 같은 문구를 반복하지 말고 관계·감정·상황에 맞춰 어휘, 문장 길이, 질문/칭찬/도발/반응형 대사를 다양하게 바꾼다. 캐릭터 말투와 성격은 유지한다.\n- 장면 다양성=${variety}. 성인 친밀 장면에서 장소·감정선과 자연스럽게 맞으면 한 가지 자세/구도에만 고정하지 말고 2개 이상의 서로 다른 자세·배치 단계로 자연스럽게 변화시킨다. 최근 장면과 동일한 구도는 우선 회피한다.\n- 자세 전환 자체를 체크리스트처럼 나열하지 말고, 인물의 선택·반응·움직임 속에 자연스럽게 녹인다.\n- 위 품질 지시는 출력 분량을 불필요하게 늘리기 위한 것이 아니라 반복을 줄이고 장면의 밀도와 다양성을 높이기 위한 것이다.`;
+    return `\n[PROSE QUALITY RESTORE — CANON을 바꾸지 않는 문체 품질 지시]\n- HARD CANON, 현재 CANON STORYLINE 단계, 이번 화 사용자 지시가 항상 우선이다. 이 블록은 사건·연령·직업·관계를 새로 만들지 않는다.\n- 신체 설정값은 외형 일관성을 위한 내부 참고값이다. ${exact ? '이번 화 사용자가 정확한 수치 언급을 직접 요구했으므로 필요한 범위에서만 수치를 사용할 수 있다.' : '저장된 컵 문자는 본문에 그대로 쓰지 않는다. 컵사이즈·cm·정확한 신체 치수를 설정표처럼 낭독하거나 반복하지 말고, 실루엣·비율·촉감·움직임·옷맵시 등 자연스럽고 문학적인 묘사로 변환한다.'}\n- 신체 묘사 풍부도=${richness}. 같은 부위·같은 형용사·같은 문장 구조를 반복하지 말고 시선, 동작, 촉감, 온도, 호흡, 자세 변화, 옷과 피부의 대비 등 묘사 초점을 장면마다 회전한다.\n- 키스 밀도=${kissing}, 애무 길이=${foreplay}, 장면 중 지속 애무=${caress ? 'ON' : 'OFF'}. 키스와 애무를 짧은 통과 의례처럼 처리하지 않는다.\n${foreplayRule}\n- 이번 화 사용자 지시에 ‘애무/전희/키스를 길게·오래·충분히’가 들어 있으면 UI 선택값보다 그 직접 지시를 우선한다.\n- 더티톡 강도=${dirty}/100. 같은 문구를 반복하지 말고 관계·감정·상황에 맞춰 어휘, 문장 길이, 질문/칭찬/도발/반응형 대사를 다양하게 바꾼다. 캐릭터 말투와 성격은 유지한다.\n- 장면 다양성=${variety}. 성인 친밀 장면에서 장소·감정선과 자연스럽게 맞으면 한 가지 자세/구도에만 고정하지 말고 2개 이상의 서로 다른 자세·배치 단계로 자연스럽게 변화시킨다. 최근 장면과 동일한 구도는 우선 회피한다.\n- 자세 전환 자체를 체크리스트처럼 나열하지 말고, 인물의 선택·반응·움직임 속에 자연스럽게 녹인다.\n- LONG 선택은 실제 장면 배분을 늘리라는 뜻이다. 단, 같은 묘사를 반복해서 분량만 부풀리지 말고 서로 다른 반응과 감정 변화로 밀도를 높인다.`;
   }
 
   window.buildPrompt = function(isContinue = false){
