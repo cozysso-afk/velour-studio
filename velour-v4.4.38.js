@@ -853,7 +853,21 @@
 
   function socialLabel(v){ return ({ordinary:'평범/일반',affluent:'유복함',chaebol:'재벌/후계자',royal:'왕족',noble:'귀족/양반',hidden:'숨겨진 신분 반전 허용',custom:'사용자 설정 우선'})[v]||v; }
 
-  function bustLabel(v){ return ({'D+':'풍만 · D 이상', full:'풍만', medium:'중간', small:'아담함', custom:'사용자 설정 우선'})[v]||v; }
+  function bustProseLevel(v){
+    const raw=String(v||'').trim();
+    const fixed={'D+':'풍만하고 볼륨감 있는 가슴선',full:'풍만한 가슴선',medium:'균형 잡힌 가슴선',small:'아담하고 자연스러운 가슴선',custom:'사용자 외형 설정에 맞는 자연스러운 가슴선'}[raw];
+    if(fixed) return fixed;
+    const cup=raw.match(/(?:\d{2,3}\s*)?([A-H])\s*(?:\+|컵)?/i)?.[1]?.toUpperCase();
+    if(!cup) return raw;
+    if(cup<='B') return '아담하고 자연스러운 가슴선';
+    if(cup==='C') return '균형 잡힌 볼륨의 가슴선';
+    if(cup<='E') return '풍만하고 선명한 가슴선';
+    return '매우 풍만하고 볼륨감 있는 가슴선';
+  }
+  function proseSafeAppearanceNote(v){
+    return String(v||'').replace(/\b(?:\d{2,3}\s*[A-H](?:\s*(?:\+|컵))?|[A-H]\s*(?:\+|컵))(?=\s|[가-힣]|[.,!?…·'"”’)}\]]|$)/gi,m=>bustProseLevel(m));
+  }
+  function bustLabel(v){ return bustProseLevel(v); }
   function waistLabel(v){ return ({slim:'가늘고 선명한 허리선', natural:'자연스러운 곡선', straight:'직선적/담백한 라인'})[v]||v; }
   function hipsLabel(v){ return ({round:'크고 둥글며 탄탄한 힙', balanced:'균형 잡힌 힙', slim:'슬림한 힙라인'})[v]||v; }
   function buildLabel(v){ return ({broad:'큰 체격·넓은 어깨·강한 피지컬', lean:'키 크고 날렵한 근육형', balanced:'균형 잡힌 체격', slim:'슬림하고 가벼운 체형'})[v]||v; }
@@ -867,10 +881,10 @@
     return `
 [CHARACTER APPEARANCE — 연재 전체에서 일관 유지]
 - 아래 외형은 비노골적 기본 앵커다. 사용자가 이번 화 지시나 인물 구도 칸에서 더 구체적으로 적은 내용이 있으면 그 지시를 우선하되, 충돌이 없으면 아래 설정을 유지한다.
-- 여주: 키 약 ${f.height||165}cm, ${bustLabel(f.bust)}, ${waistLabel(f.waist)}, ${hipsLabel(f.hips)}, 피부톤 ${optionLabel(SKIN_TONES,f.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,f.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,f.eyes)}, 코 ${optionLabel(NOSE_STYLES,f.nose)}, 입술 ${optionLabel(LIP_STYLES,f.lips)}, 전체 인상 ${optionLabel(FEMALE_IMPRESSIONS,f.impression)}, 헤어 ${optionLabel(FEMALE_HAIR_LENGTHS,f.hairLength)} · ${optionLabel(FEMALE_HAIR_STYLES,f.hairStyle)} · ${optionLabel(HAIR_COLORS,f.hairColor)}.${f.vibe?` 분위기 메모: ${f.vibe}.`:''}${f.custom?` 추가 외형 메모: ${f.custom}.`:''}
+- 여주: 키 약 ${f.height||165}cm, ${bustLabel(f.bust)}, ${waistLabel(f.waist)}, ${hipsLabel(f.hips)}, 피부톤 ${optionLabel(SKIN_TONES,f.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,f.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,f.eyes)}, 코 ${optionLabel(NOSE_STYLES,f.nose)}, 입술 ${optionLabel(LIP_STYLES,f.lips)}, 전체 인상 ${optionLabel(FEMALE_IMPRESSIONS,f.impression)}, 헤어 ${optionLabel(FEMALE_HAIR_LENGTHS,f.hairLength)} · ${optionLabel(FEMALE_HAIR_STYLES,f.hairStyle)} · ${optionLabel(HAIR_COLORS,f.hairColor)}.${f.vibe?` 분위기 메모: ${proseSafeAppearanceNote(f.vibe)}.`:''}${f.custom?` 추가 외형 메모: ${proseSafeAppearanceNote(f.custom)}.`:''}
 - 남주: 키 약 ${m.height||188}cm, 체격 ${buildLabel(m.build)}, 피부톤 ${optionLabel(SKIN_TONES,m.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,m.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,m.eyes)}, 코 ${optionLabel(NOSE_STYLES,m.nose)}, 입술 ${optionLabel(LIP_STYLES,m.lips)}, 전체 인상 ${optionLabel(MALE_IMPRESSIONS,m.impression)}, 헤어 ${optionLabel(MALE_HAIR_LENGTHS,m.hairLength)} · ${optionLabel(MALE_HAIR_STYLES,m.hairStyle)} · ${optionLabel(HAIR_COLORS,m.hairColor)}.${m.vibe?` 분위기 메모: ${m.vibe}.`:''}${m.custom?` 추가 외형 메모: ${m.custom}.`:''}
 - 외형은 화마다 들쭉날쭉 바뀌지 않게 유지하되, 이 정보는 “연속성용 내부 앵커”이지 매 화 독자에게 다시 설명할 목록이 아니다.
-- 키, 가슴/허리/힙 치수, 브라 컵 문자, 숫자+컵 조합 등 정확한 신체 수치는 기본적으로 본문·대사에 그대로 인쇄하지 않는다. 예: 사용자가 90 F처럼 입력했더라도 그것은 캐릭터 일관성을 위한 비공개 기준값으로만 보존한다.
+- 키, 가슴/허리/힙 치수, 브라 컵 문자, 숫자+컵 조합 등 정확한 신체 수치는 기본적으로 본문·대사에 그대로 인쇄하지 않는다. 사용자가 구체적 값을 입력했더라도 캐릭터 일관성을 위한 비공개 기준값으로만 보존한다.
 - 외형 묘사가 실제 장면에 필요할 때는 한 번에 1~2개 특징만 자연스럽게 사용한다. 매 화 같은 가슴 크기·키·눈매·헤어를 소개문처럼 반복하지 않는다.
 - 의상 피팅, 속옷 구매, 신체 치수 측정처럼 “정확한 숫자 자체”가 사건의 핵심이거나 사용자가 이번 화 지시에서 명시적으로 수치 언급을 요구한 경우에만 정확한 수치를 본문에 써도 된다.
 - 성인 친밀 장면에서도 설정표를 낭독하듯 ‘몇 cm / 몇 컵’이라고 반복하지 말고, 현재 행동·감각·감정에 필요한 자연스러운 묘사만 사용한다.`;
@@ -1722,6 +1736,32 @@ ${metadataDirective()}
     });
   }
 
+  async function responseVaultDelete(store,id){
+    const db=await responseVaultOpen();
+    return new Promise((resolve,reject)=>{
+      try{
+        const tx=db.transaction(store,'readwrite');
+        tx.objectStore(store).delete(id);
+        tx.oncomplete=()=>resolve(true);
+        tx.onerror=()=>reject(tx.error||new Error('응답 금고 삭제 실패'));
+        tx.onabort=()=>reject(tx.error||new Error('응답 금고 삭제 중단'));
+      }catch(e){reject(e)}
+    });
+  }
+
+  async function responseVaultClear(store){
+    const db=await responseVaultOpen();
+    return new Promise((resolve,reject)=>{
+      try{
+        const tx=db.transaction(store,'readwrite');
+        tx.objectStore(store).clear();
+        tx.oncomplete=()=>resolve(true);
+        tx.onerror=()=>reject(tx.error||new Error('응답 금고 비우기 실패'));
+        tx.onabort=()=>reject(tx.error||new Error('응답 금고 비우기 중단'));
+      }catch(e){reject(e)}
+    });
+  }
+
   function normalizeUsageMetadata(raw){
     const u=raw&&typeof raw==='object'?raw:{};
     const num=k=>Number.isFinite(Number(u[k]))?Number(u[k]):0;
@@ -1850,7 +1890,7 @@ ${metadataDirective()}
       modal.style.cssText='position:fixed;inset:0;z-index:920;background:rgba(5,1,3,.95);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:13px';
       modal.innerHTML=`<div style="width:100%;max-width:480px;max-height:88vh;display:flex;flex-direction:column;background:#190812;border:1px solid rgba(245,196,107,.3);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.75)">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid rgba(245,196,107,.16)"><div><b style="color:#ffebaa;font-size:14px">🛟 Gemini 응답 금고</b><div style="color:#a9939e;font-size:9.5px;margin-top:3px">API 응답 도착 즉시 별도 IndexedDB에 원문 보관 · 자동삭제 안 함</div></div><button id="velourVaultClose" style="border:0;background:transparent;color:#c9b1bd;font-size:24px">×</button></div>
-        <div style="padding:10px 12px;border-bottom:1px solid rgba(245,196,107,.12);display:flex;gap:7px"><button id="velourVaultExport" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.08);color:#ffdf98;border-radius:9px;padding:8px;font-size:10px;font-weight:750">⬇️ 금고 JSON 백업</button><button id="velourVaultRefresh" style="border:1px solid rgba(245,196,107,.17);background:transparent;color:#d6c2cc;border-radius:9px;padding:8px 10px;font-size:10px">새로고침</button></div>
+        <div style="padding:10px 12px;border-bottom:1px solid rgba(245,196,107,.12);display:flex;gap:7px;flex-wrap:wrap"><button id="velourVaultExport" style="flex:1;min-width:150px;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.08);color:#ffdf98;border-radius:9px;padding:8px;font-size:10px;font-weight:750">⬇️ 금고 JSON 백업</button><button id="velourVaultClear" style="border:1px solid rgba(255,125,145,.25);background:rgba(255,100,125,.06);color:#ffb7c2;border-radius:9px;padding:8px 10px;font-size:10px">🧹 본문 전체 비우기</button><button id="velourVaultRefresh" style="border:1px solid rgba(245,196,107,.17);background:transparent;color:#d6c2cc;border-radius:9px;padding:8px 10px;font-size:10px">새로고침</button></div>
         <div id="velourVaultList" style="padding:11px;overflow:auto;-webkit-overflow-scrolling:touch"></div>
       </div>`;
       document.body.appendChild(modal);
@@ -1859,6 +1899,7 @@ ${metadataDirective()}
       modal.addEventListener('click',e=>{if(e.target===modal)close();});
       modal.querySelector('#velourVaultRefresh').onclick=()=>window.showVelourResponseVault();
       modal.querySelector('#velourVaultExport').onclick=()=>window.exportVelourResponseVault();
+      modal.querySelector('#velourVaultClear').onclick=()=>window.clearVelourResponseVault();
     }
     return modal;
   }
@@ -1878,7 +1919,7 @@ ${metadataDirective()}
         <div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#fff0c4;font-size:11px">EP.${String(r.attemptedEpisode||'-').padStart(2,'0')} · ${vaultEscape(r.model||'Gemini')}</b><span style="font-size:9px;color:#9f8794">${vaultEscape(r.receivedAt?new Date(r.receivedAt).toLocaleString('ko-KR'):'')}</span></div>
         <div style="font-size:9.5px;color:#bca7b2;margin-top:5px">${vaultEscape(usageTokenLine(r.usage||{}))} · 본문 ${Number(r.outputChars||text.length).toLocaleString()}자 · finish=${vaultEscape(r.finishReason||'-')}</div>
         <div style="white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:auto;background:#10070b;border-radius:8px;padding:8px;margin-top:7px;color:#dfd0d8;font:10.5px/1.6 Georgia,'Noto Serif KR',serif">${vaultEscape(preview)}${text.length>900?'…':''}</div>
-        <div style="display:flex;gap:6px;margin-top:7px"><button type="button" onclick="copyVelourVaultResponse('${vaultEscape(r.id)}')" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.07);color:#ffdf98;border-radius:8px;padding:7px;font-size:9.5px;font-weight:750">📋 본문 복사</button><button type="button" onclick="downloadVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(245,196,107,.16);background:transparent;color:#d6c2cc;border-radius:8px;padding:7px 9px;font-size:9.5px">⬇️ TXT</button></div>
+        <div style="display:flex;gap:6px;margin-top:7px"><button type="button" onclick="copyVelourVaultResponse('${vaultEscape(r.id)}')" style="flex:1;border:1px solid rgba(245,196,107,.24);background:rgba(245,196,107,.07);color:#ffdf98;border-radius:8px;padding:7px;font-size:9.5px;font-weight:750">📋 본문 복사</button><button type="button" onclick="downloadVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(245,196,107,.16);background:transparent;color:#d6c2cc;border-radius:8px;padding:7px 9px;font-size:9.5px">⬇️ TXT</button><button type="button" onclick="deleteVelourVaultResponse('${vaultEscape(r.id)}')" style="border:1px solid rgba(255,125,145,.22);background:transparent;color:#ffb7c2;border-radius:8px;padding:7px 9px;font-size:9.5px">🗑</button></div>
       </div>`;
     }).join('');
   }
@@ -1896,6 +1937,20 @@ ${metadataDirective()}
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`VELOUR-EP${String(r.attemptedEpisode||'X').padStart(2,'0')}-${String(r.receivedAt||'').slice(0,19).replace(/[:T]/g,'-')}.txt`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1200);
   }
 
+  async function deleteVelourVaultResponse(id){
+    const r=await responseVaultGet(RESPONSE_VAULT_STORE,id);
+    if(!r) return alert('응답을 찾지 못했어.');
+    if(!confirm(`EP.${String(r.attemptedEpisode||'-').padStart(2,'0')} 금고 본문을 삭제할까?\n\nAPI 사용량 기록은 남겨서 오늘 누적 토큰 수치는 정확하게 유지해.`)) return;
+    try{await responseVaultDelete(RESPONSE_VAULT_STORE,id); await showVelourResponseVault();}
+    catch(e){alert('금고 본문 삭제 실패: '+String(e?.message||e));}
+  }
+
+  async function clearVelourResponseVault(){
+    if(!confirm('응답 금고의 보관 본문을 전부 비울까?\n\n소설 저장함/임시저장/사용량 기록은 건드리지 않아. 오늘 누적 토큰 수치도 그대로 유지돼.')) return;
+    try{await responseVaultClear(RESPONSE_VAULT_STORE); await showVelourResponseVault();}
+    catch(e){alert('응답 금고 비우기 실패: '+String(e?.message||e));}
+  }
+
   async function exportVelourResponseVault(){
     try{
       const responses=await responseVaultAll(RESPONSE_VAULT_STORE),usage=await responseVaultAll(RESPONSE_USAGE_STORE);
@@ -1908,6 +1963,8 @@ ${metadataDirective()}
   window.copyVelourVaultResponse=copyVelourVaultResponse;
   window.downloadVelourVaultResponse=downloadVelourVaultResponse;
   window.exportVelourResponseVault=exportVelourResponseVault;
+  window.deleteVelourVaultResponse=deleteVelourVaultResponse;
+  window.clearVelourResponseVault=clearVelourResponseVault;
 
   function primeGenerationDiagnostic(isContinue=false,attemptedEpisode=0,retry=false){
     let promptChars=0,buildError='';
@@ -2585,17 +2642,20 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   function userRequestsExactBodySpecs(){
     const raw=String(document.getElementById('v33Next')?.value||'').trim();
     if(!raw) return false;
-    return /(정확한\s*(?:사이즈|치수|컵)|(?:가슴|바스트|브라|허리|웨이스트|힙|엉덩이)\s*(?:사이즈|치수)|\b\d{2,3}\s*[A-H]\s*(?:컵)?\b|[A-H]\s*컵)/i.test(raw);
+    const mentions=/(정확한\s*(?:사이즈|치수|컵)|(?:가슴|바스트|브라|허리|웨이스트|힙|엉덩이)\s*(?:사이즈|치수)|\b\d{2,3}\s*[A-H]\s*(?:컵)?\b|[A-H]\s*컵)/i.test(raw);
+    const asks=/(?:정확히|직접|명시적으로|숫자로)\s*(?:언급|표기|말해|말하|써|쓰|밝혀|밝히)|(?:사이즈|치수|컵)\s*(?:를|은|는)?\s*(?:언급|표기|말해|써|밝혀)/i.test(raw);
+    const denies=/(?:언급|표기|말하|쓰|밝히)(?:지\s*마|지\s*말|지\s*않|면\s*안)|문학적|자연스럽게|설정값으로만|내부\s*(?:설정|참고)|직접\s*(?:표현|언급)\s*(?:금지|없이|말고)/i.test(raw);
+    return mentions&&asks&&!denies;
   }
 
   function appearanceMeasurementLeakReason(text){
     if(userRequestsExactBodySpecs()) return '';
     const t=String(text||'');
     if(!t) return '';
-    // Common bra-size formats such as "90 F", "90F", "F컵". These are canon anchors, not default narration.
-    const cup=/\b\d{2,3}\s*[A-H]\s*(?:컵)?\b|\b[A-H]\s*컵\b/gi;
-    const bodyWords=/(가슴|바스트|브라|허리|웨이스트|힙|엉덩이|bust|waist|hip)/i;
-    if(cup.test(t) && bodyWords.test(t)) return '외형 설정표의 정확한 신체 사이즈/컵 수치가 본문에 그대로 노출됐다. 수치는 내부 캐논으로만 유지하고 자연어 외형 묘사로 바꿀 것.';
+    // Common bra-size formats such as "90 F", "90F", "F컵". A standalone
+    // cup label is still a leaked setting value even when "가슴" is omitted.
+    const cup=/\b\d{2,3}\s*[A-H](?:\s*(?:\+|컵))?\b|\b[A-H]\s*(?:\+|컵)(?=\s|[가-힣]|[.,!?…·'"”’)}\]]|$)/i;
+    if(cup.test(t)) return '외형 설정표의 정확한 신체 사이즈/컵 수치가 본문에 그대로 노출됐다. 수치는 내부 캐논으로만 유지하고 자연어 외형 묘사로 바꿀 것.';
     // Numeric circumference/measurement near body-part labels. Height alone is intentionally not flagged.
     const bodyMeasure=/(가슴|바스트|허리|웨이스트|힙|엉덩이)[^\n.!?]{0,24}\b\d{2,3}(?:\.\d+)?\s*(?:cm|센티(?:미터)?|인치)\b|\b\d{2,3}(?:\.\d+)?\s*(?:cm|센티(?:미터)?|인치)\b[^\n.!?]{0,24}(가슴|바스트|허리|웨이스트|힙|엉덩이)/i;
     if(bodyMeasure.test(t)) return '외형 설정의 정확한 신체 치수가 본문에 직접 반복됐다. 숫자 치수는 내부 캐논으로 유지하고 장면에 필요한 자연스러운 묘사만 남길 것.';
@@ -2605,10 +2665,19 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   function softenLeakedBodySpecs(text){
     if(userRequestsExactBodySpecs()) return String(text||'');
     let out=String(text||'');
-    // Last-resort cleanup after a retry: only remove bra-size labels, leaving ordinary plot numbers untouched.
-    out=out.replace(/\b\d{2,3}\s*[A-H]\s*(?:컵)?\b(?:\s*사이즈)?(?:\s*의)?\s*(?=가슴|바스트)/gi,'');
-    out=out.replace(/\b[A-H]\s*컵\b(?:\s*사이즈)?(?:\s*의)?\s*(?=가슴|바스트)/gi,'');
-    out=out.replace(/(가슴|바스트)(?:\s*(?:사이즈|치수))?\s*(?:은|는|이|가|:)?\s*\b\d{2,3}\s*[A-H]\s*(?:컵)?\b/gi,'$1');
+    const size='\\b(?:\\d{2,3}\\s*[A-H](?:\\s*(?:\\+|컵))?|[A-H]\\s*(?:\\+|컵))(?=\\s|[가-힣]|[.,!?…·\'"”’)}\\]]|$)';
+    const adjective=m=>{
+      const cup=String(m||'').match(/[A-H]/i)?.[0]?.toUpperCase()||'D';
+      if(cup<='B') return '아담한';
+      if(cup==='C') return '균형 잡힌';
+      if(cup<='E') return '풍만한';
+      return '매우 풍만한';
+    };
+    out=out.replace(new RegExp(`(${size})(?:\\s*사이즈)?(?:\\s*의)?\\s*(가슴|바스트)`,'gi'),(all,m,body)=>`${adjective(m)} ${body}`);
+    out=out.replace(new RegExp(`(가슴|바스트)(?:\\s*(?:사이즈|치수))?\\s*(?:은|는|이|가|:)?\\s*(${size})\\s*(?:이었다|였다|이다)`,'gi'),(all,body,m)=>`${body}은 ${adjective(m)} 곡선을 이루었다`);
+    out=out.replace(new RegExp(`(가슴|바스트)(?:\\s*(?:사이즈|치수))?\\s*(?:은|는|이|가|:)?\\s*(${size})(?=\\s*(?:으로|로)(?:\\s|[.,!?…]|$))`,'gi'),(all,body,m)=>`${body}은 ${adjective(m)} 곡선`);
+    // Fallback for standalone labels such as "그녀는 F컵이었다".
+    out=out.replace(new RegExp(size,'gi'),m=>`${adjective(m)} 체형`);
     out=out.replace(/[ \t]{2,}/g,' ');
     return out;
   }
@@ -2831,18 +2900,27 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
       if(parsed.clean&&document.getElementById('novelText'))document.getElementById('novelText').innerText=parsed.clean;
       stripMetaEverywhere();
 
+      // Exact body-size anchors stay in settings, never in ordinary narration.
+      // Sanitize the first successful response before validation/persistence so
+      // the reader, history and episode row all keep the same literary wording.
+      const proseSafeClean=softenLeakedBodySpecs(parsed.clean);
+      if(proseSafeClean!==parsed.clean){
+        parsed.clean=proseSafeClean;
+        const novelEl=document.getElementById('novelText'); if(novelEl) novelEl.innerText=proseSafeClean;
+        try{ if(typeof storyHistory!=='undefined'&&storyHistory) storyHistory=softenLeakedBodySpecs(storyHistory); }catch(e){}
+        try{
+          if(typeof sessionEpisodes!=='undefined'&&Array.isArray(sessionEpisodes)){
+            sessionEpisodes=sessionEpisodes.map(row=>Number(row?.episode||0)===Number(ep)?Object.assign({},row,{text:softenLeakedBodySpecs(row?.text||'')}):row);
+          }
+        }catch(e){}
+      }
+
       const reason=retryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
       if(reason){
         // One user action must issue exactly one Gemini request. Advisory quality
         // flags keep the first usable prose; only true blocking faults stay pending
         // for an explicit user retry.
         const blocking=blockingRetryReason(parsed.meta,parsed.clean,ep,isContinue,userNext);
-        if(appearanceMeasurementLeakReason(parsed.clean)){
-          const softened=softenLeakedBodySpecs(parsed.clean);
-          parsed.clean=softened;
-          const novelEl=document.getElementById('novelText'); if(novelEl) novelEl.innerText=softened;
-          try{ if(typeof storyHistory!=='undefined'&&storyHistory) storyHistory=softenLeakedBodySpecs(storyHistory); }catch(e){}
-        }
         if(!blocking){
           const guarded=guardMetaAfterAdvisory(parsed.meta);
           console.info('VELOUR: advisory flags kept without automatic duplicate generation', reason);
@@ -3209,7 +3287,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   window.__VELOUR_IDB_PATCH_DRAFT_V4__=patchDraftV4IDB;
   window.__VELOUR_V4_STATE_SNAPSHOT__=()=>clone(state);
   window.__VELOUR_V4_STATE_RESTORE__=restoreV4StateSnapshot;
-  window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
+  window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,responseVaultDelete,responseVaultClear,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
 
   function installStorageOverrides(){
     window.saveCurrentStory=saveCurrentStoryIDB;

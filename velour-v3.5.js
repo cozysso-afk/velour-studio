@@ -323,7 +323,7 @@
   function profileText(cfg) {
     if (!cfg.defaultProfile) return '';
     const p = cfg.profile || DEFAULT_CFG.profile;
-    const bust = {'D+':'풍만한 가슴 볼륨(D 이상)','full':'풍만한 가슴 볼륨','medium':'중간 정도의 가슴 볼륨','custom':'가슴 볼륨은 사용자 인물 설정을 우선'}[p.femaleBust] || '풍만한 가슴 볼륨';
+    const bust = {'D+':'풍만하고 볼륨감 있는 가슴선','full':'풍만한 가슴 볼륨','medium':'균형 잡힌 가슴선','custom':'가슴 볼륨은 사용자 인물 설정을 자연스러운 묘사로 반영'}[p.femaleBust] || '풍만한 가슴 볼륨';
     const waist = {slim:'가는 허리와 선명한 허리선',natural:'자연스럽고 균형 잡힌 허리 곡선'}[p.femaleWaist] || '가는 허리';
     const hips = {round:'크고 둥글며 탄탄한 힙',balanced:'균형 잡힌 힙'}[p.femaleHips] || '둥글고 탄탄한 힙';
     const skin = {bright:'밝고 깨끗하며 뽀얀 피부톤',warm:'따뜻하고 건강한 피부톤',custom:'피부톤은 사용자 인물 설정 우선'}[p.femaleSkin] || '밝고 깨끗한 피부톤';
