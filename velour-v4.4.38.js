@@ -1437,7 +1437,12 @@ ${scenes.length?`최근 장면 지문(${scenes.length}건):\n${scenes.map(s=>`- 
   }
 
   function recentPositionIds(windowSize){
-    return (state.runtime.scenes||[]).slice(-Math.max(1,windowSize)).map(s=>String(s.positionId||POSITION_CATALOG.find(p=>p.label===String(s.position||''))?.id||'')).filter(Boolean);
+    const out=[];
+    for(const s of (state.runtime.scenes||[]).slice(-Math.max(1,windowSize))){
+      const ids=Array.isArray(s.positionIds)&&s.positionIds.length?s.positionIds:[s.positionId||POSITION_CATALOG.find(p=>p.label===String(s.position||''))?.id];
+      for(const id of ids){ const clean=String(id||'').trim(); if(clean) out.push(clean); }
+    }
+    return out;
   }
 
   function positionCandidates(){
@@ -1500,17 +1505,19 @@ ${scenes.length?`최근 장면 지문(${scenes.length}건):\n${scenes.map(s=>`- 
   function varietyDirective(ep){
     const allowed=INTIMACY_PATTERNS.filter(([id])=>(state.intimacyPatterns||[]).includes(id)).map(x=>x[1]);
     const recentScenes=(state.runtime.scenes||[]).slice(-3);
-    const recentPositions=recentScenes.map(s=>s.position).filter(x=>x&&x!=='none').slice(-2);
-    const candidates=positionCandidates().slice(0,2);
+    const recentPositions=recentScenes.flatMap(s=>Array.isArray(s.positions)&&s.positions.length?s.positions:[s.position]).filter(x=>x&&x!=='none').slice(-6);
+    const candidates=positionCandidates().slice(0,4);
     state.runtime.lastSuggestedPositions=candidates.map(x=>x.id);
     save(state);
     const ps=postUnlockState(ep);
     const autoDue=ps.unlocked && !ps.cooldownLocked && ps.due && !userBlocksAdultScene() && !hasActiveStorylineBeat();
+    const phaseRule=state.variety==='max'?'장면 길이가 충분하면 서로 다른 3~4개 단계':state.variety==='high'?'장면 길이가 충분하면 서로 다른 2~3개 단계':'필요하면 1~2개 단계';
     return `
 [성인 장면 다양성 — 압축 계획]
 - 다양성 ${state.variety==='max'?'매우 높음':state.variety==='high'?'높음':'보통'}, 허용 큰 구도 ${allowed.length?allowed.slice(0,8).join(', '):'별도 지정 없음'}.
 - 최근 세부 체위 ${recentPositions.length?recentPositions.join(', '):'없음'} / 저사용 후보 ${candidates.length?candidates.map(x=>x.label).join(' / '):'없음'}.
-- 실제 친밀 장면이 생길 때만 최근 반복을 피하고, 후보가 어색하면 허용 풀의 다른 미사용 구도로 바꾼다. 체위명·내부 id·작가 지시문을 본문에 노출하지 않는다.
+- 실제 친밀 장면이 생길 때만 최근 반복을 피하고 ${phaseRule}로 자연스럽게 변화시킨다. 첫 구도를 바로 버리지 말고 충분히 전개한 뒤 공간·감정·대사·상대 반응이 다음 전환의 원인이 되게 한다.
+- 위 저사용 후보는 이번 장면의 실제 선택 풀이다. 최소 하나를 우선 검토하되 장면에 어색하면 허용 풀의 다른 최근 미사용 구도로 바꾼다. 짧은 장면에 숫자를 맞추려고 억지 전환하지 않는다. 체위명·내부 id·작가 지시문을 본문에 노출하지 않는다.
 ${autoDue?'- 현재는 자동 관계 진전 배정 구간이지만 HARD CANON/사용자 지시와 충돌하면 캐논을 우선한다.':'- 자동 배정 화가 아니면 친밀 장면을 억지로 만들지 않는다.'}
 ${playRotationDirective(ep)}`;
   }
@@ -1545,13 +1552,14 @@ ${direction}
   function metadataDirective(){
     return `
 [머신 메타 — 본문 뒤 1회, 코드블록 금지]
-[[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","adultScene":false,"sexualDialogueLevel":0,"expressionViolation":false,"professionalBoundaryViolation":false,"timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","pattern":"none","position":"none","plays":[],"initiation":"","control":"","dialogueTone":"","ending":"","relationshipState":"","durableFacts":[],"foreplayDepth":"none","kissPresence":"none","bodyPraiseUsed":false,"lightSpankingUsed":false,"bodyFocuses":[],"bodyAngles":[],"bodyDescriptionRepeatRisk":"low","openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false}[[/VELOUR_V4_META]]
+[[VELOUR_V4_META]]{"beatComplete":false,"beatPhase":"setup","beatProgress":0,"beatEvidence":"","futureBeatLeak":false,"causalBridge":"ok","setupMissing":false,"causalCarry":"","canonViolation":false,"storylineSkipped":false,"repeatRisk":"low","adultScene":false,"sexualDialogueLevel":0,"expressionViolation":false,"professionalBoundaryViolation":false,"timeline":"","openThreads":[],"closedThreads":[],"location":"","purpose":"","pattern":"none","position":"none","positions":[],"positionPhaseCount":0,"plays":[],"initiation":"","control":"","dialogueTone":"","ending":"","relationshipState":"","durableFacts":[],"foreplayDepth":"none","foreplayShare":0,"kissPresence":"none","kissBeats":0,"caressContinuity":"none","bodyPraiseUsed":false,"lightSpankingUsed":false,"bodyFocuses":[],"bodyAngles":[],"bodyDescriptionRepeatRisk":"low","openingBridge":"ok","unauthorizedTimeJump":false,"startsMidEvent":false,"hardLanguageViolation":false}[[/VELOUR_V4_META]]
 - beatPhase setup/build/payoff, beatProgress 0~100. beatComplete는 현재 단계의 payoff가 실제 본문에서 충분히 완료된 경우만 true.
 - 현재 단계의 핵심 사건/선택이 본문에서 실제로 마무리됐으면 예시의 false를 그대로 복사하지 말고 반드시 beatComplete=true로 기록한다. payoff·95% 이상·본문 근거가 일치하면 완료다.
 - 미래 단계 선행은 futureBeatLeak, 캐논/단계 위반은 해당 boolean, 연결 생략은 causalBridge/setupMissing/openingBridge로 보수적으로 표시한다.
 - timeline/causalCarry/openThreads/closedThreads/관계·장면 메모는 짧은 한 문장 또는 짧은 배열만 쓴다.
 - durableFacts는 이번 화에서 실제로 확정되어 이후에도 계속 참이어야 하는 비성적 핵심 사실만 0~3개 기록한다. 예: 정체 공개, 관계 합의, 거주/직업 변화, 장기 약속·규칙. 일시적 감정·장면 동작·친밀 장면의 세부 행위는 넣지 않는다.
-- sexualDialogueLevel 0~4. 장면 관련 필드는 실제 발생한 경우만 기록하고 내부 id는 만들지 않는다.
+- sexualDialogueLevel 0~4. positions는 실제 사용한 세부 체위명을 등장 순서대로 모두 기록하고 position에는 첫 체위명을 기록한다. positionPhaseCount는 실제로 구도가 바뀐 단계 수다.
+- foreplayShare는 친밀 장면 중 본격적인 다음 단계 이전 빌드업의 대략적인 백분율, kissBeats는 서로 다른 키스 장면 비트 수, caressContinuity는 none/low/substantial로 기록한다. 장면 관련 필드는 실제 발생한 경우만 기록하고 내부 id는 만들지 않는다.
 - 메타는 앱이 제거하므로 본문에 설명하거나 반복하지 않는다.`;
   }
 
@@ -2595,11 +2603,24 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     state.runtime.openThreads=state.runtime.openThreads.slice(-MAX_THREADS);
     if(meta.relationshipState) state.runtime.relationshipState=String(meta.relationshipState).trim();
     if(meta.causalCarry!==undefined) state.runtime.causalCarry=String(meta.causalCarry||'').trim();
-    const posId=String(meta.positionId||'').trim();
-    const posName=String(meta.position||'none').trim();
-    const catalogMatch=POSITION_CATALOG.find(p=>p.id===posId) || POSITION_CATALOG.find(p=>p.label===posName);
-    const canonicalPosId=catalogMatch?.id || (posId&&posId!=='none'?posId:'');
-    const canonicalPosName=catalogMatch?.label || posName || 'none';
+    const rawPositionIds=Array.isArray(meta.positionIds)?meta.positionIds.map(String):[];
+    const rawPositionNames=Array.isArray(meta.positions)?meta.positions.map(String):[];
+    if(meta.positionId) rawPositionIds.unshift(String(meta.positionId));
+    if(meta.position&&String(meta.position).trim()!=='none') rawPositionNames.unshift(String(meta.position));
+    const canonicalPositionIds=[]; const canonicalPositionNames=[];
+    const addPosition=(value,byId)=>{
+      const clean=String(value||'').trim(); if(!clean||clean==='none') return;
+      const match=byId?POSITION_CATALOG.find(p=>p.id===clean):POSITION_CATALOG.find(p=>p.label===clean);
+      const id=match?.id||(byId?clean:''); const name=match?.label||(!byId?clean:'');
+      const key=id||`name:${name}`;
+      if(!canonicalPositionIds.some((x,i)=>(x||`name:${canonicalPositionNames[i]}`)===key)){
+        canonicalPositionIds.push(id); canonicalPositionNames.push(name||clean);
+      }
+    };
+    for(const id of rawPositionIds) addPosition(id,true);
+    for(const name of rawPositionNames) addPosition(name,false);
+    const canonicalPosId=canonicalPositionIds[0]||'';
+    const canonicalPosName=canonicalPositionNames[0]||'none';
     const rawPlayIds=Array.isArray(meta.playIds)?meta.playIds.map(String):[];
     const rawPlayNames=Array.isArray(meta.plays)?meta.plays.map(String):[];
     const canonicalPlayIds=[]; const canonicalPlayNames=[];
@@ -2609,12 +2630,12 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     for(const name of rawPlayNames){
       const m=PLAY_CATALOG.find(x=>x.label===String(name).trim()); if(m&&!canonicalPlayIds.includes(m.id)){canonicalPlayIds.push(m.id);canonicalPlayNames.push(m.label);}
     }
-    state.runtime.scenes.push({episode:ep,location:String(meta.location||'').trim(),purpose:String(meta.purpose||'').trim(),pattern:String(meta.pattern||'none').trim(),positionId:canonicalPosId,position:canonicalPosName,playIds:canonicalPlayIds,plays:canonicalPlayNames,bodyFocuses:Array.isArray(meta.bodyFocuses)?meta.bodyFocuses.map(String).map(x=>x.trim()).filter(Boolean).slice(0,5):[],bodyAngles:Array.isArray(meta.bodyAngles)?meta.bodyAngles.map(String).map(x=>x.trim()).filter(Boolean).slice(0,5):[],bodyDescriptionRepeatRisk:String(meta.bodyDescriptionRepeatRisk||'low').toLowerCase(),initiation:String(meta.initiation||'').trim(),control:String(meta.control||'').trim(),dialogueTone:String(meta.dialogueTone||'').trim(),ending:String(meta.ending||'').trim(),adultScene:!!meta.adultScene});
+    state.runtime.scenes.push({episode:ep,location:String(meta.location||'').trim(),purpose:String(meta.purpose||'').trim(),pattern:String(meta.pattern||'none').trim(),positionId:canonicalPosId,position:canonicalPosName,positionIds:canonicalPositionIds,positions:canonicalPositionNames,positionPhaseCount:Math.max(Number(meta.positionPhaseCount||0),canonicalPositionNames.length),playIds:canonicalPlayIds,plays:canonicalPlayNames,foreplayDepth:String(meta.foreplayDepth||'none').toLowerCase(),foreplayShare:Math.max(0,Math.min(100,Number(meta.foreplayShare||0))),kissPresence:String(meta.kissPresence||'none').toLowerCase(),kissBeats:Math.max(0,Number(meta.kissBeats||0)),caressContinuity:String(meta.caressContinuity||'none').toLowerCase(),bodyFocuses:Array.isArray(meta.bodyFocuses)?meta.bodyFocuses.map(String).map(x=>x.trim()).filter(Boolean).slice(0,5):[],bodyAngles:Array.isArray(meta.bodyAngles)?meta.bodyAngles.map(String).map(x=>x.trim()).filter(Boolean).slice(0,5):[],bodyDescriptionRepeatRisk:String(meta.bodyDescriptionRepeatRisk||'low').toLowerCase(),initiation:String(meta.initiation||'').trim(),control:String(meta.control||'').trim(),dialogueTone:String(meta.dialogueTone||'').trim(),ending:String(meta.ending||'').trim(),adultScene:!!meta.adultScene});
     state.runtime.scenes=state.runtime.scenes.slice(-MAX_SCENES);
     if(meta.adultScene){
       state.runtime.lastAdultEpisode=ep;
       if(!state.runtime.positionUsage||typeof state.runtime.positionUsage!=='object') state.runtime.positionUsage={};
-      if(canonicalPosId) state.runtime.positionUsage[canonicalPosId]=Number(state.runtime.positionUsage[canonicalPosId]||0)+1;
+      for(const positionId of [...new Set(canonicalPositionIds.filter(Boolean))]) state.runtime.positionUsage[positionId]=Number(state.runtime.positionUsage[positionId]||0)+1;
       if(!state.runtime.playUsage||typeof state.runtime.playUsage!=='object') state.runtime.playUsage={};
       for(const playId of canonicalPlayIds) state.runtime.playUsage[playId]=Number(state.runtime.playUsage[playId]||0)+1;
     }
@@ -2796,13 +2817,14 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     if(meta?.hardLanguageViolation) reasons.push('HARD OFF 언어 설정을 위반했다. 금지된 성별 비하형 멸칭을 모두 제거할 것.');
     const handoffHard=hardContinuationReason(meta,isContinue,userInstruction); if(handoffHard) reasons.push(handoffHard);
     if(String(meta?.repeatRisk||'').toLowerCase()==='high')reasons.push('최근 장면과 구조적 반복이 높다. 장소/목적/갈등/엔딩/친밀 구도를 바꿀 것.');
-    if(meta?.adultScene && meta?.position){
-      const pos=String(meta.position||'').trim();
+    if(meta?.adultScene && (meta?.position||Array.isArray(meta?.positions))){
+      const positions=[...new Set([...(Array.isArray(meta.positions)?meta.positions:[]),meta.position].map(String).map(x=>x.trim()).filter(x=>x&&x!=='none'))];
       const strictN=state.variety==='max'?4:state.variety==='high'?2:0;
       if(strictN>0){
-        const recentPos=(state.runtime.scenes||[]).slice(-strictN).map(s=>String(s.position||'')).filter(Boolean);
+        const recentPos=(state.runtime.scenes||[]).slice(-strictN).flatMap(s=>Array.isArray(s.positions)&&s.positions.length?s.positions:[s.position]).map(String).filter(Boolean);
         const poolSize=selectedPositionPool().length;
-        if(poolSize>=6 && pos && pos!=='none' && recentPos.includes(pos)) reasons.push(`세부 체위 '${pos}'가 최근 장면과 반복됐다. 허용 풀의 최근 미사용 체위로 교체하고 시작 계기/주도권도 함께 바꿀 것.`);
+        const repeated=positions.filter(pos=>recentPos.includes(pos));
+        if(poolSize>=6 && repeated.length) reasons.push(`세부 체위 '${repeated.join(', ')}'가 최근 장면과 반복됐다. 허용 풀의 최근 미사용 체위로 교체하고 시작 계기/주도권도 함께 바꿀 것.`);
       }
     }
     const gate=expressionGate(ep);
