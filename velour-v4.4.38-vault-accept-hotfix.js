@@ -188,7 +188,7 @@
   if (window.__VELOUR_EPISODE_BRANCH_LOADER__) return;
   window.__VELOUR_EPISODE_BRANCH_LOADER__ = true;
   const script = document.createElement('script');
-  script.src = './velour-v4.4.38-episode-branch-hotfix.js?v=1';
+  script.src = './velour-v4.4.38-episode-branch-hotfix.js?v=2';
   script.async = false;
   document.head.appendChild(script);
 })();
