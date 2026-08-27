@@ -192,3 +192,12 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+(() => {
+  if (window.__VELOUR_USAGE_DASHBOARD_LOADER__) return;
+  window.__VELOUR_USAGE_DASHBOARD_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-usage-dashboard-hotfix.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
