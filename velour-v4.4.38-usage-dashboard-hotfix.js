@@ -1,7 +1,7 @@
 'use strict';
 
 /* VELOUR — token usage dashboard + approximate KRW cost.
-   Periods use the device's local timezone. Whole-history totals begin when VELOUR usage logging began. */
+   Periods use the device's local timezone. Whole-history totals show the first locally stored usage date. */
 (() => {
   'use strict';
   if (window.__VELOUR_USAGE_DASHBOARD_HOTFIX__) return;
@@ -11,7 +11,8 @@
   if (!qa?.responseVaultAll) return;
 
   const USAGE_STORE = 'usage';
-  const DEFAULT_KRW_PER_USD = 1382.75; // 2026-08-27 reference rate; approximate display only.
+  const DEFAULT_KRW_PER_USD = 1382.75;
+  const TRACKING_ROLLOUT_DATE = '2026.08.25';
   const n = v => Number.isFinite(Number(v)) ? Number(v) : 0;
 
   function krwRate() {
@@ -28,14 +29,14 @@
     if (id === 'gemini-3.7-flash' || id === 'gemini-3.6-flash') {
       const promo = new Date() < new Date('2027-01-01T00:00:00');
       return promo
-        ? { input: 0.75, output: 3.75, cache: 0.075, label: '유료 Standard' }
-        : { input: 1.50, output: 7.50, cache: 0.15, label: '유료 Standard' };
+        ? { input: 0.75, output: 3.75, cache: 0.075 }
+        : { input: 1.50, output: 7.50, cache: 0.15 };
     }
     if (id === 'gemini-3.1-pro-preview') {
       const high = prompt > 200000;
       return high
-        ? { input: 4.00, output: 18.00, cache: 0.40, label: '유료 Standard · >200k' }
-        : { input: 2.00, output: 12.00, cache: 0.20, label: '유료 Standard · ≤200k' };
+        ? { input: 4.00, output: 18.00, cache: 0.40 }
+        : { input: 2.00, output: 12.00, cache: 0.20 };
     }
     return null;
   }
@@ -68,6 +69,12 @@
     return `약 ${Math.round(won).toLocaleString('ko-KR')}원`;
   }
 
+  function dateText(value) {
+    const d = value instanceof Date ? value : new Date(value);
+    if (!Number.isFinite(d.getTime())) return TRACKING_ROLLOUT_DATE;
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('.');
+  }
+
   function localPeriodStarts() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -79,16 +86,7 @@
   }
 
   function emptyTotals() {
-    return {
-      calls: 0,
-      promptTokenCount: 0,
-      candidatesTokenCount: 0,
-      thoughtsTokenCount: 0,
-      totalTokenCount: 0,
-      usd: 0,
-      priced: 0,
-      unpriced: 0
-    };
+    return { calls: 0, promptTokenCount: 0, candidatesTokenCount: 0, thoughtsTokenCount: 0, totalTokenCount: 0, usd: 0, priced: 0, unpriced: 0 };
   }
 
   function addRow(total, row) {
@@ -99,10 +97,8 @@
     total.thoughtsTokenCount += n(u.thoughtsTokenCount);
     total.totalTokenCount += n(u.totalTokenCount);
     const usd = estimateUSD(u, row?.model || '');
-    if (Number.isFinite(usd)) {
-      total.usd += usd;
-      total.priced += 1;
-    } else total.unpriced += 1;
+    if (Number.isFinite(usd)) { total.usd += usd; total.priced += 1; }
+    else total.unpriced += 1;
   }
 
   async function usageSnapshot() {
@@ -110,15 +106,13 @@
     try { rows = await qa.responseVaultAll(USAGE_STORE); }
     catch (_) { return null; }
     const starts = localPeriodStarts();
-    const totals = {
-      today: emptyTotals(),
-      week: emptyTotals(),
-      month: emptyTotals(),
-      all: emptyTotals()
-    };
+    const totals = { today: emptyTotals(), week: emptyTotals(), month: emptyTotals(), all: emptyTotals(), firstRecordedAt: null };
+    let firstMs = Infinity;
     for (const row of rows || []) {
       const at = new Date(row?.at || 0);
-      if (!Number.isFinite(at.getTime())) continue;
+      const ms = at.getTime();
+      if (!Number.isFinite(ms)) continue;
+      if (ms < firstMs) { firstMs = ms; totals.firstRecordedAt = at; }
       addRow(totals.all, row);
       if (at >= starts.month) addRow(totals.month, row);
       if (at >= starts.week) addRow(totals.week, row);
@@ -139,13 +133,11 @@
     return panel;
   }
 
-  function rowHtml(label, t) {
+  function rowHtml(label, t, sublabel = '') {
     const cost = t.priced > 0 ? `${usdText(t.usd)} ≈ ${krwText(t.usd)}` : '비용 계산 대기';
     const unpriced = t.unpriced > 0 ? ` · 가격표 미등록 ${t.unpriced}회 제외` : '';
-    return `<div style="display:grid;grid-template-columns:58px 1fr;gap:7px;margin:2px 0">
-      <b style="color:#ffe3a0">${label}</b>
-      <span>${t.calls.toLocaleString()}회 · 입력 ${Math.round(t.promptTokenCount).toLocaleString()} · 출력 ${Math.round(t.candidatesTokenCount).toLocaleString()} · 총 ${Math.round(t.totalTokenCount).toLocaleString()} tokens<br><span style="color:#e8d2b0">${cost}</span>${unpriced}</span>
-    </div>`;
+    const labelHtml = `<b style="color:#ffe3a0">${label}${sublabel ? `<span style="display:block;color:#a99380;font-size:8.5px;font-weight:650;white-space:nowrap">${sublabel}</span>` : ''}</b>`;
+    return `<div style="display:grid;grid-template-columns:76px 1fr;gap:7px;margin:3px 0">${labelHtml}<span>${t.calls.toLocaleString()}회 · 입력 ${Math.round(t.promptTokenCount).toLocaleString()} · 출력 ${Math.round(t.candidatesTokenCount).toLocaleString()} · 총 ${Math.round(t.totalTokenCount).toLocaleString()} tokens<br><span style="color:#e8d2b0">${cost}</span>${unpriced}</span></div>`;
   }
 
   let rendering = false;
@@ -156,28 +148,20 @@
     rendering = true;
     try {
       const s = await usageSnapshot();
-      if (!s) {
-        panel.textContent = '사용량 기록을 읽지 못했어.';
-        return;
-      }
+      if (!s) { panel.textContent = '사용량 기록을 읽지 못했어.'; return; }
+      const start = s.firstRecordedAt ? dateText(s.firstRecordedAt) : TRACKING_ROLLOUT_DATE;
       panel.innerHTML = `
         <div style="font-weight:800;color:#fff0c4;margin-bottom:4px">📊 API 사용량 · 비용</div>
         ${rowHtml('오늘', s.today)}
         ${rowHtml('이번 주', s.week)}
         ${rowHtml('이번 달', s.month)}
-        ${rowHtml('전체 누적', s.all)}
-        <div style="margin-top:5px;color:#987f8b;font-size:9px">원화는 1달러≈${Math.round(krwRate()).toLocaleString('ko-KR')}원 참고 환율 · 실제 청구액과 차이 가능 · 전체 누적은 VELOUR 사용량 기록 기능이 생긴 시점부터</div>`;
-    } finally {
-      rendering = false;
-    }
+        ${rowHtml('전체 누적', s.all, `${start}~`)}
+        <div style="margin-top:5px;color:#987f8b;font-size:9px">전체 누적 시작일은 이 기기의 최초 사용량 기록 기준 · 기록이 없으면 VELOUR 추적 기능 도입일 ${TRACKING_ROLLOUT_DATE} 기준 · 원화는 1달러≈${Math.round(krwRate()).toLocaleString('ko-KR')}원 참고 환율 · 실제 청구액과 차이 가능</div>`;
+    } finally { rendering = false; }
   }
 
   let timer = 0;
-  const schedule = () => {
-    clearTimeout(timer);
-    timer = setTimeout(renderUsageDashboard, 80);
-  };
-
+  const schedule = () => { clearTimeout(timer); timer = setTimeout(renderUsageDashboard, 80); };
   const observer = new MutationObserver(mutations => {
     if (rendering) return;
     const touched = mutations.some(m => {
@@ -192,5 +176,5 @@
   window.renderVelourUsageDashboard = renderUsageDashboard;
   qa.usagePeriodSnapshot = usageSnapshot;
   schedule();
-  console.info('✦ VELOUR usage dashboard loaded');
+  console.info('✦ VELOUR usage dashboard loaded · start-date aware');
 })();
