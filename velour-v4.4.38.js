@@ -347,7 +347,7 @@
     postUnlockPace:'natural', postUnlockInterval:3,
     sexualDialogueMode:'auto', flirtUnlockEpisode:7, explicitTalkUnlockEpisode:12, professionalBoundary:true, possessiveLateReveal:true,
     dirtyTalk:70, profanity:20, insultMode:'off',
-    terms:{boji:false,jaji:false,jot:false,jotmul:false,jeot:false,jeottong:false},
+    terms:{boji:false,bojitmul:false,jaji:false,jot:false,jotmul:false,jeot:false,jeotgaseum:false,jeottong:false,ssipmul:false},
     appearanceEnabled:true,
     appearance:{
       female:{height:'165', bust:'D+', waist:'slim', hips:'round', skin:'bright', faceShape:'oval', eyes:'soft', nose:'balanced', lips:'full', impression:'soft', hairLength:'long', hairStyle:'wave', hairColor:'dark_brown', vibe:'', custom:''},
@@ -738,11 +738,14 @@
         <div class="v40-field" style="margin-top:8px"><label>상대 비하형 욕설</label><select id="v4Insult"><option value="off">OFF · 사람을 ‘-년’ 계열로 부르는 비하욕 금지</option><option value="light">약하게 허용 · 비하적 멸칭은 계속 금지</option><option value="custom">사용자 하드캐논 지시 우선</option></select></div>
         <div class="v40-field" style="margin-top:9px"><label>직접 신체 호칭 · 단어별 허용</label><div class="v40-checks" id="v4TermChecks">
           <label class="v40-chip"><input type="checkbox" data-term="boji"${state.terms.boji?' checked':''}>보지</label>
+          <label class="v40-chip"><input type="checkbox" data-term="bojitmul"${state.terms.bojitmul?' checked':''}>보짓물</label>
           <label class="v40-chip"><input type="checkbox" data-term="jaji"${state.terms.jaji?' checked':''}>자지</label>
           <label class="v40-chip"><input type="checkbox" data-term="jot"${state.terms.jot?' checked':''}>좆</label>
           <label class="v40-chip"><input type="checkbox" data-term="jotmul"${state.terms.jotmul?' checked':''}>좆물</label>
           <label class="v40-chip"><input type="checkbox" data-term="jeot"${state.terms.jeot?' checked':''}>젖</label>
+          <label class="v40-chip"><input type="checkbox" data-term="jeotgaseum"${state.terms.jeotgaseum?' checked':''}>젖가슴</label>
           <label class="v40-chip"><input type="checkbox" data-term="jeottong"${state.terms.jeottong?' checked':''}>젖통</label>
+          <label class="v40-chip"><input type="checkbox" data-term="ssipmul"${state.terms.ssipmul?' checked':''}>씹물</label>
         </div></div>
         <div class="v40-note">더티톡 강도와 욕설 강도는 독립. 혼잣말/감탄형 욕설은 별도로 허용 가능하지만 상대를 성별 비하형 호칭으로 부르는 표현은 기본 금지.</div>
       </details>
@@ -928,7 +931,7 @@
   }
 
   function languageDirective(ep){
-    const termMap={boji:'보지',jaji:'자지',jot:'좆',jotmul:'좆물',jeot:'젖',jeottong:'젖통'};
+    const termMap={boji:'보지',bojitmul:'보짓물',jaji:'자지',jot:'좆',jotmul:'좆물',jeot:'젖',jeotgaseum:'젖가슴',jeottong:'젖통',ssipmul:'씹물'};
     const allowed=Object.entries(state.terms||{}).filter(([,v])=>v).map(([k])=>termMap[k]).filter(Boolean);
     const gate=expressionGate(ep);
     const dirtyMax=Number(state.dirtyTalk||0);
@@ -1151,7 +1154,7 @@ ${possessive&&state.possessiveLateReveal!==false?'- 집착/소유욕 트로프�
     if(gate.allowedLevel>=4) return '';
     const q=quotedDialogue(text);
     if(!q) return '';
-    const explicitBody=/(보지|자지|좆|좆물|젖통|젖었|젖으|발기|흥분했|흥분하|아래가\s*(?:젖|달아|뜨거)|몸이\s*반응)/i;
+    const explicitBody=/(보지|보짓물|자지|좆|좆물|젖가슴|젖통|씹물|젖었|젖으|발기|흥분했|흥분하|아래가\s*(?:젖|달아|뜨거)|몸이\s*반응)/i;
     const explicitAction=/(박히|박아|박고\s*싶|빨아|핥아|싸게|싸줄|발정|먹어\s*줄|먹고\s*싶)/i;
     if(gate.allowedLevel<=2 && (explicitBody.test(q)||explicitAction.test(q))) return '현재 관계 단계보다 노골적인 성적 대사/신체반응 지적이 먼저 나왔다. 직접적인 성적 표현을 제거하고 긴장감은 시선·거리·내적 반응·절제된 플러팅으로 바꿀 것.';
     if(gate.allowedLevel===0 && /(내\s*거|내\s*여자|내\s*남자|갖고\s*싶|가지고\s*싶)/i.test(q)) return '초기 관계에서 소유권/독점 언어가 너무 빨리 외부화됐다. 관심과 낯선 끌림 수준으로 낮출 것.';
@@ -1325,7 +1328,7 @@ ${isContinue?'- 이어쓰기에서는 직전 화의 결과가 이번 화 첫 장
     if(s.length<6) return false;
     // Permanent memory is for identity, relationship agreements, irreversible reveals,
     // living/work status changes and lasting promises/rules. Keep transient scene mechanics out.
-    if(/(?:이번\s*화|현재\s*장면|방금|잠시|순간|체위|삽입|사정|오르가즘|자위|성기|보지|자지|좆|젖통)/i.test(s)) return false;
+    if(/(?:이번\s*화|현재\s*장면|방금|잠시|순간|체위|삽입|사정|오르가즘|자위|성기|보지|보짓물|자지|좆|젖가슴|젖통|씹물)/i.test(s)) return false;
     if(/\b(?:position|playId|adultScene|bodyFocus|sexualDialogue)\b/i.test(s)) return false;
     // Model-authored memory may remember events, agreements and reveals, but it
     // may not become a second character sheet. Protected identity/timeline facts
