@@ -121,7 +121,7 @@
     const modelFacts = facts.filter(f => !String(f).startsWith(USER_FACT_PREFIX)).slice(-20);
     state.runtime.durableFacts = [...modelFacts, ...userFacts].slice(-32);
     try { window.__VELOUR_V4_STATE_RESTORE__?.(state); } catch (_) { return []; }
-    try { window.__VELOUR_IDB_PATCH_DRAFT_V4__?.(state); } catch (_) {}
+    try { Promise.resolve(window.__VELOUR_IDB_PATCH_DRAFT_V4__?.(state)).catch(() => {}); } catch (_) {}
     window.__VELOUR_LAST_USER_CARRY_PROMOTION__ = { episode: ep, added: clone(added), at: new Date().toISOString() };
     return added;
   }
@@ -131,7 +131,6 @@
     const durableAll = Array.isArray(runtime.durableFacts) ? runtime.durableFacts.map(x => clean(x, 170)).filter(Boolean) : [];
     const userDurable = durableAll.filter(x => String(x).startsWith(USER_FACT_PREFIX)).slice(-MAX_USER_FACTS_IN_PROMPT);
     const otherDurable = durableAll.filter(x => !String(x).startsWith(USER_FACT_PREFIX)).slice(-MAX_OTHER_DURABLE_IN_PROMPT);
-    const durable = [...otherDurable, ...userDurable];
     const arcs = (Array.isArray(runtime.arcSummaries) ? runtime.arcSummaries : []).slice(-3);
     const timeline = (Array.isArray(runtime.timeline) ? runtime.timeline : []).slice(-7).map(x => clean(x, 170)).filter(Boolean);
     const threads = (Array.isArray(runtime.openThreads) ? runtime.openThreads : []).slice(-6).map(x => clean(x, 145)).filter(Boolean);
@@ -144,7 +143,7 @@ ${userDurable.length ? userDurable.map(x => `- ${x}`).join('\n') : '- 별도 자
 - ‘과외하기로 함/동거하기로 함/계약함/시작함’처럼 이미 성립한 전환은 매 화 다시 결정하거나 첫날로 되돌리지 않는다. 누적된 횟수와 관계를 이어간다.
 
 [TIER 1 · DURABLE FACTS]
-${durable.length ? durable.map(x => `- ${x}`).join('\n') : '- 추가 장기 사실 없음.'}
+${otherDurable.length ? otherDurable.map(x => `- ${x}`).join('\n') : '- 추가 장기 사실 없음.'}
 
 [TIER 2 · ARCHIVED ARC MEMORY]
 ${arcs.length ? arcs.map(a => `- EP${a?.startEpisode || '?'}~${a?.endEpisode || '?'}: ${clean(a?.summary || '', 440)}`).join('\n') : '- 완결된 과거 아크 요약 없음.'}
