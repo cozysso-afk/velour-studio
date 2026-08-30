@@ -185,6 +185,15 @@
 })();
 
 (() => {
+  if (window.__VELOUR_SCENE_AGENCY_LOADER__) return;
+  window.__VELOUR_SCENE_AGENCY_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-scene-agency-hotfix.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
+
+(() => {
   if (window.__VELOUR_EPISODE_BRANCH_LOADER__) return;
   window.__VELOUR_EPISODE_BRANCH_LOADER__ = true;
   const script = document.createElement('script');
