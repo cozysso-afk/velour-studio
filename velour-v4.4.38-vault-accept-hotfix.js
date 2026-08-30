@@ -210,3 +210,12 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+(() => {
+  if (window.__VELOUR_CONTINUITY_COST_LOADER__) return;
+  window.__VELOUR_CONTINUITY_COST_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-continuity-hotfix.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
