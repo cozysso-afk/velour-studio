@@ -77,8 +77,17 @@
       /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
       '- HARD CANON의 완료형 상태는 내부 현재값으로만 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
     );
-    out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 그 사실을 대사·독백·서술에 넣지 않는다.\n- 이번 화의 사건·선택·감정 변화에 직접 필요한 사실만 자연스럽게 드러낸다. 필요 없는 고정 설정은 완전히 침묵한다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
+    out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 서술자 설명·설정 해설·관계사 복습에 넣지 않는다.\n- 단, 현재 장면에서 인물이 상대의 외형이나 몸에 실제로 반응하며 하는 자연스러운 칭찬·도발·더티톡은 설정 복창으로 취급하지 않는다. 아래 BODY PRAISE TALK 규칙을 따른다.\n- 이번 화의 사건·선택·감정 변화에 직접 필요한 사실만 자연스럽게 드러낸다. 필요 없는 고정 설정은 서술에서 침묵한다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 서술자가 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
     return out.trim();
+  }
+
+  function bodyPraiseDialogueDirective(state){
+    const richness = String(state?.bodyDescriptionRichness || 'rich').toLowerCase();
+    const dirty = Math.max(0, Math.min(100, Number(state?.dirtyTalk ?? 70)));
+    const rich = /rich|high|very_high|max|lush/.test(richness);
+    const medium = /medium|balanced|normal/.test(richness);
+    const density = rich ? '친밀감·욕망이 활성화된 장면에서는 서로의 외형/몸에 대한 짧은 직접 대사 비트를 장면 전체에 2~4회 정도 분산한다.' : medium ? '친밀감·욕망이 활성화된 장면에서는 외형/몸에 대한 직접 대사를 필요할 때 1~2회 자연스럽게 둔다.' : '외형 칭찬 대사는 장면상 자연스러울 때만 드물게 사용한다.';
+    return `[BODY PRAISE TALK — 외형 묘사 풍부도의 실제 의미]\n- bodyDescriptionRichness=${richness}는 서술자의 신체 설명량이 아니라 “상대방이 상대의 외형/몸을 보고 느끼며 입 밖으로 표현하는 밀도”를 뜻한다.\n- ${density}\n- 기본은 쌍방이다. 남주→여주뿐 아니라 여주→남주도 각자의 성격과 욕망에 맞게 칭찬·감탄·도발·질문·반응형 대사를 한다. 한쪽만 계속 평가자처럼 말하지 않는다.\n- 더티톡 강도=${dirty}/100과 결합한다. 수위가 높을수록 외형 칭찬도 단순 미사여구보다 지금 보고 있거나 만지고 있는 부분, 상대 반응, 움직임과 연결된 직접적인 대사로 만든다.\n- 같은 고정 특징을 매번 같은 말로 복창하지 않는다. “너는 원래 ~한 체형이야” 같은 설정문 낭독이 아니라 그 순간의 시선·접촉·반응 때문에 튀어나오는 말이어야 한다.\n- 서술자는 대사를 받쳐주는 최소한의 시선·표정·움직임만 쓴다. 외형 설정을 대신 설명하는 해설 문단으로 되돌아가지 않는다.\n- 컵 문자·cm·정확한 치수는 사용자가 이번 화에 직접 요구하지 않는 한 대사에서도 설정표처럼 읊지 않는다.\n- 비친밀 장면에서는 외형 칭찬을 의무적으로 끼워 넣지 않는다. 맥락 없는 칭찬 때문에 사건 흐름을 끊지 않는다.`;
   }
 
   // Response Vault buttons call qa.updateMemory() through their lexical handler.
@@ -126,10 +135,12 @@
       }
 
       out = reduceHardCanonExposure(out, state, isContinue);
+      out = `${out}\n\n${bodyPraiseDialogueDirective(state)}`.trim();
       window.__VELOUR_LAST_SELECTIVE_CANON__ = {
         enabled: !!isContinue,
         originalChars: String(state?.hardCanon || '').length,
         injected: isContinue ? selectiveCanon(state, out) : 'full canon on first episode',
+        bodyPraiseRichness: String(state?.bodyDescriptionRichness || 'rich'),
         at: new Date().toISOString()
       };
       return out;
@@ -141,9 +152,10 @@
     keywords,
     relevanceScore,
     selectiveCanon,
-    reduceHardCanonExposure
+    reduceHardCanonExposure,
+    bodyPraiseDialogueDirective
   };
 
-  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.1.0';
-  console.info('✦ VELOUR selective HARD CANON + continuity edge fix loaded');
+  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.2.0';
+  console.info('✦ VELOUR selective HARD CANON + mutual body-praise dialogue fix loaded');
 })();
