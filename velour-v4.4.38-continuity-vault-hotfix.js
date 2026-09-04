@@ -9,6 +9,78 @@
   const qa = window.__VELOUR_STORAGE_QA__ || {};
   const continuity = window.__VELOUR_CONTINUITY_QA__ || {};
 
+  const STOPWORDS = new Set([
+    '그리고','그러나','하지만','또한','그런데','이번','다음','현재','이후','이미','계속','정도','관련','상태','설정','캐논','하드','사용자','인물','장면','본문','사실','관계','서사','스토리','에피소드','episode','hard','canon','story'
+  ]);
+  const clean = (value, max = 280) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+  function snapshot(){
+    try { return window.__VELOUR_V4_STATE_SNAPSHOT__?.() || {}; }
+    catch (_) { return {}; }
+  }
+
+  function canonLines(raw){
+    return String(raw || '')
+      .split(/\n+|(?<=[.!?。！？])\s+|\s*[;；]\s*/)
+      .map(x => x.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+      .filter(Boolean)
+      .slice(0, 40);
+  }
+
+  function keywords(raw){
+    const words = String(raw || '').toLowerCase().match(/[가-힣a-z0-9_]{2,}/g) || [];
+    return new Set(words.filter(w => !STOPWORDS.has(w)));
+  }
+
+  function relevanceScore(line, contextKeys){
+    const keys = keywords(line);
+    let score = 0;
+    keys.forEach(k => { if (contextKeys.has(k)) score += k.length >= 4 ? 3 : 2; });
+    if (/(?:절대|금지|아님|아니다|없음|없다|반드시|오직|만\s*(?:가능|허용))/.test(line) && score > 0) score += 2;
+    return score;
+  }
+
+  function selectiveCanon(state, prompt){
+    const lines = canonLines(state?.hardCanon || '');
+    if (!lines.length) return '';
+    const runtime = state?.runtime || {};
+    const direction = String(document.getElementById('v33Next')?.value || '');
+    const context = [
+      direction,
+      runtime.causalCarry,
+      runtime.relationshipState,
+      ...(Array.isArray(runtime.openThreads) ? runtime.openThreads.slice(-4) : []),
+      ...(Array.isArray(runtime.timeline) ? runtime.timeline.slice(-4) : []),
+      String(prompt || '').slice(-1800)
+    ].filter(Boolean).join('\n');
+    const contextKeys = keywords(context);
+    const ranked = lines
+      .map((line, index) => ({ line: clean(line, 260), index, score: relevanceScore(line, contextKeys) }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .slice(0, 4)
+      .map(x => x.line);
+
+    if (!ranked.length) {
+      return '[HARD CANON 원문은 내부 검증 기준으로 유지됨 · 이번 화 직접 관련 항목 없음]';
+    }
+    return `[이번 화 관련 HARD CANON · 내부 제약]\n${ranked.map(x => `- ${x}`).join('\n')}\n- 위 항목은 사실관계 검증용이다. 현재 장면에 필요하지 않으면 본문에서 설명·복습·언급하지 않는다.`;
+  }
+
+  function reduceHardCanonExposure(prompt, state, isContinue){
+    if (!isContinue) return String(prompt || '');
+    const hard = String(state?.hardCanon || '').trim();
+    if (!hard) return String(prompt || '');
+    const replacement = selectiveCanon(state, prompt);
+    let out = String(prompt || '').split(hard).join(replacement);
+    out = out.replace(
+      /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
+      '- HARD CANON의 완료형 상태는 내부 현재값으로만 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
+    );
+    out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 그 사실을 대사·독백·서술에 넣지 않는다.\n- 이번 화의 사건·선택·감정 변화에 직접 필요한 사실만 자연스럽게 드러낸다. 필요 없는 고정 설정은 완전히 침묵한다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
+    return out.trim();
+  }
+
   // Response Vault buttons call qa.updateMemory() through their lexical handler.
   // Wrap that bridge so a user-authored persistent direction is promoted even
   // when the response is accepted from the vault rather than normal generation.
@@ -31,6 +103,7 @@
   if (typeof previousBuild === 'function') {
     window.buildPrompt = function(isContinue = false){
       let out = String(previousBuild.apply(this, arguments) || '');
+      const state = snapshot();
       out = out.replace(
         '사용자가 종료·변경하기 전까지 계속 참인 현재 조건으로 취급한다.',
         '사용자가 종료·변경하거나 문장에 명시된 기간·조건이 끝날 때까지 현재 조건으로 취급한다.'
@@ -46,15 +119,31 @@
       // unless HARD CANON actually contains an already-settled state that needs it.
       if (!isContinue && typeof continuity.settledCanonLines === 'function') {
         let settled = [];
-        try { settled = continuity.settledCanonLines(window.__VELOUR_V4_STATE_SNAPSHOT__?.() || {}); } catch (_) {}
+        try { settled = continuity.settledCanonLines(state); } catch (_) {}
         if (!settled.length) {
           out = out.replace(/\n\n\[VELOUR CONTINUITY SEMANTICS — RESET 금지\][\s\S]*$/,'').trim();
         }
       }
+
+      out = reduceHardCanonExposure(out, state, isContinue);
+      window.__VELOUR_LAST_SELECTIVE_CANON__ = {
+        enabled: !!isContinue,
+        originalChars: String(state?.hardCanon || '').length,
+        injected: isContinue ? selectiveCanon(state, out) : 'full canon on first episode',
+        at: new Date().toISOString()
+      };
       return out;
     };
   }
 
-  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.0.2';
-  console.info('✦ VELOUR continuity vault edge fix loaded');
+  window.__VELOUR_SELECTIVE_CANON_QA__ = {
+    canonLines,
+    keywords,
+    relevanceScore,
+    selectiveCanon,
+    reduceHardCanonExposure
+  };
+
+  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.1.0';
+  console.info('✦ VELOUR selective HARD CANON + continuity edge fix loaded');
 })();
