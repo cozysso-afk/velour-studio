@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>VELOUR V4.4.38 loading…</title>
+  <title>VELOUR - Imperial Sensory Studio</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VELOUR">
+  <meta name="theme-color" content="#16070e">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.PNG?v=20260906-1">
+  <link rel="icon" href="/apple-touch-icon.PNG?v=20260906-1">
   <style>
     html,body{margin:0;min-height:100%;background:#16070e;color:#fff6f8;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}
     .boot{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}
@@ -20,6 +26,7 @@
     if(!res.ok) throw new Error('원본 로드 실패: HTTP '+res.status);
     let html=await res.text();
     html=html.replaceAll('velour-v4.4.38-vault-accept-hotfix.js?v=11','velour-v4.4.38-vault-accept-hotfix.js?v=13');
+    html=html.replace(/<head>/i,`<head>\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="VELOUR">\n<meta name="theme-color" content="#16070e">\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.PNG?v=20260906-1">\n<link rel="icon" href="/apple-touch-icon.PNG?v=20260906-1">`);
     document.open();
     document.write(html);
     document.close();
