@@ -7,7 +7,7 @@
   'use strict';
   if (window.__VELOUR_PROSE_PREFERENCE__) return;
   window.__VELOUR_PROSE_PREFERENCE__ = true;
-  window.__VELOUR_PROSE_PREFERENCE_VERSION__ = '1.0.0';
+  window.__VELOUR_PROSE_PREFERENCE_VERSION__ = '1.0.1';
 
   const KEY='VELOUR_PROSE_PREFERENCE_V1';
   const OPTIONS=[
@@ -32,18 +32,19 @@
   function sync(v=get()){
     document.querySelectorAll('[data-velour-prose-pref]').forEach(el=>{if(el.value!==v)el.value=v;});
     const hint=document.querySelector('[data-velour-prose-pref-hint]');
-    if(hint){const o=OPTIONS.find(x=>x[0]===v);hint.textContent=o?.[2]||'';}
+    if(hint){const o=OPTIONS.find(x=>x[0]===v);const next=o?.[2]||'';if(hint.textContent!==next)hint.textContent=next;}
   }
   function installUI(){
-    if(document.getElementById('velourProsePreferenceField')) return sync();
+    if(document.getElementById('velourProsePreferenceField')){sync();return true;}
     const anchor=document.getElementById('v41HistoricalField');
     const host=anchor?.parentElement || document.querySelector('.v40-grid') || document.querySelector('.v40-body');
-    if(!host) return;
+    if(!host) return false;
     const field=document.createElement('div');
     field.className='v40-field';field.id='velourProsePreferenceField';
     field.innerHTML=`<label>문체 취향</label><select data-velour-prose-pref>${OPTIONS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select><div data-velour-prose-pref-hint style="margin-top:5px;color:#9f8794;font-size:9.5px;line-height:1.45"></div>`;
     if(anchor?.parentElement===host) anchor.insertAdjacentElement('afterend',field); else host.appendChild(field);
     const sel=field.querySelector('select');sel.value=get();sel.addEventListener('change',()=>set(sel.value));sync();
+    return true;
   }
 
   const previousBuild=window.buildPrompt;
@@ -56,9 +57,17 @@
     };
   }
 
-  const observer=new MutationObserver(()=>installUI());
-  observer.observe(document.body,{childList:true,subtree:true});
-  installUI();
-  window.__VELOUR_PROSE_PREFERENCE_QA__={version:'1.0.0',get,set,options:OPTIONS.map(x=>({id:x[0],label:x[1]})),reinstallUI:installUI};
+  // Do not observe the whole app subtree: on iOS that can create a self-triggering
+  // mutation/render loop when the hint text is synchronized. Retry installation briefly instead.
+  let tries=0;
+  const tryInstall=()=>{
+    tries+=1;
+    if(installUI()||tries>=24) return;
+    setTimeout(tryInstall,250);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',tryInstall,{once:true});
+  else tryInstall();
+
+  window.__VELOUR_PROSE_PREFERENCE_QA__={version:'1.0.1',get,set,options:OPTIONS.map(x=>({id:x[0],label:x[1]})),reinstallUI:installUI};
   console.info('✦ VELOUR prose preference overlay loaded:',get());
 })();
