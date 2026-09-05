@@ -32,7 +32,7 @@
 })();
 
 const __velourLoadHotfix=(guard,src)=>{if(window[guard])return;window[guard]=true;const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);};
-__velourLoadHotfix('__VELOUR_AUTH_GATE_LOADER__','./velour-v4.4.38-auth-gate.js?v=1');
+__velourLoadHotfix('__VELOUR_AUTH_GATE_LOADER__','./velour-v4.4.38-auth-gate.js?v=2');
 __velourLoadHotfix('__VELOUR_QUALITY_RESTORE_LOADER__','./velour-v4.4.38-quality-restore.js?v=5');
 __velourLoadHotfix('__VELOUR_SCENE_AGENCY_LOADER__','./velour-v4.4.38-scene-agency-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_EPISODE_BRANCH_LOADER__','./velour-v4.4.38-episode-branch-hotfix.js?v=3');
