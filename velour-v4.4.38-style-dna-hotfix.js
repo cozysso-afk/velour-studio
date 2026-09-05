@@ -8,7 +8,7 @@
   'use strict';
   if (window.__VELOUR_STYLE_DNA_HOTFIX__) return;
   window.__VELOUR_STYLE_DNA_HOTFIX__ = true;
-  window.__VELOUR_STYLE_DNA_VERSION__ = '1.1.0';
+  window.__VELOUR_STYLE_DNA_VERSION__ = '1.1.1';
 
   const previousBuild = window.buildPrompt;
   if (typeof previousBuild !== 'function') {
@@ -69,8 +69,13 @@
 
   function chooseProfile(s){
     const world=String(s?.world||'modern_general').toLowerCase();
-    if(world==='historical_real'||world==='eastern_fantasy'||/histor|eastern|orient|dynasty|period/.test(world)) return PROFILES.eastern_historical;
-    if(world==='western_fantasy'||/western|regency|victorian/.test(world)) return PROFILES.western_fantasy;
+    const periodNote=String(s?.periodNote||'').toLowerCase();
+    if(world==='historical_west'||world==='western_fantasy'||/western|regency|victorian/.test(world)) return PROFILES.western_fantasy;
+    if(world==='historical_real'){
+      if(/서양|유럽|영국|프랑스|이탈리아|스페인|독일|오스트리아|러시아|regency|victorian|europe|britain|france|italy|spain|germany|austria|russia/.test(periodNote)) return PROFILES.western_fantasy;
+      return PROFILES.eastern_historical;
+    }
+    if(world==='historical_korea'||world==='eastern_fantasy'||/eastern|orient|dynasty/.test(world)) return PROFILES.eastern_historical;
     return PROFILES.modern_commercial;
   }
 
@@ -103,10 +108,10 @@
   window.buildPrompt=function(){
     const out=String(previousBuild.apply(this,arguments)||'');
     const s=snapshot(); const p=chooseProfile(s);
-    window.__VELOUR_LAST_STYLE_DNA__={id:p.id,label:p.label,world:String(s?.world||''),historicalStyle:String(s?.historicalStyle||''),version:'1.1.0',at:new Date().toISOString()};
+    window.__VELOUR_LAST_STYLE_DNA__={id:p.id,label:p.label,world:String(s?.world||''),historicalStyle:String(s?.historicalStyle||''),version:'1.1.1',at:new Date().toISOString()};
     return `${out}\n\n${directive(s)}`.trim();
   };
 
   window.__VELOUR_STYLE_DNA__={PROFILES,chooseProfile,directive,dialogueLexiconLayer,rhythmLayer};
-  console.info('✦ VELOUR corpus-derived style DNA v1.1 loaded');
+  console.info('✦ VELOUR corpus-derived style DNA v1.1.1 loaded');
 })();
