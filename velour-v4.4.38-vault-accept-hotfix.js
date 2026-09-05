@@ -237,3 +237,12 @@
   script.async = false;
   document.head.appendChild(script);
 })();
+
+(() => {
+  if (window.__VELOUR_PROSE_QA_LOADER__) return;
+  window.__VELOUR_PROSE_QA_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-prose-qa-hotfix.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
