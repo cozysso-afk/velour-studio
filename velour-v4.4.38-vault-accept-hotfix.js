@@ -1,15 +1,10 @@
 'use strict';
 
-/* VELOUR — Response Vault acceptance helper
-   - lets the user promote the exact next pending response without another Gemini request
-   - does not inspect prose, age, timeline, or content categories
-   - provider/API blocked responses remain non-promotable
-*/
+/* VELOUR — Response Vault acceptance helper */
 (() => {
   'use strict';
   if (window.__VELOUR_VAULT_ACCEPT_HOTFIX__) return;
   window.__VELOUR_VAULT_ACCEPT_HOTFIX__ = true;
-
   const qa = window.__VELOUR_STORAGE_QA__;
   if (!qa) { console.error('VELOUR vault helper: storage bridge not found'); return; }
   const RESPONSE_STORE='responses';
@@ -19,7 +14,6 @@
   function confirmedEpisode(){try{const n=Number(qa.confirmedEpisode?.()||0);return Number.isFinite(n)&&n>=0?Math.floor(n):0;}catch(_){return 0;}}
   function isAcceptableRecord(r){const ep=nEp(r?.attemptedEpisode),text=String(r?.readerText||r?.rawText||'').trim();if(!ep||!text)return false;if(String(r?.finishReason||'').toUpperCase()==='SAFETY')return false;if(String(r?.promptBlock||'').trim())return false;const pending=pendingEpisode(),confirmed=confirmedEpisode();return ep===confirmed+1&&(pending===0||pending===ep);}
   function guardedMeta(meta){if(!meta||typeof meta!=='object')return null;const m=JSON.parse(JSON.stringify(meta));const hard=!!(m.canonViolation||m.storylineSkipped||m.futureBeatLeak||m.residenceViolation||m.expressionViolation||m.professionalBoundaryViolation);if(hard)m.beatComplete=false;if(m.storylineSkipped||m.futureBeatLeak||m.canonViolation){m.beatComplete=false;m.beatProgress=Math.min(85,Math.max(0,Number(m.beatProgress||0)));}return m;}
-
   async function acceptVelourVaultResponse(id){
     let r=null;try{r=await qa.responseVaultGet(RESPONSE_STORE,String(id));}catch(e){return alert('응답 금고를 읽지 못했어: '+String(e?.message||e));}
     if(!r)return alert('응답 금고에서 해당 본문을 찾지 못했어.');const ep=nEp(r.attemptedEpisode);
@@ -47,3 +41,4 @@ __velourLoadHotfix('__VELOUR_CONTINUITY_VAULT_EDGE_LOADER__','./velour-v4.4.38-c
 __velourLoadHotfix('__VELOUR_INTERNAL_LABEL_FIREWALL_LOADER__','./velour-v4.4.38-internal-label-firewall.js?v=1');
 __velourLoadHotfix('__VELOUR_PROSE_QA_LOADER__','./velour-v4.4.38-prose-qa-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_STYLE_DNA_LOADER__','./velour-v4.4.38-style-dna-hotfix.js?v=2');
+__velourLoadHotfix('__VELOUR_SCENE_VOICE_MEMORY_LOADER__','./velour-v4.4.38-scene-voice-memory-hotfix.js?v=1');
