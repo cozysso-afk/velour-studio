@@ -3,6 +3,7 @@
 /* VELOUR — single-user Supabase Auth gate
  * Uses only a browser-safe publishable key.
  * Authorization is enforced again by the server-side `velour-access` Edge Function.
+ * A successful server authorization is remembered on this device so PWA relaunches do not flash the login form.
  */
 (() => {
   'use strict';
@@ -13,6 +14,7 @@
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_NQ0pSTq8gE8JrKDrIyXJww_HTapFg_x';
   const SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js';
   const ACCESS_FUNCTION = 'velour-access';
+  const TRUST_KEY = 'velour-auth-trusted-v2';
 
   const css = document.createElement('style');
   css.id = 'velour-auth-gate-css';
@@ -36,6 +38,7 @@
 
   const gate = document.createElement('div');
   gate.id = 'velourAuthGate';
+  gate.hidden = true;
   gate.innerHTML = `
     <form class="velour-auth-card" id="velourAuthForm" autocomplete="on">
       <div class="velour-auth-mark">PRIVATE STUDIO</div>
@@ -65,83 +68,70 @@
   const msg = gate.querySelector('#velourAuthMsg');
   let client = null;
 
-  function message(text, ok=false){
-    msg.textContent = String(text || '');
-    msg.style.color = ok ? '#bff4cf' : '#ffb5c1';
-  }
+  function trusted(){ try{return localStorage.getItem(TRUST_KEY)==='1';}catch(_){return false;} }
+  function rememberTrusted(value){ try{value?localStorage.setItem(TRUST_KEY,'1'):localStorage.removeItem(TRUST_KEY);}catch(_){} }
+  function message(text, ok=false){ msg.textContent=String(text||''); msg.style.color=ok?'#bff4cf':'#ffb5c1'; }
   function lock(reason=''){
-    gate.hidden = false;
-    logout.style.display = 'none';
+    rememberTrusted(false);
+    gate.hidden=false;
+    logout.style.display='none';
     if(reason) message(reason);
     setTimeout(()=>email?.focus(),80);
   }
   function unlock(){
-    message('인증 완료', true);
-    gate.hidden = true;
-    logout.style.display = 'block';
-    password.value = '';
+    rememberTrusted(true);
+    message('인증 완료',true);
+    gate.hidden=true;
+    logout.style.display='block';
+    password.value='';
   }
   function loadSdk(){
     if(window.supabase?.createClient) return Promise.resolve();
     return new Promise((resolve,reject)=>{
       const existing=document.querySelector('script[data-velour-supabase-sdk]');
       if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}
-      const s=document.createElement('script');
-      s.src=SDK_URL;s.async=true;s.dataset.velourSupabaseSdk='1';
-      s.onload=resolve;s.onerror=()=>reject(new Error('인증 모듈을 불러오지 못했습니다.'));
-      document.head.appendChild(s);
+      const s=document.createElement('script');s.src=SDK_URL;s.async=true;s.dataset.velourSupabaseSdk='1';
+      s.onload=resolve;s.onerror=()=>reject(new Error('인증 모듈을 불러오지 못했습니다.'));document.head.appendChild(s);
     });
   }
   async function serverAllows(session){
     if(!session?.access_token) return false;
-    const { data, error } = await client.functions.invoke(ACCESS_FUNCTION, { body: { purpose: 'velour-entry' } });
+    const {data,error}=await client.functions.invoke(ACCESS_FUNCTION,{body:{purpose:'velour-entry'}});
     if(error) return false;
-    return data?.ok === true;
+    return data?.ok===true;
   }
   async function verifyExistingSession(){
+    const hadTrust=trusted();
+    if(hadTrust){ gate.hidden=true; logout.style.display='block'; }
     try{
       await loadSdk();
-      const { createClient } = window.supabase;
-      client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-        auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'velour-auth-session-v1'}
-      });
-      const { data:{ session } } = await client.auth.getSession();
+      const {createClient}=window.supabase;
+      client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'velour-auth-session-v1'}});
+      const {data:{session}}=await client.auth.getSession();
       if(session && await serverAllows(session)) return unlock();
       if(session) await client.auth.signOut({scope:'local'}).catch(()=>{});
       lock();
     }catch(e){
-      console.error('VELOUR auth init failed', e);
+      console.error('VELOUR auth init failed',e);
+      if(hadTrust){ gate.hidden=true; logout.style.display='block'; return; }
       lock('인증 연결에 실패했습니다. 네트워크를 확인해 주세요.');
     }
   }
-  form.addEventListener('submit', async (ev)=>{
-    ev.preventDefault();
-    if(!client) return message('인증 모듈을 준비 중입니다.');
-    submit.disabled=true;message('확인 중…',true);
+  form.addEventListener('submit',async(ev)=>{
+    ev.preventDefault();if(!client)return message('인증 모듈을 준비 중입니다.');submit.disabled=true;message('확인 중…',true);
     try{
-      const { data, error } = await client.auth.signInWithPassword({email:email.value.trim(),password:password.value});
-      if(error || !data?.session){message('이메일 또는 비밀번호를 확인해 주세요.');return;}
-      if(!(await serverAllows(data.session))){
-        await client.auth.signOut({scope:'local'}).catch(()=>{});
-        message('이 계정은 VELOUR에 접근할 수 없습니다.');
-        return;
-      }
+      const {data,error}=await client.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+      if(error||!data?.session){message('이메일 또는 비밀번호를 확인해 주세요.');return;}
+      if(!(await serverAllows(data.session))){await client.auth.signOut({scope:'local'}).catch(()=>{});rememberTrusted(false);message('이 계정은 VELOUR에 접근할 수 없습니다.');return;}
       unlock();
-    }catch(e){
-      console.error('VELOUR login failed',e);
-      message('로그인 처리 중 오류가 발생했습니다.');
-    }finally{submit.disabled=false;}
+    }catch(e){console.error('VELOUR login failed',e);message('로그인 처리 중 오류가 발생했습니다.');}
+    finally{submit.disabled=false;}
   });
   logout.addEventListener('click',async()=>{
+    rememberTrusted(false);
     try{await client?.auth.signOut({scope:'local'});}catch(_){}
     lock('잠겼습니다.');
   });
-
-  window.__VELOUR_AUTH_QA__ = {
-    version:'1.0.0',
-    isLocked:()=>!gate.hidden,
-    lock,
-    async verify(){const {data:{session}}=await client.auth.getSession();return !!(session&&await serverAllows(session));}
-  };
+  window.__VELOUR_AUTH_QA__={version:'1.1.0',isLocked:()=>!gate.hidden,lock,async verify(){const {data:{session}}=await client.auth.getSession();return !!(session&&await serverAllows(session));}};
   verifyExistingSession();
 })();
