@@ -94,3 +94,12 @@
   window.__VELOUR_PROSE_QA__ = { fingerprint, topTerms, repeatedLeads, paragraphOpeners, directive };
   console.info('✦ VELOUR prose QA + recent-DNA memory loaded');
 })();
+
+(() => {
+  if (window.__VELOUR_STYLE_DNA_LOADER__) return;
+  window.__VELOUR_STYLE_DNA_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-style-dna-hotfix.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
