@@ -1,10 +1,6 @@
 'use strict';
 
-/* VELOUR — single-user Supabase Auth gate
- * Uses only a browser-safe publishable key.
- * Authorization is enforced again by the server-side `velour-access` Edge Function.
- * A successful server authorization is remembered on this device so PWA relaunches do not flash the login form.
- */
+/* VELOUR — single-user Supabase Auth gate */
 (() => {
   'use strict';
   if (window.__VELOUR_AUTH_GATE__) return;
@@ -30,6 +26,7 @@
     .velour-auth-input:focus{border-color:rgba(245,196,107,.62);box-shadow:0 0 0 3px rgba(245,196,107,.07)}
     .velour-auth-btn{width:100%;border:0;border-radius:12px;margin-top:18px;padding:13px 14px;background:linear-gradient(135deg,#eab75f,#f7d68e);color:#291508;font-size:13px;font-weight:850;letter-spacing:.02em;box-shadow:0 8px 24px rgba(234,183,95,.16)}
     .velour-auth-btn:disabled{opacity:.55}
+    .velour-auth-link{display:block;width:100%;border:0;background:transparent;color:#d8b86f;font-size:10.5px;text-decoration:underline;text-underline-offset:3px;margin-top:11px;padding:5px;cursor:pointer}
     .velour-auth-msg{min-height:18px;margin:10px 2px 0;text-align:center;color:#ffb5c1;font-size:10.5px;line-height:1.5}
     .velour-auth-security{text-align:center;margin-top:13px;color:#806b76;font-size:9.5px;line-height:1.5}
     #velourLogoutBtn{position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:2147483000;border:1px solid rgba(245,196,107,.20);border-radius:999px;background:rgba(18,5,11,.78);color:#d8c0cb;padding:7px 10px;font-size:9px;font-weight:700;backdrop-filter:blur(12px);display:none}
@@ -43,12 +40,22 @@
     <form class="velour-auth-card" id="velourAuthForm" autocomplete="on">
       <div class="velour-auth-mark">PRIVATE STUDIO</div>
       <h1 class="velour-auth-title">✦ VELOUR</h1>
-      <div class="velour-auth-sub">개인 스튜디오입니다.<br>인증된 계정으로 로그인해 주세요.</div>
-      <label class="velour-auth-label" for="velourAuthEmail">EMAIL</label>
-      <input class="velour-auth-input" id="velourAuthEmail" name="email" type="email" inputmode="email" autocomplete="username" required>
-      <label class="velour-auth-label" for="velourAuthPassword">PASSWORD</label>
-      <input class="velour-auth-input" id="velourAuthPassword" name="password" type="password" autocomplete="current-password" required>
-      <button class="velour-auth-btn" id="velourAuthSubmit" type="submit">로그인</button>
+      <div class="velour-auth-sub" id="velourAuthSub">개인 스튜디오입니다.<br>인증된 계정으로 로그인해 주세요.</div>
+      <div id="velourLoginFields">
+        <label class="velour-auth-label" for="velourAuthEmail">EMAIL</label>
+        <input class="velour-auth-input" id="velourAuthEmail" name="email" type="email" inputmode="email" autocomplete="username" required>
+        <label class="velour-auth-label" for="velourAuthPassword">PASSWORD</label>
+        <input class="velour-auth-input" id="velourAuthPassword" name="password" type="password" autocomplete="current-password" required>
+        <button class="velour-auth-btn" id="velourAuthSubmit" type="submit">로그인</button>
+        <button class="velour-auth-link" id="velourForgotBtn" type="button">비밀번호 재설정</button>
+      </div>
+      <div id="velourRecoveryFields" hidden>
+        <label class="velour-auth-label" for="velourNewPassword">새 비밀번호</label>
+        <input class="velour-auth-input" id="velourNewPassword" type="password" autocomplete="new-password" minlength="8">
+        <label class="velour-auth-label" for="velourNewPassword2">새 비밀번호 확인</label>
+        <input class="velour-auth-input" id="velourNewPassword2" type="password" autocomplete="new-password" minlength="8">
+        <button class="velour-auth-btn" id="velourRecoverySubmit" type="button">새 비밀번호 저장</button>
+      </div>
       <div class="velour-auth-msg" id="velourAuthMsg" role="status" aria-live="polite"></div>
       <div class="velour-auth-security">회원가입 기능 없음 · 허용된 계정 1개만 입장 가능</div>
     </form>`;
@@ -65,25 +72,45 @@
   const email = gate.querySelector('#velourAuthEmail');
   const password = gate.querySelector('#velourAuthPassword');
   const submit = gate.querySelector('#velourAuthSubmit');
+  const forgot = gate.querySelector('#velourForgotBtn');
   const msg = gate.querySelector('#velourAuthMsg');
+  const sub = gate.querySelector('#velourAuthSub');
+  const loginFields = gate.querySelector('#velourLoginFields');
+  const recoveryFields = gate.querySelector('#velourRecoveryFields');
+  const newPassword = gate.querySelector('#velourNewPassword');
+  const newPassword2 = gate.querySelector('#velourNewPassword2');
+  const recoverySubmit = gate.querySelector('#velourRecoverySubmit');
   let client = null;
+  let recoveryMode = false;
 
   function trusted(){ try{return localStorage.getItem(TRUST_KEY)==='1';}catch(_){return false;} }
   function rememberTrusted(value){ try{value?localStorage.setItem(TRUST_KEY,'1'):localStorage.removeItem(TRUST_KEY);}catch(_){} }
   function message(text, ok=false){ msg.textContent=String(text||''); msg.style.color=ok?'#bff4cf':'#ffb5c1'; }
   function lock(reason=''){
-    rememberTrusted(false);
+    if(!recoveryMode) rememberTrusted(false);
     gate.hidden=false;
     logout.style.display='none';
     if(reason) message(reason);
-    setTimeout(()=>email?.focus(),80);
+    setTimeout(()=>recoveryMode?newPassword?.focus():email?.focus(),80);
   }
   function unlock(){
+    recoveryMode=false;
     rememberTrusted(true);
     message('인증 완료',true);
     gate.hidden=true;
     logout.style.display='block';
     password.value='';
+  }
+  function showRecovery(){
+    recoveryMode=true;
+    rememberTrusted(false);
+    loginFields.hidden=true;
+    recoveryFields.hidden=false;
+    sub.innerHTML='복구 링크 인증이 완료됐습니다.<br>새 비밀번호를 설정해 주세요.';
+    message('새 비밀번호는 8자 이상으로 설정해 주세요.',true);
+    gate.hidden=false;
+    logout.style.display='none';
+    setTimeout(()=>newPassword?.focus(),80);
   }
   function loadSdk(){
     if(window.supabase?.createClient) return Promise.resolve();
@@ -106,19 +133,25 @@
     try{
       await loadSdk();
       const {createClient}=window.supabase;
-      client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'velour-auth-session-v1'}});
+      client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'velour-auth-session-v1'}});
+      client.auth.onAuthStateChange((event)=>{
+        if(event==='PASSWORD_RECOVERY') showRecovery();
+      });
+      const hashRecovery=/type=recovery/i.test(location.hash||'');
+      if(hashRecovery) recoveryMode=true;
       const {data:{session}}=await client.auth.getSession();
+      if(recoveryMode){ showRecovery(); return; }
       if(session && await serverAllows(session)) return unlock();
       if(session) await client.auth.signOut({scope:'local'}).catch(()=>{});
       lock();
     }catch(e){
       console.error('VELOUR auth init failed',e);
-      if(hadTrust){ gate.hidden=true; logout.style.display='block'; return; }
+      if(hadTrust && !recoveryMode){ gate.hidden=true; logout.style.display='block'; return; }
       lock('인증 연결에 실패했습니다. 네트워크를 확인해 주세요.');
     }
   }
   form.addEventListener('submit',async(ev)=>{
-    ev.preventDefault();if(!client)return message('인증 모듈을 준비 중입니다.');submit.disabled=true;message('확인 중…',true);
+    ev.preventDefault();if(recoveryMode)return;if(!client)return message('인증 모듈을 준비 중입니다.');submit.disabled=true;message('확인 중…',true);
     try{
       const {data,error}=await client.auth.signInWithPassword({email:email.value.trim(),password:password.value});
       if(error||!data?.session){message('이메일 또는 비밀번호를 확인해 주세요.');return;}
@@ -127,11 +160,39 @@
     }catch(e){console.error('VELOUR login failed',e);message('로그인 처리 중 오류가 발생했습니다.');}
     finally{submit.disabled=false;}
   });
+  forgot.addEventListener('click',async()=>{
+    if(!client)return message('인증 모듈을 준비 중입니다.');
+    const address=email.value.trim();
+    if(!address)return message('이메일을 먼저 입력해 주세요.');
+    forgot.disabled=true;message('복구 메일 보내는 중…',true);
+    try{
+      const redirectTo=location.origin+location.pathname;
+      const {error}=await client.auth.resetPasswordForEmail(address,{redirectTo});
+      if(error){console.error('VELOUR reset email failed',error);message('복구 메일 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');return;}
+      message('복구 메일을 보냈어요. 메일의 링크를 눌러 새 비밀번호를 설정해 주세요.',true);
+    }catch(e){console.error('VELOUR reset request failed',e);message('복구 메일 전송 중 오류가 발생했습니다.');}
+    finally{forgot.disabled=false;}
+  });
+  recoverySubmit.addEventListener('click',async()=>{
+    const a=newPassword.value,b=newPassword2.value;
+    if(a.length<8)return message('새 비밀번호는 8자 이상이어야 합니다.');
+    if(a!==b)return message('새 비밀번호가 서로 일치하지 않습니다.');
+    recoverySubmit.disabled=true;message('비밀번호 변경 중…',true);
+    try{
+      const {error}=await client.auth.updateUser({password:a});
+      if(error){console.error('VELOUR password update failed',error);message('비밀번호 변경에 실패했습니다. 복구 링크를 다시 열어 주세요.');return;}
+      const {data:{session}}=await client.auth.getSession();
+      if(!session || !(await serverAllows(session))){message('비밀번호는 변경됐지만 접근 확인에 실패했습니다. 새 비밀번호로 다시 로그인해 주세요.');recoveryMode=false;loginFields.hidden=false;recoveryFields.hidden=true;sub.innerHTML='개인 스튜디오입니다.<br>인증된 계정으로 로그인해 주세요.';return;}
+      history.replaceState(null,'',location.pathname+location.search);
+      unlock();
+    }catch(e){console.error('VELOUR recovery failed',e);message('비밀번호 변경 중 오류가 발생했습니다.');}
+    finally{recoverySubmit.disabled=false;}
+  });
   logout.addEventListener('click',async()=>{
     rememberTrusted(false);
     try{await client?.auth.signOut({scope:'local'});}catch(_){}
     lock('잠겼습니다.');
   });
-  window.__VELOUR_AUTH_QA__={version:'1.1.0',isLocked:()=>!gate.hidden,lock,async verify(){const {data:{session}}=await client.auth.getSession();return !!(session&&await serverAllows(session));}};
+  window.__VELOUR_AUTH_QA__={version:'1.2.0',isLocked:()=>!gate.hidden,lock,async verify(){const {data:{session}}=await client.auth.getSession();return !!(session&&await serverAllows(session));}};
   verifyExistingSession();
 })();
