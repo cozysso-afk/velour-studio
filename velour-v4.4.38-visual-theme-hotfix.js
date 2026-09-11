@@ -243,7 +243,7 @@
     if (!cover) return false;
     if (!cover.dataset.velourSuppliedCover) {
       cover.dataset.velourSuppliedCover = '1';
-      cover.src = './velour-cover-20260911.jpg?v=1';
+      cover.src = './velour-cover-20260911.jpg?v=2';
       cover.alt = '촛불이 켜진 고딕풍 살롱의 연인';
     }
     return true;

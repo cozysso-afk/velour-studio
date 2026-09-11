@@ -8,8 +8,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="VELOUR">
   <meta name="theme-color" content="#16070e">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.PNG?v=20260906-1">
-  <link rel="icon" href="/apple-touch-icon.PNG?v=20260906-1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-velour-v2.png?v=1">
+  <link rel="icon" type="image/png" href="/apple-touch-icon-velour-v2.png?v=1">
   <style>
     html,body{margin:0;min-height:100%;background:#16070e;color:#fff6f8;font-family:-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif}
     .boot{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}
@@ -26,13 +26,22 @@
     if(!res.ok) throw new Error('원본 로드 실패: HTTP '+res.status);
     let html=await res.text();
     html=html.replaceAll('velour-v4.4.38-vault-accept-hotfix.js?v=11','velour-v4.4.38-vault-accept-hotfix.js?v=13');
-    html=html.replace(/<head>/i,`<head>\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="VELOUR">\n<meta name="theme-color" content="#16070e">\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.PNG?v=20260906-1">\n<link rel="icon" href="/apple-touch-icon.PNG?v=20260906-1">`);
+    html=html.replace(/<head>/i,`<head>\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="VELOUR">\n<meta name="theme-color" content="#16070e">\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-velour-v2.png?v=1">\n<link rel="icon" type="image/png" href="/apple-touch-icon-velour-v2.png?v=1">`);
+    const nestedLoadMarker='    let html = await res.text();';
+    const nestedLoadReplacement=`${nestedLoadMarker}\n    html = html.replace('src="cover.PNG"', 'src="./velour-cover-20260911.jpg?v=2"');`;
+    if(!html.includes(nestedLoadMarker)) throw new Error('원본 로더의 표지 선적용 지점을 찾지 못했어.');
+    html=html.replace(nestedLoadMarker,nestedLoadReplacement);
+    const finalHeadAssets='<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="VELOUR"><meta name="theme-color" content="#16070e"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-velour-v2.png?v=1"><link rel="icon" type="image/png" href="/apple-touch-icon-velour-v2.png?v=1">';
+    const nestedHeadMarker="    html = html.replace('</head>', FIX_CSS + '\\n</head>');";
+    const nestedHeadReplacement=`    html = html.replace('</head>', FIX_CSS + '\\n${finalHeadAssets}\\n</head>');`;
+    if(!html.includes(nestedHeadMarker)) throw new Error('원본 로더의 최종 아이콘 삽입 지점을 찾지 못했어.');
+    html=html.replace(nestedHeadMarker,nestedHeadReplacement);
     // The pinned source is itself a loader. Inject into its final app payload;
     // scripts appended to this outer shell are discarded by the nested document.write().
     const nestedBodyMarker="\\n</body>');";
     const nestedBodyClose=html.lastIndexOf(nestedBodyMarker);
     if(nestedBodyClose<0) throw new Error('원본 로더의 최종 앱 삽입 지점을 찾지 못했어.');
-    const nestedHotfixScripts="\\n<script src=\"./velour-v4.4.38-state-isolation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-lock-ui-hotfix.js?v=4\"><' + '/script><script src=\"./velour-v4.4.38-visual-theme-hotfix.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-ui-consolidation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-continuity-voice-guard.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1\"><' + '/script>";
+    const nestedHotfixScripts="\\n<script src=\"./velour-v4.4.38-state-isolation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-lock-ui-hotfix.js?v=4\"><' + '/script><script src=\"./velour-v4.4.38-visual-theme-hotfix.js?v=3\"><' + '/script><script src=\"./velour-v4.4.38-ui-consolidation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-continuity-voice-guard.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1\"><' + '/script>";
     html=html.slice(0,nestedBodyClose)+nestedHotfixScripts+html.slice(nestedBodyClose);
     document.open();
     document.write(html);
