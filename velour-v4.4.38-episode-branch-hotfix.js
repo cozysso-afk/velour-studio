@@ -1,7 +1,8 @@
 'use strict';
 
 /* VELOUR — restore "specific episode" branching removed after V4.4.35.
-   V2: tolerate legacy/migrated stories whose per-episode rows are incomplete,
+   V2.1: keep NEW-story save identity isolated from the previously restored slot,
+   tolerate legacy/migrated stories whose per-episode rows are incomplete,
    and add paid-tier Gemini cost estimates beside token usage. */
 (() => {
   'use strict';
@@ -138,6 +139,153 @@
     return out;
   }
 
+  /* Storage identity edge: a successful NEW generation must never keep the
+     previously restored story slot, even if a downstream draft wrapper sees
+     the old ID while generation is in flight. This lives in the existing
+     storage/branch owner rather than another runtime hotfix file. */
+  let saveMode = 'idle';
+  let modeStoryId = null;
+  const freshStoryId = () => crypto.randomUUID ? crypto.randomUUID() : `story-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  async function stampDraftIdentity(id, title = '', mode = saveMode) {
+    try {
+      const draft = await qa.idbGet(DRAFTS, 'current');
+      if (!draft) return null;
+      const next = cleanStoryObject({
+        ...draft,
+        id: 'current',
+        activeStoryId: id || null,
+        activeStoryTitle: id ? String(title || draft.activeStoryTitle || '') : '',
+        velourStorageMode: mode,
+        savedAt: new Date().toISOString()
+      });
+      await qa.idbPut(DRAFTS, next);
+      return next;
+    } catch (_) { return null; }
+  }
+
+  const originalGenerateForIdentity = window.generateStory;
+  if (typeof originalGenerateForIdentity === 'function') {
+    window.generateStory = async function(isContinue = false) {
+      const oldDraft = !isContinue ? await qa.idbGet(DRAFTS, 'current').catch(() => null) : null;
+      if (!isContinue) {
+        saveMode = 'new';
+        modeStoryId = null;
+        if (oldDraft) await stampDraftIdentity(null, '', 'new');
+      }
+
+      let out;
+      try {
+        out = await originalGenerateForIdentity.apply(this, arguments);
+      } catch (err) {
+        if (!isContinue && oldDraft) await qa.idbPut(DRAFTS, oldDraft).catch(() => {});
+        if (!isContinue) {
+          modeStoryId = oldDraft?.activeStoryId ? String(oldDraft.activeStoryId) : null;
+          saveMode = modeStoryId ? 'continue' : 'idle';
+        }
+        throw err;
+      }
+
+      const outcome = window.__VELOUR_LAST_GENERATION_OUTCOME__ || {};
+      if (!isContinue) {
+        if (outcome.status === 'committed') {
+          await stampDraftIdentity(null, '', 'new');
+          saveMode = 'new';
+          modeStoryId = null;
+        } else {
+          if (oldDraft) await qa.idbPut(DRAFTS, oldDraft).catch(() => {});
+          modeStoryId = oldDraft?.activeStoryId ? String(oldDraft.activeStoryId) : null;
+          saveMode = modeStoryId ? 'continue' : 'idle';
+        }
+      } else if (saveMode === 'idle') {
+        const draft = await qa.idbGet(DRAFTS, 'current').catch(() => null);
+        modeStoryId = draft?.activeStoryId ? String(draft.activeStoryId) : null;
+        saveMode = modeStoryId ? 'continue' : 'idle';
+      }
+      return out;
+    };
+  }
+
+  const originalRestoreForIdentity = window.restoreStory;
+  if (typeof originalRestoreForIdentity === 'function') {
+    window.restoreStory = async function(id) {
+      const out = await originalRestoreForIdentity.apply(this, arguments);
+      const item = await qa.idbGet(STORIES, String(id)).catch(() => null);
+      if (item) {
+        modeStoryId = String(item.id);
+        saveMode = 'continue';
+        await stampDraftIdentity(item.id, item.title || '', 'continue');
+      }
+      return out;
+    };
+  }
+
+  const originalRestoreDraftForIdentity = window.restoreDraftStory;
+  if (typeof originalRestoreDraftForIdentity === 'function') {
+    window.restoreDraftStory = async function() {
+      const before = await qa.idbGet(DRAFTS, 'current').catch(() => null);
+      const out = await originalRestoreDraftForIdentity.apply(this, arguments);
+      if (before?.velourStorageMode === 'new' || !before?.activeStoryId) {
+        modeStoryId = null;
+        saveMode = 'new';
+        await stampDraftIdentity(null, '', 'new');
+      } else {
+        modeStoryId = String(before.activeStoryId);
+        saveMode = 'continue';
+      }
+      return out;
+    };
+  }
+
+  const originalSaveForIdentity = window.saveCurrentStory;
+  if (typeof originalSaveForIdentity === 'function') {
+    window.saveCurrentStory = async function() {
+      if (saveMode !== 'new') return originalSaveForIdentity.apply(this, arguments);
+
+      await window.__VELOUR_STORAGE_READY__;
+      const draft = cleanStoryObject(await qa.idbGet(DRAFTS, 'current') || {});
+      if (!String(draft.currentText || '').trim() && !String(draft.storyHistory || '').trim() && !(Array.isArray(draft.episodes) && draft.episodes.length)) {
+        return alert('저장할 스토리가 아직 없어. 먼저 한 화를 생성해줘.');
+      }
+
+      const settings = draft.settings || {};
+      const defaultName = `${String(settings.chars || 'VELOUR Story').slice(0, 28) || 'VELOUR Story'} · ${new Date().toLocaleDateString('ko-KR')}`;
+      const entered = prompt('처음 한 번만 작품 제목을 정해줘', defaultName);
+      if (entered === null) return null;
+      const id = freshStoryId();
+      const title = String(entered || '').trim() || defaultName;
+      const now = new Date().toISOString();
+      const item = cleanStoryObject({
+        ...draft,
+        id,
+        title,
+        createdAt: now,
+        updatedAt: now,
+        date: new Date().toLocaleString('ko-KR'),
+        activeStoryId: id,
+        activeStoryTitle: title,
+        velourStorageMode: 'continue'
+      });
+      await qa.idbPut(STORIES, item);
+      await qa.idbPut(DRAFTS, cleanStoryObject({
+        ...draft,
+        id: 'current',
+        savedAt: now,
+        activeStoryId: id,
+        activeStoryTitle: title,
+        velourStorageMode: 'continue'
+      }));
+
+      modeStoryId = id;
+      saveMode = 'continue';
+      // Synchronize V4's private active-story closure through its own restore path.
+      await window.restoreStory?.(id);
+      await window.renderStoryLibrary?.();
+      alert('💾 새 작품으로 저장했어. 이후 저장은 이 작품에 이어 저장돼.');
+      return item;
+    };
+  }
+
   async function branchStoryFromEpisodeIDB(id, restartEpisode = null) {
     try {
       await window.__VELOUR_STORAGE_READY__;
@@ -252,8 +400,9 @@
   window.__VELOUR_STORAGE_QA__.branchStoryFromEpisodeIDB = branchStoryFromEpisodeIDB;
   window.__VELOUR_STORAGE_QA__.derivedBranchRuntimeSnapshot = derivedBranchRuntimeSnapshot;
   window.__VELOUR_STORAGE_QA__.mergeBranchEpisodeRows = mergeEpisodeRows;
+  window.__VELOUR_STORAGE_QA__.storySaveMode = () => ({ mode: saveMode, activeStoryId: modeStoryId });
   installButtons();
-  console.info('✦ VELOUR specific-episode branch restored v2');
+  console.info('✦ VELOUR specific-episode branch restored v2.1 · new-story identity isolated');
 })();
 
 (() => {
