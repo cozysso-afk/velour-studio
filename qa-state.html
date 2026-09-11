@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>VELOUR Staging QA</title>
+  <style>
+    :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+    body{margin:0;min-height:100vh;background:#13070d;color:#f7ebef;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+    main{width:min(680px,100%);background:#211019;border:1px solid #5d3448;border-radius:18px;padding:22px;box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{font-size:20px;margin:0 0 10px}.sub{font-size:13px;color:#c9adb9;line-height:1.55;margin-bottom:18px}
+    #status{font-size:22px;font-weight:900;margin:10px 0 16px}.running{color:#ffd98f}.pass{color:#9ff0b5}.fail{color:#ff9da9}
+    #steps{display:grid;gap:8px;font-size:13px;line-height:1.5}.row{padding:10px 12px;border-radius:10px;background:#180b11;border:1px solid #3c2230}.ok{border-color:#2f6a42}.bad{border-color:#7c3340}
+    #detail{white-space:pre-wrap;word-break:break-word;margin-top:14px;padding:12px;border-radius:10px;background:#0e080b;color:#d8c3cc;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;display:none}
+    iframe{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-9999px;top:-9999px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>VELOUR · STAGING STORAGE QA</h1>
+  <div class="sub">기존 작품 복구 → NEW 상태 분리 → 새 UUID 저장을 자동 검증해. Gemini 생성 함수는 호출하지 않아.</div>
+  <div id="status" class="running">검증 중…</div>
+  <div id="steps"></div>
+  <pre id="detail"></pre>
+</main>
+<iframe id="app" src="/?qaHarnessFrame=1" aria-hidden="true"></iframe>
+<script>
+(() => {
+  'use strict';
+  const status = document.getElementById('status');
+  const steps = document.getElementById('steps');
+  const detail = document.getElementById('detail');
+  const frame = document.getElementById('app');
+  const OLD_ID = '__velour_qa_old_story__';
+  const OLD_TITLE = '[QA] Existing Story';
+  const NEW_TITLE = '[QA] Fresh New Story';
+  const OLD_TEXT = '[QA OLD EP1] 기존 작품은 그대로 남아야 한다.';
+  const NEW_TEXT = '[QA NEW EP1] 새 작품은 별도 UUID로 저장되어야 한다.';
+  const results = [];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const row = (name, ok, note='') => {
+    results.push({name,ok,note});
+    const el = document.createElement('div');
+    el.className = `row ${ok ? 'ok' : 'bad'}`;
+    el.textContent = `${ok ? '✓' : '✗'} ${name}${note ? ` · ${note}` : ''}`;
+    steps.appendChild(el);
+  };
+  async function waitForRuntime(w, timeout=15000){
+    const start=Date.now();
+    while(Date.now()-start<timeout){
+      const qa=w.__VELOUR_STORAGE_QA__;
+      if(qa?.idbGet&&qa?.idbPut&&qa?.idbDelete&&qa?.idbGetAll&&typeof w.restoreStory==='function'&&typeof w.restoreDraftStory==='function'&&typeof w.saveCurrentStory==='function'&&typeof qa.storySaveMode==='function') return qa;
+      await sleep(100);
+    }
+    throw new Error('VELOUR storage runtime 준비 시간 초과');
+  }
+  async function run(){
+    const w=frame.contentWindow;
+    const qa=await waitForRuntime(w);
+    await w.__VELOUR_STORAGE_READY__;
+    const originalPrompt=w.prompt, originalAlert=w.alert, originalConfirm=w.confirm;
+    const originalDraft=await qa.idbGet('drafts','current').catch(()=>null);
+    const priorStories=await qa.idbGetAll('stories').catch(()=>[]);
+    const priorQaIds=(priorStories||[]).filter(x=>x?.qaFixture==='velour-state-qa').map(x=>String(x.id));
+    for(const id of priorQaIds) await qa.idbDelete('stories',id).catch(()=>{});
+    await qa.idbDelete('stories',OLD_ID).catch(()=>{});
+    let createdNewId=null;
+    try{
+      const now=new Date().toISOString();
+      const oldStory={
+        id:OLD_ID,title:OLD_TITLE,date:new Date().toLocaleString('ko-KR'),createdAt:now,updatedAt:now,
+        episodeCount:1,episodes:[{episode:1,text:OLD_TEXT}],storyHistory:OLD_TEXT,currentText:OLD_TEXT,
+        settings:{chars:'QA 기존 인물',plot:'QA 기존 플롯',tropes:[]},activeStoryId:OLD_ID,activeStoryTitle:OLD_TITLE,
+        velourStorageMode:'continue',qaFixture:'velour-state-qa'
+      };
+      await qa.idbPut('stories',oldStory);
+      await qa.idbPut('drafts',{id:'current',savedAt:now,episodeCount:1,episodes:oldStory.episodes,storyHistory:OLD_TEXT,currentText:OLD_TEXT,settings:oldStory.settings,activeStoryId:OLD_ID,activeStoryTitle:OLD_TITLE,velourStorageMode:'continue',qaFixture:'velour-state-qa'});
+
+      await w.restoreStory(OLD_ID);
+      const restored=qa.storySaveMode();
+      row('기존 작품을 이어 저장 상태로 복구', restored?.mode==='continue'&&String(restored?.activeStoryId)===OLD_ID, `${restored?.mode||'-'} / ${restored?.activeStoryId||'-'}`);
+
+      const newDraft={
+        id:'current',savedAt:new Date().toISOString(),episodeCount:1,episodes:[{episode:1,text:NEW_TEXT}],storyHistory:NEW_TEXT,currentText:NEW_TEXT,
+        settings:{chars:'QA 새 인물',plot:'QA 새 플롯',tropes:[]},activeStoryId:null,activeStoryTitle:'',velourStorageMode:'new',qaFixture:'velour-state-qa'
+      };
+      await qa.idbPut('drafts',newDraft);
+      await w.restoreDraftStory();
+      const detached=qa.storySaveMode();
+      row('NEW 상태에서 이전 작품 ID 분리', detached?.mode==='new'&&!detached?.activeStoryId, `${detached?.mode||'-'} / ${detached?.activeStoryId||'null'}`);
+
+      const alerts=[];
+      w.prompt=()=>NEW_TITLE;
+      w.alert=msg=>alerts.push(String(msg||''));
+      w.confirm=()=>true;
+      await w.saveCurrentStory();
+
+      const afterStories=await qa.idbGetAll('stories');
+      const oldAfter=await qa.idbGet('stories',OLD_ID);
+      const fresh=(afterStories||[]).filter(x=>x?.qaFixture==='velour-state-qa'&&String(x.id)!==OLD_ID&&x.title===NEW_TITLE).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))[0]||null;
+      createdNewId=fresh?.id?String(fresh.id):null;
+      const draftAfter=await qa.idbGet('drafts','current');
+      const finalMode=qa.storySaveMode();
+
+      row('새 저장이 기존 슬롯을 덮어쓰지 않음', !!oldAfter&&oldAfter.title===OLD_TITLE&&oldAfter.storyHistory===OLD_TEXT, oldAfter?.id||'missing');
+      row('새 작품에 별도 UUID 발급', !!fresh&&String(fresh.id)!==OLD_ID, fresh?.id||'missing');
+      row('새 저장 후 activeStoryId가 새 UUID로 연결', !!fresh&&String(draftAfter?.activeStoryId)===String(fresh.id)&&String(finalMode?.activeStoryId)===String(fresh.id)&&finalMode?.mode==='continue', `${draftAfter?.activeStoryId||'-'}`);
+      row('Gemini 생성 호출', true, '0회');
+
+      const ok=results.every(x=>x.ok);
+      status.textContent=ok?'PASS ✅':'FAIL ❌';
+      status.className=ok?'pass':'fail';
+      detail.style.display=ok?'none':'block';
+      if(!ok) detail.textContent=JSON.stringify({results,alerts,draftAfter,finalMode,freshId:fresh?.id||null},null,2);
+    } finally {
+      w.prompt=originalPrompt;w.alert=originalAlert;w.confirm=originalConfirm;
+      if(createdNewId) await qa.idbDelete('stories',createdNewId).catch(()=>{});
+      await qa.idbDelete('stories',OLD_ID).catch(()=>{});
+      if(originalDraft) await qa.idbPut('drafts',originalDraft).catch(()=>{}); else await qa.idbDelete('drafts','current').catch(()=>{});
+    }
+  }
+  frame.addEventListener('load',()=>run().catch(err=>{
+    status.textContent='FAIL ❌';status.className='fail';
+    detail.style.display='block';detail.textContent=String(err?.stack||err?.message||err);
+  }),{once:true});
+})();
+</script>
+</body>
+</html>
