@@ -7,7 +7,7 @@
   'use strict';
   if (window.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__) return;
   window.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__ = true;
-  window.__VELOUR_SCENE_VOICE_MEMORY_VERSION__ = '1.1.0';
+  window.__VELOUR_SCENE_VOICE_MEMORY_VERSION__ = '1.1.1';
 
   const previousBuild = window.buildPrompt;
   if (typeof previousBuild !== 'function') {
@@ -46,10 +46,13 @@
     return String(document.getElementById('inputChars')?.value || '').trim();
   }
 
+  const KOREAN_TOKEN_END = '(?=$|[\\s,./·×xX()])';
+  const AGE_TOKEN_RE = new RegExp('\\d{1,2}\\s*(?:세|살)' + KOREAN_TOKEN_END);
+
   function durableAddressHints(s){
     return arr(s?.runtime?.durableFacts)
       .map(x=>clean(x,220))
-      .filter(line => /호칭|반말|존댓말|존대말|존대|오빠|형|누나|언니|선배|후배|님\b|부르|연상|연하|동갑|\d{1,2}\s*(?:세|살)\b/.test(line))
+      .filter(line => /호칭|반말|존댓말|존대말|존대|오빠|형|누나|언니|선배|후배|부르|연상|연하|동갑/.test(line) || AGE_TOKEN_RE.test(line) || /님(?=$|[\s,./·×xX()])/.test(line))
       .slice(-10);
   }
 
@@ -68,7 +71,7 @@
       .map(x=>clean(x,240))
       .filter(Boolean);
     const ageLines = lines
-      .filter(line => /\d{1,2}\s*(?:세|살)\b|연상|연하|동갑|나이\s*차/.test(line))
+      .filter(line => AGE_TOKEN_RE.test(line) || /연상|연하|동갑|나이\s*차/.test(line))
       .slice(0,10);
     const addressLines = lines
       .filter(line => /호칭|반말|존댓말|존대말|존대|오빠|형|누나|언니|선배|후배|팀장님|대표님|선생님|이름으로|부르/.test(line))
