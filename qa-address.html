@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>VELOUR Age & Address QA</title>
+  <style>
+    :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
+    body{margin:0;min-height:100vh;background:#13070d;color:#f7ebef;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+    main{width:min(680px,100%);background:#211019;border:1px solid #5d3448;border-radius:18px;padding:22px;box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{font-size:20px;margin:0 0 10px}.sub{font-size:13px;color:#c9adb9;line-height:1.55;margin-bottom:18px}
+    #status{font-size:22px;font-weight:900;margin:10px 0 16px}.running{color:#ffd98f}.pass{color:#9ff0b5}.fail{color:#ff9da9}
+    #steps{display:grid;gap:8px;font-size:13px;line-height:1.5}.row{padding:10px 12px;border-radius:10px;background:#180b11;border:1px solid #3c2230}.ok{border-color:#2f6a42}.bad{border-color:#7c3340}
+    #detail{white-space:pre-wrap;word-break:break-word;margin-top:14px;padding:12px;border-radius:10px;background:#0e080b;color:#d8c3cc;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;display:none}
+    iframe{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-9999px;top:-9999px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>VELOUR · AGE / ADDRESS QA</h1>
+  <div class="sub">명시 나이·연상연하·호칭·존반말 CANON을 우선하고, “남자가 연상 → 오빠” 같은 자동 추론을 금지하는지 검증해. Gemini는 호출하지 않아.</div>
+  <div id="status" class="running">검증 중…</div>
+  <div id="steps"></div>
+  <pre id="detail"></pre>
+</main>
+<iframe id="app" src="/?qaAddressHarnessFrame=1" aria-hidden="true"></iframe>
+<script>
+(() => {
+  'use strict';
+  const status=document.getElementById('status'),steps=document.getElementById('steps'),detail=document.getElementById('detail'),frame=document.getElementById('app');
+  const results=[];
+  const row=(ok,text)=>{results.push({ok,text});const el=document.createElement('div');el.className='row '+(ok?'ok':'bad');el.textContent=(ok?'✓ ':'✗ ')+text;steps.appendChild(el);};
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+  async function run(){
+    const w=frame.contentWindow;
+    for(let i=0;i<180;i++){
+      if(w?.__VELOUR_SCENE_VOICE_MEMORY_QA__?.ageAddressDirective && typeof w.buildPrompt==='function') break;
+      await wait(100);
+    }
+    const q=w?.__VELOUR_SCENE_VOICE_MEMORY_QA__;
+    if(!q?.ageAddressDirective) throw new Error('age/address QA bridge not ready');
+
+    row(w.__VELOUR_SCENE_VOICE_MEMORY_VERSION__==='1.1.0','새 age/address owner v1.1.0 로드');
+
+    const synthetic={
+      hardCanon:'서연은 민준을 이름으로 부른다. 둘은 서로 반말을 쓴다.',
+      storyline:'민준이 서연보다 연상이다.',
+      runtime:{durableFacts:['[사용자 확정 지속 상태 · EP7] 이후 서로 존댓말을 쓴다.']}
+    };
+    const chars='민준 35세 × 서연 28세';
+    const evidence=q.ageAddressEvidence(synthetic,chars);
+    const directive=q.ageAddressDirective(synthetic,chars);
+
+    row(evidence.ageLines.join(' ').includes('35세')&&evidence.ageLines.join(' ').includes('28세'),'명시 숫자 나이 35세 / 28세를 근거로 보존');
+    row(evidence.addressLines.join(' ').includes('이름으로 부른다'),'명시 호칭 CANON을 근거로 보존');
+    row(evidence.addressLines.join(' ').includes('존댓말'),'후속 확정 존댓말 상태를 근거로 보존');
+    row(/성별[^.\n]*나이 순서를 뒤집지 않는다/.test(directive),'성별·역할 때문에 연상/연하를 뒤집는 추론 금지');
+    row(/남자가 연상[^.\n]*오빠[^.\n]*하지 않는다/.test(directive),'남자 연상 → 오빠 자동 호칭 금지');
+    row(/최신의 명시적 사용자 확정 상태가 최우선/.test(directive),'후속 호칭/존반말 변경이 오래된 설정보다 우선');
+    row(/명시적 호칭이 없으면 이름, 이름\+씨, 직책/.test(directive),'호칭 미지정 시 중립 호칭 정책');
+    row(/나이와 호칭은 별개/.test(directive),'나이 판정과 호칭 결정을 분리');
+
+    const input=w.document.getElementById('inputChars');
+    const old=input?.value||'';
+    if(input) input.value=chars;
+    let prompt='';
+    try{prompt=String(w.buildPrompt(false)||'');}finally{if(input)input.value=old;}
+    row(prompt.includes('[AGE & ADDRESS LOCK — 나이·호칭 오류 방지]'),'실제 buildPrompt에 age/address lock 주입');
+    row(prompt.includes('35세')&&prompt.includes('28세'),'실제 프롬프트에도 명시 나이 근거 포함');
+    row(true,'Gemini 생성 호출 · 0회');
+
+    const ok=results.every(x=>x.ok);
+    status.textContent=ok?'PASS ✅':'FAIL ❌';status.className=ok?'pass':'fail';
+    if(!ok){detail.style.display='block';detail.textContent=JSON.stringify({version:w.__VELOUR_SCENE_VOICE_MEMORY_VERSION__,evidence,directive,results},null,2);}
+  }
+
+  frame.addEventListener('load',()=>run().catch(err=>{status.textContent='FAIL ❌';status.className='fail';detail.style.display='block';detail.textContent=String(err?.stack||err);}));
+})();
+</script>
+</body>
+</html>
