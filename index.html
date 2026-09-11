@@ -32,7 +32,7 @@
     const nestedBodyMarker="\\n</body>');";
     const nestedBodyClose=html.lastIndexOf(nestedBodyMarker);
     if(nestedBodyClose<0) throw new Error('원본 로더의 최종 앱 삽입 지점을 찾지 못했어.');
-    const nestedHotfixScripts="\\n<script src=\"./velour-v4.4.38-state-isolation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-lock-ui-hotfix.js?v=3\"><' + '/script><script src=\"./velour-v4.4.38-visual-theme-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-ui-consolidation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-continuity-voice-guard.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1\"><' + '/script>";
+    const nestedHotfixScripts="\\n<script src=\"./velour-v4.4.38-state-isolation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-lock-ui-hotfix.js?v=4\"><' + '/script><script src=\"./velour-v4.4.38-visual-theme-hotfix.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-ui-consolidation-hotfix.js?v=1\"><' + '/script><script src=\"./velour-v4.4.38-continuity-voice-guard.js?v=2\"><' + '/script><script src=\"./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1\"><' + '/script>";
     html=html.slice(0,nestedBodyClose)+nestedHotfixScripts+html.slice(nestedBodyClose);
     document.open();
     document.write(html);

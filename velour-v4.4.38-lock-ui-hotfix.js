@@ -9,23 +9,22 @@
   const style = document.createElement('style');
   style.id = 'velour-lock-ui-hotfix-css';
   style.textContent = `
-    header.velour-header-lock-layout{align-items:flex-start;gap:10px}
-    .velour-header-actions{display:grid;grid-template-columns:max-content max-content;gap:7px 8px;justify-content:end;align-items:center;flex:0 0 auto}
-    .velour-header-actions #btnStoryLibrary{grid-column:1;grid-row:1}
-    .velour-header-actions .velour-api-settings-btn{grid-column:2;grid-row:1}
+    header.velour-header-lock-layout{align-items:center;gap:10px}
+    .velour-header-actions{display:flex;gap:7px;justify-content:flex-end;align-items:center;flex:0 0 auto}
     #velourLogoutBtn.velour-header-lock-btn{
       position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
-      z-index:auto!important;grid-column:2;grid-row:2;justify-self:stretch;min-height:40px;margin:0!important;
-      border:1px solid rgba(245,196,107,.24)!important;border-radius:14px!important;
-      background:rgba(26,8,17,.82)!important;color:#f3d48c!important;padding:8px 12px!important;
-      font-size:11px!important;font-weight:750!important;line-height:1!important;opacity:1!important;
+      z-index:auto!important;flex:0 0 44px;width:44px!important;min-width:44px!important;min-height:44px;margin:0!important;
+      border:1px solid rgba(245,196,107,.24)!important;border-radius:999px!important;
+      background:rgba(26,8,17,.82)!important;color:#f3d48c!important;padding:0!important;
+      font-size:0!important;font-weight:750!important;line-height:1!important;opacity:1!important;
       backdrop-filter:blur(12px);box-shadow:0 4px 14px rgba(0,0,0,.28);touch-action:manipulation
     }
+    #velourLogoutBtn.velour-header-lock-btn::before{content:'🔒';font-size:15px;line-height:1}
     @media(max-width:390px){
       header.velour-header-lock-layout{gap:7px}
-      .velour-header-actions{gap:6px}
+      .velour-header-actions{gap:5px}
       .velour-header-actions .icon-btn{padding:8px 11px;font-size:11px}
-      #velourLogoutBtn.velour-header-lock-btn{min-height:38px;padding:7px 10px!important;font-size:10.5px!important}
+      #velourLogoutBtn.velour-header-lock-btn{flex-basis:42px;width:42px!important;min-width:42px!important;min-height:42px;padding:0!important;font-size:0!important}
     }
   `;
   (document.head || document.documentElement).appendChild(style);
@@ -53,6 +52,7 @@
     if (lock.parentElement !== actions) actions.appendChild(lock);
     lock.classList.add('velour-header-lock-btn');
     if (lock.textContent !== '🔒 잠금') lock.textContent = '🔒 잠금';
+    lock.setAttribute('aria-label', 'VELOUR 잠금 및 로그아웃');
     lock.title = 'VELOUR 잠금 / 로그아웃';
     return true;
   }

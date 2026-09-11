@@ -68,10 +68,11 @@
       -webkit-backdrop-filter:blur(14px) saturate(1.15);
     }
     #velourLogoutBtn.velour-header-lock-btn{
-      grid-column:2;
-      grid-row:2;
-      justify-self:end;
-      min-width:84px;
+      flex:0 0 44px;
+      width:44px!important;
+      min-width:44px;
+      padding:0!important;
+      font-size:0!important;
       opacity:1!important;
     }
     .hero-banner{
@@ -223,9 +224,15 @@
       .brand-text p{max-width:144px;font-size:8.5px;letter-spacing:1.35px}
       .velour-header-actions .icon-btn,
       #velourLogoutBtn.velour-header-lock-btn{min-height:36px;padding:8px 10px!important;font-size:10px!important}
-      #velourLogoutBtn.velour-header-lock-btn{min-width:76px}
-      .hero-overlay h2{font-size:16.5px}
-      .hero-overlay p{font-size:10.5px}
+      #velourLogoutBtn.velour-header-lock-btn{flex-basis:42px;width:42px!important;min-width:42px;padding:0!important;font-size:0!important}
+      .hero-banner{height:238px;aspect-ratio:auto}
+      .hero-overlay{padding:25px 15px 12px}
+      .hero-overlay h2{font-size:15.5px}
+      .hero-overlay p{font-size:10px}
+    }
+    @media(min-width:391px) and (max-width:430px){
+      .hero-banner{height:250px;aspect-ratio:auto}
+      .hero-overlay{padding:27px 16px 13px}
     }
   `;
   (document.head || document.documentElement).appendChild(style);
