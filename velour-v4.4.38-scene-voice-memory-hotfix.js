@@ -7,7 +7,7 @@
   'use strict';
   if (window.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__) return;
   window.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__ = true;
-  window.__VELOUR_SCENE_VOICE_MEMORY_VERSION__ = '1.0.0';
+  window.__VELOUR_SCENE_VOICE_MEMORY_VERSION__ = '1.1.0';
 
   const previousBuild = window.buildPrompt;
   if (typeof previousBuild !== 'function') {
@@ -42,6 +42,46 @@
     return lines.filter(line => /말투|말버릇|호칭|존댓말|반말|대사|화법|어투|성격|무뚝뚝|다정|직설|능글|냉정|장난|수다|과묵|존칭|높임/.test(line)).slice(0,8);
   }
 
+  function currentCharacterText(){
+    return String(document.getElementById('inputChars')?.value || '').trim();
+  }
+
+  function durableAddressHints(s){
+    return arr(s?.runtime?.durableFacts)
+      .map(x=>clean(x,220))
+      .filter(line => /호칭|반말|존댓말|존대말|존대|오빠|형|누나|언니|선배|후배|님\b|부르|연상|연하|동갑|\d{1,2}\s*(?:세|살)\b/.test(line))
+      .slice(-10);
+  }
+
+  function ageAddressEvidence(s, charsOverride = ''){
+    const chars = clean(charsOverride || currentCharacterText(), 600);
+    const durable = durableAddressHints(s);
+    const raw = [
+      chars,
+      String(s?.hardCanon || ''),
+      String(s?.storyline || ''),
+      String(s?.periodNote || ''),
+      ...durable
+    ].filter(Boolean).join('\n');
+    const lines = raw
+      .split(/\n+|[;；]+/)
+      .map(x=>clean(x,240))
+      .filter(Boolean);
+    const ageLines = lines
+      .filter(line => /\d{1,2}\s*(?:세|살)\b|연상|연하|동갑|나이\s*차/.test(line))
+      .slice(0,10);
+    const addressLines = lines
+      .filter(line => /호칭|반말|존댓말|존대말|존대|오빠|형|누나|언니|선배|후배|팀장님|대표님|선생님|이름으로|부르/.test(line))
+      .slice(-10);
+    return { chars, ageLines:uniq(ageLines), addressLines:uniq(addressLines), durable };
+  }
+
+  function ageAddressDirective(s, charsOverride = ''){
+    const e = ageAddressEvidence(s, charsOverride);
+    const fmt = a => a.length ? a.join(' / ') : '명시 없음';
+    return `\n[AGE & ADDRESS LOCK — 나이·호칭 오류 방지]\n- 명시된 숫자 나이는 HARD FACT다. 숫자를 그대로 비교해 연상/연하를 정하고 성별, 직업, 주도권, 체격, 성격 때문에 나이 순서를 뒤집지 않는다.\n- ‘남자가 연상이다’라는 이유만으로 상대가 자동으로 ‘오빠’라고 부르게 하지 않는다. 오빠/형/누나/언니 같은 친족형 호칭은 사용자가 인물 설정·HARD CANON·확정된 후속 상태에서 실제로 정했을 때만 사용한다.\n- 호칭·존댓말/반말은 최신의 명시적 사용자 확정 상태가 최우선이다. 그다음 인물 설정/HARD CANON, 이미 확립된 본문 순으로 따른다. 일반적인 한국어 관습이나 성별 고정관념으로 빈칸을 임의 보충하지 않는다.\n- 명시적 호칭이 없으면 이름, 이름+씨, 직책 등 현재 관계와 장면에 맞는 중립 호칭을 사용하고 친족형 호칭을 새로 만들어 고정하지 않는다.\n- 나이와 호칭은 별개다. 연상/연하 판정이 맞더라도 호칭은 CANON에 근거해야 한다.\n- 현재 명시 나이/연상·연하 근거: ${fmt(e.ageLines)}\n- 현재 명시 호칭/말투 근거: ${fmt(e.addressLines)}`;
+  }
+
   function voiceDirective(s){
     const hints = canonVoiceHints(s);
     const period = /historical|eastern_fantasy|western_fantasy|martial_arts/.test(String(s?.world||''));
@@ -58,7 +98,7 @@
     return `\n[SCENE STATE MACHINE — 제자리걸음 방지]\n- 장면은 필요에 따라 진입(entry) → 압력/긴장(pressure) → 선택(choice) → 결과(consequence) → 잔여감(residue) 중 현재 필요한 단계만 밟는다. 짧은 장면에 다섯 단계를 억지로 넣지 않는다.\n- 이어쓰기라면 직전 장면이 이미 압력 단계에 있는데 다시 배경 설명과 감정 정의부터 시작하지 않는다. 현재 단계에서 앞으로 진행한다.\n- 선택은 거창한 사건일 필요가 없다. 질문에 답함/피함, 머무름/떠남, 말함/숨김, 제안/거절처럼 관계 상태를 조금이라도 바꾸는 행동이면 된다.\n- consequence는 선택의 실제 반응이어야 하며, 즉시 모든 갈등을 해결하는 보상으로 쓰지 않는다. residue는 다음 장면에 이어질 감정·정보·현실적 비용 중 하나만 남겨도 충분하다.`;
   }
 
-  function directive(s){ return `${sceneDirective(s)}${voiceDirective(s)}${stateMachineDirective()}`; }
+  function directive(s){ return `${sceneDirective(s)}${voiceDirective(s)}${ageAddressDirective(s)}${stateMachineDirective()}`; }
 
   window.buildPrompt = function(){
     const out = String(previousBuild.apply(this, arguments) || '');
@@ -66,9 +106,13 @@
     const dna = sceneDNA(s);
     window.__VELOUR_LAST_SCENE_DNA__ = Object.assign({at:new Date().toISOString()},dna);
     window.__VELOUR_LAST_VOICE_HINTS__ = canonVoiceHints(s);
+    window.__VELOUR_LAST_AGE_ADDRESS_EVIDENCE__ = ageAddressEvidence(s);
     return `${out}\n${directive(s)}`.trim();
   };
 
-  window.__VELOUR_SCENE_VOICE_MEMORY_QA__ = { sceneDNA, canonVoiceHints, sceneDirective, voiceDirective, stateMachineDirective, directive };
-  console.info('✦ VELOUR scene DNA + character voice memory loaded');
+  window.__VELOUR_SCENE_VOICE_MEMORY_QA__ = {
+    sceneDNA, canonVoiceHints, ageAddressEvidence, ageAddressDirective,
+    sceneDirective, voiceDirective, stateMachineDirective, directive
+  };
+  console.info('✦ VELOUR scene DNA + character voice memory loaded · age/address lock');
 })();
