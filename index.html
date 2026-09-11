@@ -29,7 +29,7 @@
     html=html.replace(/<head>/i,`<head>\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="VELOUR">\n<meta name="theme-color" content="#16070e">\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.PNG?v=20260906-1">\n<link rel="icon" href="/apple-touch-icon.PNG?v=20260906-1">`);
     const bodyClose=html.toLowerCase().lastIndexOf('</body>');
     if(bodyClose<0) throw new Error('원본 HTML의 최종 </body>를 찾지 못했어.');
-    const hotfixScripts='<script src="./velour-v4.4.38-state-isolation-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-lock-ui-hotfix.js?v=2"><'+'/script><script src="./velour-v4.4.38-visual-theme-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-continuity-voice-guard.js?v=2"><'+'/script><script src="./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1"><'+'/script>';
+    const hotfixScripts='<script src="./velour-v4.4.38-state-isolation-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-lock-ui-hotfix.js?v=2"><'+'/script><script src="./velour-v4.4.38-visual-theme-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-ui-consolidation-hotfix.js?v=1"><'+'/script><script src="./velour-v4.4.38-continuity-voice-guard.js?v=2"><'+'/script><script src="./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=1"><'+'/script>';
     html=html.slice(0,bodyClose)+hotfixScripts+html.slice(bodyClose);
     document.open();
     document.write(html);
