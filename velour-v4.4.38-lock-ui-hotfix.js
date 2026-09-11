@@ -52,7 +52,7 @@
     }
     if (lock.parentElement !== actions) actions.appendChild(lock);
     lock.classList.add('velour-header-lock-btn');
-    lock.textContent = '🔒 잠금';
+    if (lock.textContent !== '🔒 잠금') lock.textContent = '🔒 잠금';
     lock.title = 'VELOUR 잠금 / 로그아웃';
     return true;
   }
