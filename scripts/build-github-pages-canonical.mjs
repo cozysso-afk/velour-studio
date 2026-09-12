@@ -46,7 +46,7 @@ const runtimeScripts = `
 <script src="./velour-v4.4.38-state-isolation-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-lock-ui-hotfix.js?v=4"></script>
-<script src="./velour-v4.4.38-visual-theme-hotfix.js?v=3"></script>
+<script src="./velour-v4.4.38-visual-theme-hotfix.js?v=4"></script>
 <script src="./velour-v4.4.38-ui-consolidation-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-continuity-voice-guard.js?v=3"></script>
 <script src="./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=2"></script>
