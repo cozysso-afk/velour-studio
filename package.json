@@ -5,7 +5,7 @@
   },
   "private": true,
   "scripts": {
-    "test": "node scripts/test-conditional-canon.mjs && node scripts/test-long-canon.mjs && node scripts/test-canon-authoring.mjs"
+    "test": "node scripts/test-conditional-canon.mjs && node scripts/test-long-canon.mjs && node scripts/test-canon-authoring.mjs && node scripts/test-settings-library.mjs"
   },
   "engines": {
     "node": ">=24.0.0"

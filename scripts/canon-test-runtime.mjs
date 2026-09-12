@@ -20,7 +20,7 @@ export async function runtime({saved={},database=new IDBFactory(),wrappers=true}
   // remain real; no application code is rewritten to make tests pass.
   w.setInterval=()=>0;
   for(const script of [...w.document.scripts]) if(!script.src&&script.textContent.trim()) w.eval(script.textContent);
-  for(const name of ['velour-v3.5.js','velour-canon-authoring.js','velour-canon-index.js','velour-v4.4.38.js'])w.eval(readFileSync(name,'utf8'));
+  for(const name of ['velour-v3.5.js','velour-canon-authoring.js','velour-canon-index.js','velour-v4.4.38.js','velour-settings-library.js'])w.eval(readFileSync(name,'utf8'));
   await w.__VELOUR_STORAGE_READY__;
   if(wrappers) for(const suffix of ['state-isolation-hotfix','episode-branch-hotfix','state-isolation-reclaim-hotfix','visual-theme-hotfix','ui-consolidation-hotfix','quality-restore','scene-agency-hotfix','continuity-hotfix','continuity-vault-hotfix','internal-label-firewall','prose-qa-hotfix','style-dna-hotfix','scene-voice-memory-hotfix','continuity-voice-guard','continuity-relation-grammar-hotfix'])w.eval(readFileSync(`velour-v4.4.38-${suffix}.js`,'utf8'));
   return {w,dom,errors,database,close:()=>w.close()};

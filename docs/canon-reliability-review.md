@@ -33,3 +33,9 @@ All changed JS/MJS files must pass `node --check`; `git diff --check` must pass 
 ## Review limits
 
 Native iPhone Safari/PWA IME behavior still needs device verification; synthetic DOM tests do not prove native keyboard behavior. Natural-language name/type/condition detection is deterministic and heuristic, not a semantic guarantee. Clear named subjects and named blocks are supported; ambiguous pronouns or unusual formatting can remain unassigned. Models can still violate instructions despite receiving the rules. Mandatory overflow deliberately blocks generation rather than reducing saved canon. No new paid model request or live generated story was used for QA. Existing crossover styling and response-vault/branch logic are not redesigned.
+
+## Follow-up: save settings without generating a story
+
+The user confirmed Korean text input and requested settings-only saving. A compact settings library next to HARD CANON now provides named save, select/load and delete. It stores base character/plot/genre selections, V4 authoring configuration and V33 helper/crossover selections in independent IndexedDB meta records. No episode, generated text, runtime relationship memory or beat index is copied into a preset; loading applies settings while preserving the current story and its progress. Names create separate snapshots instead of silently overwriting older ones. Writes report success only after transaction completion. No generation/API request is necessary. The preset store is local to this browser; the existing story JSON export does not yet export these independent presets.
+
+`test-settings-library.mjs` verifies empty-story saves, named isolation, exact long text after reload, character/plot/crossover restoration, preservation of current story/runtime/progress and transaction failure without loss. Native iPhone keyboard input was reported working by the user; this follow-up settings library still needs user review before merge/deploy.

@@ -3426,6 +3426,14 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   window.__VELOUR_V4_STATE_SNAPSHOT__=()=>clone(state);
   window.__VELOUR_V4_STATE_RESTORE__=restoreV4StateSnapshot;
   window.__VELOUR_CANON_FLUSH__=()=>canonEditor?.flush();
+  window.__VELOUR_SETTINGS_FORM__={
+    capture:()=>{const config=clone(state);delete config.runtime;delete config.beatIndex;return {settings:currentSettingsForIDB(),config};},
+    apply:snapshot=>{
+      applySettingsFromIDB(snapshot.settings);
+      restoreV4StateSnapshot({...state,...snapshot.config,runtime:state.runtime,beatIndex:state.beatIndex});
+      return save(state);
+    }
+  };
   window.__VELOUR_CANON_INPUT_QA__={get editor(){return canonEditor;},storylineBeats,canonDirective,save,load,cleanStoryObject,persistCanonDraft};
   window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,responseVaultDelete,responseVaultClear,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
 
