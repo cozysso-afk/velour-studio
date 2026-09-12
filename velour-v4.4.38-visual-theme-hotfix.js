@@ -213,6 +213,12 @@
       padding:6px 9px!important;
       font-size:10px!important;
     }
+    /* Keep selected crossover colors above the important base pill theme. */
+    .v33-tag.on{
+      border-color:rgba(252,218,149,.72)!important;
+      background:linear-gradient(135deg,rgba(145,82,39,.36),rgba(99,31,39,.54))!important;
+      color:#fff0bd!important;
+    }
     .icon-btn:active,.btn-outline:active,.velour-small-btn:active,.velour-story-actions button:active,
     #velourLogoutBtn.velour-header-lock-btn:active{
       transform:translateY(1px);
