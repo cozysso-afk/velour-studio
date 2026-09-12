@@ -12,6 +12,7 @@ context.__VELOUR_STORAGE_QA__ = {};
 context.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__ = true;
 context.buildPrompt = () => `[HARD CANON]\n${state.hardCanon}\n[CURRENT STEP] 촬영`;
 context.generateStory = async () => {};
+vm.runInContext(readFileSync('velour-canon-index.js','utf8'), context);
 for (const file of ['continuity-hotfix','continuity-vault-hotfix','continuity-voice-guard','continuity-relation-grammar-hotfix']) {
   vm.runInContext(readFileSync(`velour-v4.4.38-${file}.js`,'utf8'), context);
 }
@@ -79,7 +80,7 @@ for (const age of ['35세', '35 세', '35살', '만 35세', '35세이다']) {
 
 const html = readFileSync('index.html','utf8');
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
-assert.match(html,/vault-accept-hotfix.js\?v=14/);
+assert.match(html,/vault-accept-hotfix.js\?v=15/);
 assert.match(loader,/continuity-hotfix.js\?v=2/);
-assert.match(loader,/continuity-vault-hotfix.js\?v=3/);
+assert.match(loader,/continuity-vault-hotfix.js\?v=4/);
 console.log('PASS: pending conditions, first/continuation prompts, settled baseline, per-character facts, deduplication, cache URLs');

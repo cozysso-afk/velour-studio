@@ -19,13 +19,7 @@
     catch (_) { return {}; }
   }
 
-  function canonLines(raw){
-    return String(raw || '')
-      .split(/\n+|(?<=[.!?。！？])\s+|\s*[;；]\s*/)
-      .map(x => x.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
-      .filter(Boolean)
-      .slice(0, 40);
-  }
+  function canonLines(raw){ return window.__VELOUR_CANON_INDEX__.index(raw).fragments.map(f=>f.text); }
 
   function keywords(raw){
     const words = String(raw || '').toLowerCase().match(/[가-힣a-z0-9_]{2,}/g) || [];
@@ -40,39 +34,20 @@
     return score;
   }
 
-  function selectiveCanon(state, prompt){
-    const lines = canonLines(state?.hardCanon || '');
-    if (!lines.length) return '';
-    const runtime = state?.runtime || {};
-    const direction = String(document.getElementById('v33Next')?.value || '');
-    const context = [
-      direction,
-      runtime.causalCarry,
-      runtime.relationshipState,
-      ...(Array.isArray(runtime.openThreads) ? runtime.openThreads.slice(-4) : []),
-      ...(Array.isArray(runtime.timeline) ? runtime.timeline.slice(-4) : []),
-      String(prompt || '').slice(-1800)
-    ].filter(Boolean).join('\n');
-    const contextKeys = keywords(context);
-    const ranked = lines
-      .map((line, index) => ({ line: clean(line, 260), index, score: relevanceScore(line, contextKeys) }))
-      .filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score || a.index - b.index)
-      .slice(0, 4)
-      .map(x => x.line);
-
-    if (!ranked.length) {
-      return '[HARD CANON 원문은 내부 검증 기준으로 유지됨 · 이번 화 직접 관련 항목 없음]';
-    }
-    return `[이번 화 관련 HARD CANON · 내부 제약]\n${ranked.map(x => `- ${x}`).join('\n')}\n- 위 항목은 사실관계 검증용이다. 현재 장면에 필요하지 않으면 본문에서 설명·복습·언급하지 않는다.`;
+  function selectiveCanon(state){
+    const api=window.__VELOUR_CANON_INDEX__;
+    const result=api.retrieve(state,{direction:document.getElementById('v33Next')?.value||''});
+    return api.render(result);
   }
 
   function reduceHardCanonExposure(prompt, state, isContinue){
     if (!isContinue) return String(prompt || '');
     const hard = String(state?.hardCanon || '').trim();
     if (!hard) return String(prompt || '');
-    const replacement = selectiveCanon(state, prompt);
-    let out = String(prompt || '').split(hard).join(replacement);
+    // Base V4 now inserts retrieval at its source. Legacy callers are supported
+    // without re-ranking the prompt itself (which contains all canon names).
+    let out = String(prompt || '');
+    if(!out.includes('[CANON RETRIEVAL —')) out = out.split(hard).join(selectiveCanon(state));
     out = out.replace(
       /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
       '- HARD CANON 중 조건 없는 초기 사실 또는 확정 본문에서 실제 성립한 상태만 내부 현재값으로 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
@@ -152,7 +127,7 @@
       window.__VELOUR_LAST_SELECTIVE_CANON__ = {
         enabled: !!isContinue,
         originalChars: String(state?.hardCanon || '').length,
-        injected: isContinue ? selectiveCanon(state, out) : 'full canon on first episode',
+        injected: window.__VELOUR_LAST_CANON_RETRIEVAL__ || 'structured retrieval',
         bodyPraiseRichness: String(state?.bodyDescriptionRichness || 'rich'),
         at: new Date().toISOString()
       };
