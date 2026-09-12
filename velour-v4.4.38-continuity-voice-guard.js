@@ -42,7 +42,7 @@
 
   function isDurableTransitionClause(raw){
     const text = clean(raw, 360);
-    if (!text || text.length < 4) return false;
+    if (!text || text.length < 4 || window.__VELOUR_CONTINUITY_QA__?.hasPendingCondition?.(text)) return false;
     const stateChange = RELATION_TRANSITION.test(text) || ADDRESS_TRANSITION.test(text) || ROLE_TRANSITION.test(text) || RESIDENCE_TRANSITION.test(text) || KNOWLEDGE_TRANSITION.test(text);
     if (stateChange) return true;
     if (ONGOING_RULE.test(text)) return true;
@@ -75,16 +75,8 @@
       const duplicate = facts.some(existing => compactKey(String(existing).replace(/^\[[^\]]+\]\s*/, '')) === key);
       if (duplicate) continue;
 
-      // New explicit address/register rules supersede older user-authored address/register rules.
-      if (ADDRESS_TRANSITION.test(raw)) {
-        facts = facts.filter(existing => !String(existing).startsWith(USER_FACT_PREFIX) || !ADDRESS_TRANSITION.test(existing));
-      }
-      // Explicit relationship transitions supersede contradictory older relationship-state user facts,
-      // while unrelated persistent rules are retained.
-      if (RELATION_TRANSITION.test(raw)) {
-        facts = facts.filter(existing => !String(existing).startsWith(USER_FACT_PREFIX) || !RELATION_TRANSITION.test(existing));
-      }
-
+      // Keep chronological facts: a shared relationship/address keyword does
+      // not prove that two facts concern the same character pair.
       facts.push(fact);
       added.push(fact);
     }
@@ -100,7 +92,7 @@
     return added;
   }
 
-  const ADDRESS_HINT = /(?:\b\d{1,2}\s*세\b|연상|연하|나이\s*차|호칭|존댓말|반말|존대|말투|어투|(?:라고|이라)\s*부르|오빠|누나|형|언니|선배님?|후배|대표님|사장님|팀장님|선생님|교수님|\S+씨\b|\S+님\b)/i;
+  const ADDRESS_HINT = /(?:(?:^|[^0-9])\d{1,3}\s*(?:세|살)(?=$|[^가-힣]|[이가의은는]|입니|이다)|연상|연하|나이\s*차|호칭|존댓말|반말|존대|말투|어투|(?:라고|이라)\s*부르|오빠|누나|형|언니|선배님?|후배|대표님|사장님|팀장님|선생님|교수님|\S+씨\b|\S+님\b)/i;
 
   function addressCanon(state){
     const characterSheet = String(document.getElementById('inputChars')?.value || '');
