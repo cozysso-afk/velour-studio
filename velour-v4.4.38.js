@@ -415,7 +415,7 @@
     }
     return cfg;
   }
-  function save(cfg){ try { localStorage.setItem(CFG_KEY,JSON.stringify(cfg)); } catch(e){} }
+  function save(cfg){ try { localStorage.setItem(CFG_KEY,JSON.stringify(cfg)); return true; } catch(e){ return false; } }
 
   function readV33Cfg(){
     try { return JSON.parse(localStorage.getItem(V33_KEY)||'null'); } catch(e){ return null; }
@@ -756,11 +756,38 @@
     bindUI(); compactLegacyUI(); syncUI();
   }
 
+  let canonEditor = null;
+  function canonSaveStatus(status){
+    const labels={idle:'',pending:'입력 중 · 저장 대기',saving:'저장 중…',saved:'저장됨',error:'저장하지 못했어요. 입력 내용은 화면에 유지됩니다. 복사해 보관한 뒤 다시 저장해 주세요.'};
+    for(const id of ['v4HardCanon','v4Storyline']){
+      const el=document.getElementById(id+'SaveStatus');
+      if(el){ const text=labels[status]||''; if(el.textContent!==text)el.textContent=text; if(el.dataset.status!==status)el.dataset.status=status; }
+    }
+  }
+  function refreshCanonBeatStatus(){
+    const bs=document.getElementById('v4BeatStatus'); if(!bs)return;
+    const beats=storylineBeats(), rawIdx=Math.max(0,Number(state.beatIndex||0));
+    bs.textContent=!beats.length?'스토리라인 미입력':rawIdx>=beats.length?`전체 ${beats.length}단계 완료`:`현재 ${rawIdx+1}/${beats.length} · ${beats[rawIdx]}`;
+  }
+  function bindCanonField(el,key){
+    if(!canonEditor) canonEditor=window.__VELOUR_CANON_AUTHORING__.create({
+      getState:()=>state, persist:save, persistDraft:persistCanonDraft,
+      showStatus:canonSaveStatus, refreshBeatStatus:refreshCanonBeatStatus
+    });
+    let status=document.getElementById(el.id+'SaveStatus');
+    if(!status){status=document.createElement('small');status.id=el.id+'SaveStatus';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.style.cssText='display:block;min-height:1.4em;font-size:11px;line-height:1.4';el.insertAdjacentElement('afterend',status);}
+    if(key==='hardCanon'&&!document.getElementById('v4CanonBudgetStatus')){
+      const note=document.createElement('small');note.id='v4CanonBudgetStatus';note.setAttribute('role','status');note.style.cssText='display:block;font-size:11px;line-height:1.4';status.insertAdjacentElement('afterend',note);
+    }
+    canonEditor.bind(el,key);
+  }
+
   function bindUI(){
     const p=document.getElementById('velourV40Panel'); if(!p)return;
     const map={v4World:'world',v4Relationship:'relationship',v4Trajectory:'trajectory',v4HistoricalStyle:'historicalStyle',v43PeriodNote:'periodNote',v4SocialA:'socialA',v4SocialB:'socialB',v4MilitaryStatus:'militaryStatus',v4ReligiousRule:'religiousRule',v4ReligiousNote:'religiousNote',v4HardCanon:'hardCanon',v4Storyline:'storyline',v4Pacing:'pacing',v4Unlock:'customUnlockEpisode',v4AdultFrequency:'adultFrequency',v4Cooldown:'cooldown',v445PostUnlockPace:'postUnlockPace',v445PostUnlockInterval:'postUnlockInterval',v4Variety:'variety',v4VarietyWindow:'varietyWindow',v443DialogueMode:'sexualDialogueMode',v443FlirtUnlock:'flirtUnlockEpisode',v443ExplicitUnlock:'explicitTalkUnlockEpisode',v4415Kissing:'kissingDensity',v4415Foreplay:'foreplayLength',v4415InSceneCaress:'inSceneCaress',v4415BodyPraise:'bodyPraiseDirtyTalk',v4416BodyRichness:'bodyDescriptionRichness',v4416BodyWindow:'bodyDescriptionWindow',v4Dirty:'dirtyTalk',v4Profanity:'profanity',v4Insult:'insultMode'};
     Object.entries(map).forEach(([id,key])=>{
       const el=p.querySelector('#'+id); if(!el)return;
+      if(key==='hardCanon'||key==='storyline'){bindCanonField(el,key);return;}
       const ev=(el.tagName==='TEXTAREA'||el.type==='range'||el.type==='number'||el.tagName==='INPUT')?'input':'change';
       el.addEventListener(ev,()=>{ state[key]=(el.type==='number'||el.type==='range')?Number(el.value):el.value; save(state); syncUI(false); });
     });
@@ -838,6 +865,7 @@
   }
 
   function syncUI(full=true){
+    if(canonEditor?.editing()) return;
     const p=document.getElementById('velourV40Panel'); if(!p)return;
     if(full){
       const values={v4World:state.world,v4Relationship:state.relationship,v4Trajectory:state.trajectory,v4HistoricalStyle:state.historicalStyle,v43PeriodNote:state.periodNote,v4OccCatA:state.occCategoryA,v4OccCatB:state.occCategoryB,v4OccA:state.occupationA,v4OccB:state.occupationB,v4SocialA:state.socialA,v4SocialB:state.socialB,v4MilitaryStatus:state.militaryStatus,v4ReligiousRule:state.religiousRule,v4ReligiousNote:state.religiousNote,v4HardCanon:state.hardCanon,v4Storyline:state.storyline,v4Pacing:state.pacing,v4Unlock:state.customUnlockEpisode,v4AdultFrequency:state.adultFrequency,v4Cooldown:state.cooldown,v445PostUnlockPace:state.postUnlockPace,v445PostUnlockInterval:state.postUnlockInterval,v4Variety:state.variety,v4VarietyWindow:state.varietyWindow,v443DialogueMode:state.sexualDialogueMode,v443FlirtUnlock:state.flirtUnlockEpisode,v443ExplicitUnlock:state.explicitTalkUnlockEpisode,v4415Kissing:state.kissingDensity,v4415Foreplay:state.foreplayLength,v4415InSceneCaress:state.inSceneCaress,v4415BodyPraise:state.bodyPraiseDirtyTalk,v4416BodyRichness:state.bodyDescriptionRichness,v4416BodyWindow:state.bodyDescriptionWindow,v4Dirty:state.dirtyTalk,v4Profanity:state.profanity,v4Insult:state.insultMode,
@@ -948,6 +976,17 @@ ${directVocabularyRelevant&&allowed.length?`- 현재 해금 구간에서 사용�
 - 선택하지 않은 직접 어휘를 금지 목록으로 재나열하지 않는다.`;
   }
 
+  function retrievedHardCanon(){
+    const api=window.__VELOUR_CANON_INDEX__;
+    if(!api)throw new Error('캐논 검색 모듈을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.');
+    let result;
+    const status=document.getElementById('v4CanonBudgetStatus');
+    try { result=api.retrieve(state,{direction:document.getElementById('v33Next')?.value||''}); if(status)status.textContent=''; }
+    catch(error){ if(status)status.textContent=error.message; throw error; }
+    window.__VELOUR_LAST_CANON_RETRIEVAL__={total:result.total,selected:result.selected.length,omitted:result.omitted,chars:result.chars,active:result.active,ceiling:result.ceiling};
+    return api.render(result);
+  }
+
   function canonDirective(){
     const beats=storylineBeats();
     const rawIdx=Math.max(0,Number(state.beatIndex||0));
@@ -974,7 +1013,7 @@ ${dynamicLabels.length?`- 추가 관계 다이내믹: ${dynamicLabels.join(', ')
 - A: ${state.occupationA} / 신분 ${socialLabel(state.socialA)}.
 - B: ${state.occupationB} / 신분 ${socialLabel(state.socialB)}.
 ${state.militaryStatus?`- 군 관련 현재 상태: ${state.militaryStatus}.`:''}
-${state.hardCanon?`- 사용자 잠금 설정:\n${state.hardCanon}`:'- 사용자 추가 잠금 설정 없음.'}
+${state.hardCanon?`- 사용자 잠금 설정:\n${retrievedHardCanon()}`:'- 사용자 추가 잠금 설정 없음.'}
 - 인물 설정 원문의 이름·성씨·나이·학년·가족·출신·직업·신분·관계·첫 만남·호칭·이미 밝혀진 사실은 철자와 역할까지 그대로 유지한다. 사용자가 이번 화 지시에서 명시적으로 바꾼 항목만 변경한다.
 - 구체적인 인물 설정 원문과 사용자 잠금 설정은 넓은 장르/관계 프리셋보다 우선한다. 이름을 바꾸거나, 두 사람의 역할을 뒤집거나, 관계를 처음으로 되돌리거나, 없는 가족·신분·과거를 보충해서 만들지 않는다.
 - 나이·학년·현재 시점도 사용자 캐논 그대로 따른다. 학생 시기를 자동으로 성인 시점으로 바꾸거나, 성인 시점을 과거 학생 시기로 되감지 않는다. 명시적인 성적 관계 장면은 관련 인물이 성인인 시점에서만 다룬다.
@@ -3239,6 +3278,27 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
     if(!String(d.currentText||'').trim()&&!String(d.storyHistory||'').trim()&&!(Array.isArray(d.episodes)&&d.episodes.length)){await idbDelete(IDB_DRAFTS,'current');refreshDraftBannerIDB();return null;}
     await idbPut(IDB_DRAFTS,d); refreshDraftBannerIDB(); return d;
   }
+  async function persistCanonDraft(expectedState){
+    await storageReady;
+    if(state!==expectedState)return;
+    const identity=storageActiveStoryId;
+    const db=await idbOpen();
+    if(state!==expectedState||storageActiveStoryId!==identity)return;
+    // Read and write within one transaction; a delayed edit cannot overwrite a
+    // newly restored draft/branch or copy runtime from a different story.
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(IDB_DRAFTS,'readwrite'), os=tx.objectStore(IDB_DRAFTS);
+      const req=os.get('current');
+      req.onsuccess=()=>{
+        const d=req.result;
+        if(state!==expectedState||storageActiveStoryId!==identity||!d||String(d.activeStoryId||'')!==String(identity||''))return;
+        try{ d.v4State=clone(state); os.put(d); }catch(error){ reject(error); try{tx.abort();}catch(_){} }
+      };
+      tx.oncomplete=()=>resolve();
+      tx.onerror=()=>reject(tx.error||new Error('캐논 임시저장 실패'));
+      tx.onabort=()=>reject(tx.error||new Error('캐논 임시저장 중단'));
+    });
+  }
   async function patchDraftV4IDB(v4State){
     await storageReady; const d=await idbGet(IDB_DRAFTS,'current'); if(!d)return;
     d.v4State=clone(v4State||state); const c=cleanStoryObject(d); await idbPut(IDB_DRAFTS,c);
@@ -3275,6 +3335,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   }
   async function saveCurrentStoryIDB(){
     try{
+      await canonEditor?.flush();
       await storageReady;
       const outcome=window.__VELOUR_LAST_GENERATION_OUTCOME__||{};
       if(outcome.status==='running') return alert('아직 생성 중이야. 본문 확정이 끝난 뒤 저장해줘.');
@@ -3342,6 +3403,7 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   async function diagnoseStoryLibraryIDB(){try{const sum=await storageSummary();const mig=await idbGet(IDB_META,'legacyMigrationV2');const rec431=await idbGet(IDB_META,'storageReconcileV4431');const draft=await idbGet(IDB_DRAFTS,'current');const legacyPrimary=legacyArray(LIB_KEY).length;const backupCounts=LEGACY_BACKUP_KEYS.map(k=>legacyArray(k).length);const rolling=(await idbGetAll(IDB_BACKUPS)).filter(x=>x.source==='rolling').length;const lines=[`IndexedDB 메인 저장함: ${sum.stories.length}개`,`VELOUR 데이터 추정: ${prettyBytes(sum.appBytes)}`,sum.estimate?.quota?`브라우저 전체 사용/할당: ${prettyBytes(sum.estimate.usage||0)} / ${prettyBytes(sum.estimate.quota)}`:'브라우저 할당량: 조회 불가',`영구저장 요청 상태: ${sum.persisted===true?'허용됨':sum.persisted===false?'미허용/브라우저 관리':'조회 불가'}`,`현재 임시저장: ${draft?'있음':'없음'}`,`작품별 롤링백업: ${rolling}개`,`레거시 V2 메인 안전백업: ${legacyPrimary}개`,`레거시 3세대 백업: ${backupCounts.join(' / ')}`,`마이그레이션 검증: ${mig?.verified?'PASS':'미완료/확인 필요'}`,`4.4.31 자동 재조정: ${rec431?`복구 ${rec431.restored||0}개 · ${rec431.beforeCount||0}→${rec431.afterCount||0}`:'기록 없음'}`,`레거시 원본 자동삭제: 안 함`, `복구 정책: 기존 작품 덮어쓰기/자동삭제 없음`];alert(lines.join('\n'));}catch(e){alert('진단 실패: '+String(e.message||e));}}
   function restoreV4StateSnapshot(snapshot){
     if(!snapshot||typeof snapshot!=='object')return;
+    canonEditor?.reset();
     state=Object.assign(clone(DEFAULT),snapshot);state.terms=Object.assign({},DEFAULT.terms,snapshot.terms||{});state.runtime=Object.assign({},DEFAULT.runtime,snapshot.runtime||{});state.runtime.timeline=Array.isArray(state.runtime.timeline)?state.runtime.timeline:[];state.runtime.openThreads=Array.isArray(state.runtime.openThreads)?state.runtime.openThreads:[];state.runtime.scenes=Array.isArray(state.runtime.scenes)?state.runtime.scenes:[];state.runtime.durableFacts=Array.isArray(state.runtime.durableFacts)?state.runtime.durableFacts.map(String).filter(Boolean).slice(-MAX_DURABLE_FACTS):[];state.runtime.arcSummaries=Array.isArray(state.runtime.arcSummaries)?state.runtime.arcSummaries.filter(x=>x&&typeof x==='object').slice(-MAX_ARC_SUMMARIES):[];state.runtime.arcBuffer=Array.isArray(state.runtime.arcBuffer)?state.runtime.arcBuffer.filter(x=>x&&typeof x==='object').slice(-ARC_WINDOW):[];state.runtime.positionUsage=(state.runtime.positionUsage&&typeof state.runtime.positionUsage==='object')?state.runtime.positionUsage:{};state.runtime.lastSuggestedPositions=Array.isArray(state.runtime.lastSuggestedPositions)?state.runtime.lastSuggestedPositions:[];state.runtime.playUsage=(state.runtime.playUsage&&typeof state.runtime.playUsage==='object')?state.runtime.playUsage:{};state.runtime.lastSuggestedPlays=Array.isArray(state.runtime.lastSuggestedPlays)?state.runtime.lastSuggestedPlays:[];state.adultPlayTypes=Array.isArray(snapshot.adultPlayTypes)?snapshot.adultPlayTypes:clone(DEFAULT.adultPlayTypes);state.appearanceEnabled=snapshot.appearanceEnabled!==false;state.appearance={female:Object.assign({},DEFAULT.appearance.female,((snapshot.appearance||{}).female)||{}),male:Object.assign({},DEFAULT.appearance.male,((snapshot.appearance||{}).male)||{})};state.dynamics=Array.isArray(snapshot.dynamics)?snapshot.dynamics:[];state.lifestyleScenarios=Array.isArray(snapshot.lifestyleScenarios)?snapshot.lifestyleScenarios:[];state.adultPreferences=Array.isArray(snapshot.adultPreferences)?snapshot.adultPreferences:[];state.intimacyPatterns=Array.isArray(snapshot.intimacyPatterns)?snapshot.intimacyPatterns:clone(DEFAULT.intimacyPatterns);save(state);syncAppearanceToV33();syncUI();
   }
 
@@ -3363,6 +3425,16 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
   window.__VELOUR_IDB_PATCH_DRAFT_V4__=patchDraftV4IDB;
   window.__VELOUR_V4_STATE_SNAPSHOT__=()=>clone(state);
   window.__VELOUR_V4_STATE_RESTORE__=restoreV4StateSnapshot;
+  window.__VELOUR_CANON_FLUSH__=()=>canonEditor?.flush();
+  window.__VELOUR_SETTINGS_FORM__={
+    capture:()=>{const config=clone(state);delete config.runtime;delete config.beatIndex;return {settings:currentSettingsForIDB(),config};},
+    apply:snapshot=>{
+      applySettingsFromIDB(snapshot.settings);
+      restoreV4StateSnapshot({...state,...snapshot.config,runtime:state.runtime,beatIndex:state.beatIndex});
+      return save(state);
+    }
+  };
+  window.__VELOUR_CANON_INPUT_QA__={get editor(){return canonEditor;},storylineBeats,canonDirective,save,load,cleanStoryObject,persistCanonDraft};
   window.__VELOUR_STORAGE_QA__={idbOpen,idbGet,idbGetAll,idbPut,idbDelete,storageStories,saveDraftIDB,migrateLegacyStorage,storyRecoveryFingerprint,positionCandidates,selectedPositionPool,playCandidates,prettyBytes,playCatalog:PLAY_CATALOG,stripPlannerArtifacts,postUnlockState,userBlocksAdultScene,appearanceMeasurementLeakReason,softenLeakedBodySpecs,userRequestsExactBodySpecs,repeatedBodyPhraseReason,bodyDescriptionDirective,bodyIntegrityReason,bodyLengthAdvisoryReason,readerBodyLength,generationFailureKind,thrownFailureKind,isFailureScreenText,markGenerationOutcome,normalizeSafetyRatings,safeRequestDiagnostic,likelySafetyCause,generationDiagnosticText,responseVaultOpen,responseVaultGet,responseVaultAll,responseVaultDelete,responseVaultClear,normalizeUsageMetadata,usageTokenLine,dailyUsageTotals,memoryClip,mergeDurableFacts,buildArcDigest,archiveArcBufferIfReady,bootstrapTieredMemory,pendingRetryEpisode,confirmedEpisode,rememberConfirmedEpisode,rememberPendingRetryEpisode,clearPendingRetryEpisode,pinCounterToConfirmed,forceCounterForPendingRetry,forceCounterAfterFailure,updateMemory};
 
   function installStorageOverrides(){
@@ -3522,6 +3594,8 @@ EP.${attemptedEp}는 확정하지 않았고 에피소드/장기 메모리/임시
 
   installCss();
   installUI();
+  window.addEventListener('pagehide',()=>canonEditor?.flush());
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')canonEditor?.flush();});
   installStorageOverrides();
   installLegacyFailureMutationWatchdog();
   sanitizeExistingInternalMeta();

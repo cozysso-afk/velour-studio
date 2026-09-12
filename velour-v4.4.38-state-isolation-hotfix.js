@@ -18,7 +18,7 @@
         clearInterval(window.__VELOUR_STATE_ISOLATION_RETRY_TIMER__);
         window.__VELOUR_STATE_ISOLATION_RETRY_TIMER__ = null;
         const script = document.createElement('script');
-        script.src = './velour-v4.4.38-state-isolation-hotfix.js?v=1&late=1';
+        script.src = './velour-v4.4.38-state-isolation-hotfix.js?v=2&late=1';
         script.async = false;
         (document.head || document.documentElement).appendChild(script);
       }, 80);
@@ -213,6 +213,7 @@
   const originalSave = window.saveCurrentStory;
   if (typeof originalSave === 'function') {
     window.saveCurrentStory = async function(){
+      await window.__VELOUR_CANON_FLUSH__?.();
       if (mode !== 'new') return originalSave.apply(this, arguments);
 
       await window.__VELOUR_STORAGE_READY__;

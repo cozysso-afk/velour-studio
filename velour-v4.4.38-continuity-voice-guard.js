@@ -97,11 +97,16 @@
   function addressCanon(state){
     const characterSheet = String(document.getElementById('inputChars')?.value || '');
     const durable = (Array.isArray(state?.runtime?.durableFacts) ? state.runtime.durableFacts : []).join('\n');
-    const raw = [characterSheet, state?.hardCanon, state?.storyline, durable]
-      .filter(Boolean).join('\n');
-    const hints = lines(raw).filter(line => ADDRESS_HINT.test(line)).slice(0, 14).map(x => clean(x, 220));
+    const api=window.__VELOUR_CANON_INDEX__;
+    const selected=api.retrieve(state,{direction:document.getElementById('v33Next')?.value||''}).selected;
+    const canonHints=selected.filter(f=>ADDRESS_HINT.test(f.text)).map(f=>!f.future && f.owners.some(n=>f.text.startsWith(n)) ? f.text : `[${f.owners.join(' × ')||f.block.label}${f.future?' · 미래/조건부 · 미성립':''}] ${f.text}`);
+    const raw = [characterSheet, durable].filter(Boolean).join('\n');
+    const sourceHints=raw.split(/\n+/).filter(line=>ADDRESS_HINT.test(line));
+    const hints=[...canonHints,...sourceHints];
+    const hintText=hints.join('\n');
 
-    return `\n[ADDRESS / AGE CANON — 호칭·연상연하 오류 방지]\n- 인물 설정에 숫자 나이가 둘 다 있으면 실제 숫자를 비교해 누가 연상/연하인지 먼저 내부적으로 확인한다. 연상·연하 방향을 뒤집지 않는다.\n- 명시된 호칭, 존댓말/반말 규칙, 직급·신분 호칭은 단순 문체 취향이 아니라 CANON이다. 감정이 격해지거나 친밀 장면이어도 임의로 뒤집지 않는다.\n- 나이가 많다는 이유만으로 ‘오빠/누나/형/언니’를 자동 생성하지 않는다. 그런 호칭은 사용자 설정이나 이미 확립된 본문 관계에서 실제로 쓰였을 때만 유지한다. 명시가 없으면 기존에 확립된 이름/직함/호칭을 보존한다.\n- 한 화 안에서 같은 상대를 부르는 기본 호칭이 이유 없이 오락가락하지 않는다. 호칭 변화가 서사 사건이라면 변화가 일어난 시점 이후부터 새 규칙을 지속한다.\n${hints.length ? `- 현재 설정에서 추출한 연령/호칭 단서:\n${hints.map(x => `  • ${x}`).join('\n')}` : '- 명시적 호칭 단서가 부족하면 새 친족형 호칭을 발명하지 말고 직전 확정 본문의 호칭을 우선한다.'}`;
+
+    return `\n[ADDRESS / AGE CANON — 호칭·연상연하 오류 방지]\n- 인물 설정에 숫자 나이가 둘 다 있으면 실제 숫자를 비교해 누가 연상/연하인지 먼저 내부적으로 확인한다. 연상·연하 방향을 뒤집지 않는다.\n- 명시된 호칭, 존댓말/반말 규칙, 직급·신분 호칭은 단순 문체 취향이 아니라 CANON이다. 감정이 격해지거나 친밀 장면이어도 임의로 뒤집지 않는다.\n- 나이가 많다는 이유만으로 ‘오빠/누나/형/언니’를 자동 생성하지 않는다. 그런 호칭은 사용자 설정이나 이미 확립된 본문 관계에서 실제로 쓰였을 때만 유지한다. 명시가 없으면 기존에 확립된 이름/직함/호칭을 보존한다.\n- 한 화 안에서 같은 상대를 부르는 기본 호칭이 이유 없이 오락가락하지 않는다. 호칭 변화가 서사 사건이라면 변화가 일어난 시점 이후부터 새 규칙을 지속한다.\n${hints.length ? `- 현재 설정에서 추출한 연령/호칭 단서:\n${hintText.length<=2000 ? hints.map(x => `  • ${x}`).join('\n') : '  • CANON RETRIEVAL 및 인물 설정 원문의 인물별 연령/호칭을 참조한다. 이곳에 중복 낭독하지 않는다.'}` : '- 명시적 호칭 단서가 부족하면 새 친족형 호칭을 발명하지 말고 직전 확정 본문의 호칭을 우선한다.'}`;
   }
 
   function dialogueVariationDirective(state){
