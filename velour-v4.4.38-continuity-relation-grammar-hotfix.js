@@ -31,10 +31,11 @@
       const candidates = raw.split(/\n+|(?<=[.!?。！？])\s+|\s*[;；]\s*/).map(x => x.trim()).filter(x => RELATION_FORM.test(x));
       const added = [];
       for (const clause of candidates) {
+        if (window.__VELOUR_CONTINUITY_QA__?.hasPendingCondition?.(clause)) continue;
         const fact = guardQa.normalizeTransition(clause, ep);
         const key = String(fact).replace(/\s+/g, ' ').trim();
         if (facts.some(existing => String(existing).replace(/\s+/g, ' ').trim() === key)) continue;
-        facts = facts.filter(existing => !String(existing).startsWith(PREFIX) || !/연인|사귀|연애|재결합|이별|결혼|동거/i.test(existing));
+        // Do not delete other character pairs based on a relationship keyword.
         facts.push(fact);
         added.push(fact);
       }

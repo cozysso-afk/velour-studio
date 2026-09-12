@@ -42,10 +42,16 @@
       .slice(0, 24);
   }
 
+  // Conservative screening only: grammatical tense alone is not evidence that
+  // a conditional event occurred. Full temporal interpretation stays in prompt.
+  function hasPendingCondition(raw){
+    return /(?:친해지면|[가-힣]+(?:하면|되면|지면|으면)|경우|조건|전제|예정|계획|나중|향후|장차|언젠가|추후|몇\s*(?:차례|번|회)|여러\s*(?:차례|번)|(?:촬영|만남|합의|계약|전환|성립|형성|확인|충족|친밀감|신뢰)[^.!?\n]{0,24}(?:후|뒤|다음)|(?:한|된|진|친|난)\s*(?:후|뒤)|이후|뒤에|후에|[0-9]+\s*(?:화|단계|회차)\s*(?:부터|이후|뒤|후)|\b(?:if|when|after|once|until|eventually|later|will|planned)\b)/i.test(String(raw || ''));
+  }
+
   function settledCanonLines(state){
     const hard = String(state?.hardCanon || '');
     const settled = /(?:하기로\s*(?:함|했다|했음|결정|합의)|하게\s*(?:됨|됐다|되었|되기로)|시작(?:함|했다|했음|하기로)|합의(?:함|했다|됨)?|결정(?:함|했다|됨)?|약속(?:함|했다|됨)?|계약(?:함|했다|체결)|맡기로|배우기로|가르치기로|사귀기로|동거하기로|과외하기로|연재하기로|근무하기로)/i;
-    return lineCandidates(hard).filter(line => settled.test(line)).slice(-10);
+    return lineCandidates(hard).filter(line => settled.test(line) && !hasPendingCondition(line)).slice(-10);
   }
 
   const PERSISTENT_CUE = /(?:앞으로|이후(?:에도|부터)?|계속|계속해서|지속|유지|반복|정기(?:적)?|상시|장기|당분간|한동안|내내|매(?:일|주|달|월|번)|주\s*\d+\s*회|월\s*\d+\s*회|몇\s*(?:주|달|개월)|수\s*개월|수개월|\d+\s*(?:주|개월|달)\s*(?:간|동안)|동안)/i;
@@ -69,7 +75,7 @@
 
   function isDurableUserClause(clause){
     const text = clean(clause, 360);
-    if (!text || text.length < 5) return false;
+    if (!text || text.length < 5 || hasPendingCondition(text)) return false;
     const persistent = PERSISTENT_CUE.test(text);
     const settled = SETTLED_CUE.test(text);
     const domain = ONGOING_DOMAIN.test(text);
@@ -103,12 +109,8 @@
     const added = [];
 
     for (const clause of clauses) {
-      const topic = topicOf(clause);
-      const replacing = END_CUE.test(clause) || CHANGE_CUE.test(clause);
-      if (topic && replacing) {
-        const topicRx = TOPICS.find(([id]) => id === topic)?.[1];
-        if (topicRx) facts = facts.filter(f => !String(f).startsWith(USER_FACT_PREFIX) || !topicRx.test(factPayload(f)));
-      }
+      // Preserve named-party history; topic equality alone cannot establish
+      // that a change replaces the same person's agreement or role.
       const next = normalizedCommittedFact(clause, ep);
       const key = compactKey(factPayload(next));
       if (!key || facts.some(f => compactKey(factPayload(f)) === key)) continue;
@@ -162,7 +164,7 @@ ${scenes.length ? `최근 장면 지문:\n${scenes.map(s => `- EP${s?.episode ||
     const settled = settledCanonLines(state);
     return `[VELOUR CONTINUITY SEMANTICS — RESET 금지]
 - ‘상황 & 서사적 갈등’, 초기 플롯/서사 단계는 작품의 출발 조건이다. 이어쓰기에서는 최근 확정 타임라인·관계 상태·사용자 확정 지속 상태가 현재 시점의 진실이다. 사용자가 초기 상황 칸을 매 화 수정하지 않아도 된다.
-- HARD CANON의 완료형·상태형 표현(예: ‘~하기로 함’, ‘~했다’, ‘~하게 됨’, ‘~시작함’)은 이미 성립한 사실이다. 그 합의·결정·첫 시작을 새 사건처럼 반복하지 말고 그 이후 누적 상태에서 진행한다.
+- HARD CANON의 완료형·상태형 표현도 문장 전체의 시간·조건을 먼저 확인한다. 조건 없는 명시적 초기 사실 또는 확정 본문으로 성립이 확인된 사실만 현재 상태다. ‘촬영 후 맡기로 함’ 같은 미래·조건부 설정은 완료형 어미가 있어도 아직 성립한 사실이 아니다. 그 합의·결정·첫 시작을 새 사건처럼 반복하지 말고 그 이후 누적 상태에서 진행한다.
 - ‘과외하기로 함’이 있고 이미 1회차가 본문에서 끝났다면 다음 화는 2회차 이후다. 캐논에 ‘과외하기로 함’ 문장이 계속 보인다는 이유로 매번 과외 첫날을 다시 쓰지 않는다.
 - ‘다음 화 추가 지시’는 기본적으로 1회성이다. 다만 몇 주/몇 달간 지속, 계속/정기/유지, 합의·계약·시작처럼 지속성이 명백한 사용자의 지시는 확정 성공 뒤 장기 사실로 승격되며 이후에도 유지한다.
 ${settled.length ? `[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목]\n${settled.map(x => `- ${clean(x, 220)}`).join('\n')}` : '- HARD CANON에서 별도 추출된 완료형 상태 항목 없음.'}`;
@@ -237,6 +239,7 @@ ${settled.length ? `[현재 HARD CANON에서 ‘이미 성립한 상태’로 �
 
   window.__VELOUR_CONTINUITY_QA__ = {
     settledCanonLines,
+    hasPendingCondition,
     isDurableUserClause,
     normalizedCommittedFact,
     promoteCommittedDirection,

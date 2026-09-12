@@ -75,10 +75,23 @@
     let out = String(prompt || '').split(hard).join(replacement);
     out = out.replace(
       /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
-      '- HARD CANON의 완료형 상태는 내부 현재값으로만 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
+      '- HARD CANON 중 조건 없는 초기 사실 또는 확정 본문에서 실제 성립한 상태만 내부 현재값으로 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
     );
     out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 서술자 설명·설정 해설·관계사 복습에 넣지 않는다.\n- 단, 현재 장면에서 인물이 상대의 외형이나 몸에 실제로 반응하며 하는 자연스러운 칭찬·도발·더티톡은 설정 복창으로 취급하지 않는다. 아래 BODY PRAISE TALK 규칙을 따른다.\n- 이번 화의 사건·선택·감정 변화에 직접 필요한 사실만 자연스럽게 드러낸다. 필요 없는 고정 설정은 서술에서 침묵한다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 서술자가 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
     return out.trim();
+  }
+
+  function relationshipProgressionDirective(){
+    return `[CONDITIONAL CANON — 인물별 현재 상태와 미래 전개 분리]
+- 인물 설정/HARD CANON의 권위는 유지하되 사실의 적용 시점을 구분한다. 초기·현재 사실, 미래 목표, 조건부 변화, 잠재 성향을 문맥으로 구별한다. 미래 관계가 적혀 있다는 사실은 현재 관계 성립의 증거가 아니다. 사용자가 별도 조건칸·반복 금지문을 작성할 필요는 없다.
+- ‘몇 차례 촬영 후 매니저가 되고 이후 연인이 된다’는 순차 계획이다. 첫 화부터 매니저/연인으로 취급하거나 그 역할·호칭·행동을 앞당기지 않는다. 횟수·신뢰·합의 등 선행 조건을 실제 확정 사건에서 확인하고, 미확인 조건은 충족됐다고 발명하지 않는다.
+- CANON STORYLINE이 있으면 현재 단계에서 허용한 사건만 실행한다. 미래 단계는 계획 참고이며 현재 상태가 아니다. 현재 단계 진입만으로 관계 전환이 완료되지는 않는다. 단계가 없으면 명시적 초기 설정과 실제 진행된 사건을 기준으로 자연스럽게 발전시킨다. 애매하면 현재 관계를 유지하며 필요한 과정을 쌓는다.
+- 각 인물 쌍의 직업/역할, 친밀도, 관계 합의, 호칭, 알고 있는 정보를 독립적으로 판단한다. A와의 진전·합의·기억을 B/C에게 전파하지 않는다. 기존 relationshipState가 한 인물만 설명하면 다른 인물의 관계까지 같은 상태로 추정하지 않는다.
+- 잠재적 취향·성향은 그 인물의 설정일 뿐 지금 실행할 지시가 아니다. 관련 관계와 장면의 맥락이 실제로 성립하기 전에는 해당 행동·대사·암시를 의무적으로 넣지 않는다. 인물의 기본 성격은 유지하되 미래의 친밀 관계를 선행 실행하지 않는다.
+- 처음부터 이미 성립했다고 명시된 관계와 실제 확정 본문에서 성립한 관계는 유지한다. 미래 설정 차단을 이유로 기존 관계를 초기화하거나 전환 장면을 반복하지 않는다.
+- 관계 전환은 현재 단계 안에서 본문에 실제로 성립한 뒤에만 relationshipState/timeline/durableFacts에 현재 사실로 기록한다. 인물 이름 또는 인물 쌍을 명시하고, 영향을 받지 않은 인물의 기존 상태도 보존한다. 미래 계획·미충족 조건·잠재 성향을 완료 사실로 저장하지 않는다.
+- 사용자 확정 지속 상태도 문장에 미래 조건이 있으면 성립 증거가 아니다. 동일 인물 쌍의 같은 속성이 실제로 변경됐을 때만 최신 확정 상태를 적용한다. 인물 쌍이 불명확하면 다른 인물의 사실을 덮어쓰지 않는다.
+- 출력 전 현재 단계와 인물별 성립 근거를 점검한다. 미래 관계 선행은 futureBeatLeak, 단계 건너뜀은 storylineSkipped, 설정 모순은 canonViolation에 정직하게 표시한다.`;
   }
 
   function bodyPraiseDialogueDirective(state){
@@ -135,7 +148,7 @@
       }
 
       out = reduceHardCanonExposure(out, state, isContinue);
-      out = `${out}\n\n${bodyPraiseDialogueDirective(state)}`.trim();
+      out = `${out}\n\n${bodyPraiseDialogueDirective(state)}\n\n${relationshipProgressionDirective()}`.trim();
       window.__VELOUR_LAST_SELECTIVE_CANON__ = {
         enabled: !!isContinue,
         originalChars: String(state?.hardCanon || '').length,
@@ -148,6 +161,7 @@
   }
 
   window.__VELOUR_SELECTIVE_CANON_QA__ = {
+    relationshipProgressionDirective,
     canonLines,
     keywords,
     relevanceScore,
