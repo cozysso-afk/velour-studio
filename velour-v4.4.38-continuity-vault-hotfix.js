@@ -40,44 +40,42 @@
     return score;
   }
 
-  function selectiveCanon(state, prompt){
-    const lines = canonLines(state?.hardCanon || '');
-    if (!lines.length) return '';
-    const runtime = state?.runtime || {};
-    const direction = String(document.getElementById('v33Next')?.value || '');
-    const context = [
-      direction,
-      runtime.causalCarry,
-      runtime.relationshipState,
-      ...(Array.isArray(runtime.openThreads) ? runtime.openThreads.slice(-4) : []),
-      ...(Array.isArray(runtime.timeline) ? runtime.timeline.slice(-4) : []),
-      String(prompt || '').slice(-1800)
-    ].filter(Boolean).join('\n');
-    const contextKeys = keywords(context);
-    const ranked = lines
-      .map((line, index) => ({ line: clean(line, 260), index, score: relevanceScore(line, contextKeys) }))
-      .filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score || a.index - b.index)
-      .slice(0, 4)
-      .map(x => x.line);
+  // Kept for QA/backward compatibility. HARD CANON is no longer relevance-pruned.
+  function selectiveCanon(state){
+    const hard = String(state?.hardCanon || '').trim();
+    if (!hard) return '';
+    return `[HARD CANON 전체 원문 · 내부 제약]\n${hard}\n- 모든 줄은 장면 키워드 관련성과 무관하게 계속 유효하다. 본문에 필요 없는 설정은 설명하지 않되 사실 자체는 절대 버리지 않는다.`;
+  }
 
-    if (!ranked.length) {
-      return '[HARD CANON 원문은 내부 검증 기준으로 유지됨 · 이번 화 직접 관련 항목 없음]';
+  function stripLegacyBroadPreset(prompt, state){
+    let out = String(prompt || '');
+    if (state?.world || window.__VELOUR_V44_INSTALLED__) {
+      // V2's broad selector contains examples such as campus/self-rental room.
+      // V4 has an authoritative world axis, so the legacy example line must not
+      // invent residence or semester facts.
+      out = out.replace(/^\s*-\s*배경 세계관:\s*.*(?:\n|$)/gm, '');
     }
-    return `[이번 화 관련 HARD CANON · 내부 제약]\n${ranked.map(x => `- ${x}`).join('\n')}\n- 위 항목은 사실관계 검증용이다. 현재 장면에 필요하지 않으면 본문에서 설명·복습·언급하지 않는다.`;
+    return out.replace(/\n{3,}/g, '\n\n').trim();
   }
 
   function reduceHardCanonExposure(prompt, state, isContinue){
-    if (!isContinue) return String(prompt || '');
+    let out = String(prompt || '');
     const hard = String(state?.hardCanon || '').trim();
-    if (!hard) return String(prompt || '');
-    const replacement = selectiveCanon(state, prompt);
-    let out = String(prompt || '').split(hard).join(replacement);
-    out = out.replace(
-      /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
-      '- HARD CANON 중 조건 없는 초기 사실 또는 확정 본문에서 실제 성립한 상태만 내부 현재값으로 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
-    );
-    out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 서술자 설명·설정 해설·관계사 복습에 넣지 않는다.\n- 단, 현재 장면에서 인물이 상대의 외형이나 몸에 실제로 반응하며 하는 자연스러운 칭찬·도발·더티톡은 설정 복창으로 취급하지 않는다. 아래 BODY PRAISE TALK 규칙을 따른다.\n- 이번 화의 사건·선택·감정 변화에 직접 필요한 사실만 자연스럽게 드러낸다. 필요 없는 고정 설정은 서술에서 침묵한다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 서술자가 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
+    if (!hard) return out;
+
+    // HARD CANON must remain fully visible to the model on every episode.
+    // “Do not recap it in prose” is a presentation rule, not permission to hide
+    // canon from the prompt. If an older wrapper omitted it, restore it here.
+    if (!out.includes(hard)) out = `${out}\n\n${selectiveCanon(state)}`;
+
+    if (isContinue) {
+      out = out.replace(
+        /\[현재 HARD CANON에서 ‘이미 성립한 상태’로 읽어야 할 항목\]\n(?:- [^\n]*\n?)+/g,
+        '- HARD CANON 중 조건 없는 초기 사실 또는 확정 본문에서 실제 성립한 상태만 내부 현재값으로 유지한다. 장면의 직접 원인이 아니면 본문에서 다시 설명하지 않는다.\n'
+      );
+    }
+
+    out += `\n\n[HARD CANON EXPOSURE FIREWALL]\n- HARD CANON은 모순 방지용 내부 제약이지 매 화 독자에게 보여줄 설정집이 아니다. 원문 전체는 모델 내부에 항상 유지하고, 본문에서는 현재 장면에 필요한 사실만 자연스럽게 드러낸다.\n- 캐논 문구가 프롬프트에 보인다는 이유만으로 서술자 설명·설정 해설·관계사 복습에 넣지 않는다.\n- 거주지/주거 형태와 현재 장면 장소를 분리한다. 아파트·빌라·원룸·오피스텔, 옆집·윗집·아랫집·같은 건물 같은 확정 주거 사실은 사용자가 바꾸거나 확정 본문에서 실제 이사가 성립하기 전까지 유지한다. 외출·학교·회사·카페 장면은 이사 근거가 아니다.\n- 방학·학기 중·개강 전후·휴학·졸업·재학 같은 현재 시간/학사 상태도 확정 사실로 유지한다. 넓은 ‘캠퍼스’ 프리셋이나 시간 경과 추정만으로 방학을 개강으로 바꾸지 않는다.\n- ‘캠퍼스/대학 연구실/자취방’ 같은 레거시 장르 예시는 사실이 아니라 후보 예시다. 구체적인 HARD CANON과 충돌하면 반드시 HARD CANON을 따른다.\n- 단, 현재 장면에서 인물이 상대의 외형이나 몸에 실제로 반응하며 하는 자연스러운 칭찬·도발·더티톡은 설정 복창으로 취급하지 않는다. 아래 BODY PRAISE TALK 규칙을 따른다.\n- 이미 독자가 아는 외모·직업·가족·과거·관계·세계관을 서술자가 재소개하지 않는다. 현재 장면에서 새 정보가 아니면 설명문을 만들지 않는다.\n- 연속성은 설정 복창이 아니라 인물의 행동, 익숙한 루틴, 호칭, 거리감, 선택의 결과로 보여준다.`;
     return out.trim();
   }
 
@@ -126,6 +124,7 @@
     window.buildPrompt = function(isContinue = false){
       let out = String(previousBuild.apply(this, arguments) || '');
       const state = snapshot();
+      out = stripLegacyBroadPreset(out, state);
       out = out.replace(
         '사용자가 종료·변경하기 전까지 계속 참인 현재 조건으로 취급한다.',
         '사용자가 종료·변경하거나 문장에 명시된 기간·조건이 끝날 때까지 현재 조건으로 취급한다.'
@@ -150,9 +149,10 @@
       out = reduceHardCanonExposure(out, state, isContinue);
       out = `${out}\n\n${bodyPraiseDialogueDirective(state)}\n\n${relationshipProgressionDirective()}`.trim();
       window.__VELOUR_LAST_SELECTIVE_CANON__ = {
-        enabled: !!isContinue,
+        enabled: false,
+        mode: 'full-hard-canon',
         originalChars: String(state?.hardCanon || '').length,
-        injected: isContinue ? selectiveCanon(state, out) : 'full canon on first episode',
+        injected: selectiveCanon(state),
         bodyPraiseRichness: String(state?.bodyDescriptionRichness || 'rich'),
         at: new Date().toISOString()
       };
@@ -166,10 +166,11 @@
     keywords,
     relevanceScore,
     selectiveCanon,
+    stripLegacyBroadPreset,
     reduceHardCanonExposure,
     bodyPraiseDialogueDirective
   };
 
-  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.2.0';
-  console.info('✦ VELOUR selective HARD CANON + mutual body-praise dialogue fix loaded');
+  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.3.0';
+  console.info('✦ VELOUR full HARD CANON + continuity vault fix loaded');
 })();
