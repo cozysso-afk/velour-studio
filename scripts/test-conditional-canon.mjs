@@ -12,7 +12,7 @@ context.__VELOUR_STORAGE_QA__ = {};
 context.__VELOUR_SCENE_VOICE_MEMORY_HOTFIX__ = true;
 context.buildPrompt = () => `[HARD CANON]\n${state.hardCanon}\n[CURRENT STEP] 촬영`;
 context.generateStory = async () => {};
-for (const file of ['continuity-hotfix','continuity-vault-hotfix','continuity-voice-guard','continuity-relation-grammar-hotfix']) {
+for (const file of ['continuity-hotfix','continuity-vault-hotfix','continuity-voice-guard','continuity-relation-grammar-hotfix','hard-canon-lock-hotfix']) {
   vm.runInContext(readFileSync(`velour-v4.4.38-${file}.js`,'utf8'), context);
 }
 const continuity = context.__VELOUR_CONTINUITY_QA__;
@@ -48,6 +48,7 @@ for (const hardCanon of ['', pending[0], 'B와 이미 계약하기로 합의함.
     const prompt = context.buildPrompt(isContinue);
     assert.equal(prompt.split('[CONDITIONAL CANON —').length - 1, 1);
     assert.match(prompt, /미래 계획·미충족 조건·잠재 성향을 완료 사실로 저장하지 않는다/);
+    if (hardCanon) assert.ok(prompt.includes(hardCanon), 'Full HARD CANON must survive final prompt assembly');
     assert.equal(JSON.stringify(state), before);
   }
 }
@@ -79,7 +80,8 @@ for (const age of ['35세', '35 세', '35살', '만 35세', '35세이다']) {
 
 const html = readFileSync('index.html','utf8');
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
-assert.match(html,/vault-accept-hotfix.js\?v=14/);
+assert.match(html,/vault-accept-hotfix.js\?v=(?:14|15)/);
 assert.match(loader,/continuity-hotfix.js\?v=2/);
 assert.match(loader,/continuity-vault-hotfix.js\?v=3/);
-console.log('PASS: pending conditions, first/continuation prompts, settled baseline, per-character facts, deduplication, cache URLs');
+assert.match(loader,/hard-canon-lock-hotfix.js\?v=1/);
+console.log('PASS: pending conditions, first/continuation prompts, settled baseline, full hard canon, per-character facts, deduplication, cache URLs');
