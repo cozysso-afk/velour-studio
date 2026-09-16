@@ -55,10 +55,16 @@ const already = `HEAD\n${hardCanon}\nTAIL`;
 const stripped = qa.stripLegacyBroadPreset(already, state);
 assert.equal((stripped.match(/두 사람은 같은 아파트의 바로 옆집에 산다\./g) || []).length, 1);
 
+const owner = readFileSync('velour-v4.4.38-continuity-vault-hotfix.js', 'utf8');
+assert.doesNotMatch(owner, /split\(hard\)\.join\(/, 'Owner must not replace full HARD CANON with a relevance sample');
+assert.match(owner, /mode:\s*'full-hard-canon'/);
+assert.match(owner, /방학을 개강으로 바꾸지 않는다/);
+
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js', 'utf8');
+assert.match(loader, /continuity-vault-hotfix\.js\?v=4/);
 assert.match(loader, /hard-canon-lock-hotfix\.js\?v=1/);
 
 const build = readFileSync('scripts/build-github-pages-canonical.mjs', 'utf8');
 assert.match(build, /vault-accept-hotfix\.js\?v=15/);
 
-console.log('PASS: full HARD CANON survives relevance pruning; legacy campus\/자취방 preset is removed; residence and vacation locks remain authoritative');
+console.log('PASS: owner no longer prunes HARD CANON; full canon survives prompt assembly; legacy campus\/자취방 cannot override residence or vacation state');
