@@ -1,0 +1,40 @@
+name: One-shot GitHub Pages loader cache bump
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-pages-loader-cache-bump.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump VELOUR loader cache key in published index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = 'velour-v4.4.38-vault-accept-hotfix.js?v=14'
+          new = 'velour-v4.4.38-vault-accept-hotfix.js?v=15'
+          if old not in s:
+              print('index already bumped or expected marker missing')
+          else:
+              p.write_text(s.replace(old, new), encoding='utf-8')
+              print('bumped index loader cache key to v15')
+          PY
+      - name: Commit published index if changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'No change needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Bump GitHub Pages VELOUR loader cache key'
+          git push
