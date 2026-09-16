@@ -82,6 +82,6 @@ const html = readFileSync('index.html','utf8');
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
 assert.match(html,/vault-accept-hotfix.js\?v=(?:14|15)/);
 assert.match(loader,/continuity-hotfix.js\?v=2/);
-assert.match(loader,/continuity-vault-hotfix.js\?v=3/);
+assert.match(loader,/continuity-vault-hotfix.js\?v=4/);
 assert.match(loader,/hard-canon-lock-hotfix.js\?v=1/);
 console.log('PASS: pending conditions, first/continuation prompts, settled baseline, full hard canon, per-character facts, deduplication, cache URLs');
