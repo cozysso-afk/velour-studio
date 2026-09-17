@@ -1,6 +1,6 @@
 name: One-shot dirty-talk frequency separation
 
-# trigger revision 4
+# trigger revision 5
 on:
   push:
     paths:
@@ -21,29 +21,19 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          def replace_all(path, pairs):
-              p = Path(path)
-              s = p.read_text(encoding='utf-8')
-              for old, new in pairs:
-                  if old not in s:
-                      raise SystemExit(f'missing regression marker in {path}: {old}')
-                  s = s.replace(old, new)
-              p.write_text(s, encoding='utf-8')
+          p = Path('scripts/test-hard-canon-lock.mjs')
+          s = p.read_text(encoding='utf-8').replace('v=5/);', 'v=6/);').replace('v=16/);', 'v=17/);')
+          p.write_text(s, encoding='utf-8')
 
-          replace_all('scripts/test-hard-canon-lock.mjs', [
-              (r'continuity-vault-hotfix\.js\?v=5', r'continuity-vault-hotfix\.js\?v=6'),
-              (r'vault-accept-hotfix\.js\?v=16', r'vault-accept-hotfix\.js\?v=17'),
-          ])
-          replace_all('scripts/test-conditional-canon.mjs', [
-              (r'vault-accept-hotfix.js\?v=16', r'vault-accept-hotfix.js\?v=17'),
-              (r'continuity-vault-hotfix.js\?v=5', r'continuity-vault-hotfix.js\?v=6'),
-          ])
-          replace_all('scripts/test-dialogue-continuity-regression.mjs', [
-              ('assert.match(voice, /친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니/);','assert.match(voice, /강도는 등장 횟수를 뜻하지 않는다/);'),
-              (r'continuity-vault-hotfix\.js\?v=5', r'continuity-vault-hotfix\.js\?v=6'),
-              (r'vault-accept-hotfix\.js\?v=16', r'vault-accept-hotfix\.js\?v=17'),
-              (r'continuity-voice-guard\.js\?v=4', r'continuity-voice-guard\.js\?v=5'),
-          ])
+          p = Path('scripts/test-conditional-canon.mjs')
+          s = p.read_text(encoding='utf-8').replace('v=5/);', 'v=6/);').replace('v=16/);', 'v=17/);')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('scripts/test-dialogue-continuity-regression.mjs')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('assert.match(voice, /친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니/);','assert.match(voice, /강도는 등장 횟수를 뜻하지 않는다/);')
+          s = s.replace('v=5/);', 'v=6/);').replace('v=16/);', 'v=17/);').replace('v=4/);', 'v=5/);')
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Validate JavaScript and regressions
         run: |
