@@ -11,7 +11,7 @@
     'velourV33Panel', 'v33Mix', 'v33Auto', 'v33Dialogue', 'v33Next', 'v33Tags',
     'v35LengthMode', 'v35ThinkingLevel',
     'velourV40Panel', 'v4World', 'v4Relationship', 'v4HardCanon', 'v4Storyline',
-    'v4Pacing', 'selectIntensity', 'v4Dirty', 'v4Profanity'
+    'v4Pacing', 'selectIntensity', 'v4Dirty', 'v4DirtyFrequency', 'v4Profanity'
   ];
 
   function allControlsReady() {

@@ -346,7 +346,7 @@
     adultFrequency:'sparse', cooldown:2, variety:'high', varietyWindow:5,
     postUnlockPace:'natural', postUnlockInterval:3,
     sexualDialogueMode:'auto', flirtUnlockEpisode:7, explicitTalkUnlockEpisode:12, professionalBoundary:true, possessiveLateReveal:true,
-    dirtyTalk:70, profanity:20, insultMode:'off',
+    dirtyTalk:70, dirtyTalkFrequency:70, profanity:20, insultMode:'off',
     terms:{boji:false,bojitmul:false,jaji:false,jot:false,jotmul:false,jeot:false,jeotgaseum:false,jeottong:false,ssipmul:false},
     appearanceEnabled:true,
     appearance:{
@@ -733,6 +733,7 @@
         <div id="v41IntensityMount" class="v41-intensity-mount"></div>
         <div class="v40-grid" style="margin-top:9px">
           <div class="v40-field"><label>더티톡 강도</label><div class="v40-slider"><input id="v4Dirty" type="range" min="0" max="100" value="${Number(state.dirtyTalk||0)}"><span class="v40-value" id="v4DirtyVal"></span></div></div>
+          <div class="v40-field"><label>더티톡 빈도</label><div class="v40-slider"><input id="v4DirtyFrequency" type="range" min="0" max="100" value="${Number(state.dirtyTalkFrequency ?? 70)}"><span class="v40-value" id="v4DirtyFrequencyVal"></span></div></div>
           <div class="v40-field"><label>욕설 강도</label><div class="v40-slider"><input id="v4Profanity" type="range" min="0" max="100" value="${Number(state.profanity||0)}"><span class="v40-value" id="v4ProfanityVal"></span></div></div>
         </div>
         <div class="v40-field" style="margin-top:8px"><label>상대 비하형 욕설</label><select id="v4Insult"><option value="off">OFF · 사람을 ‘-년’ 계열로 부르는 비하욕 금지</option><option value="light">약하게 허용 · 비하적 멸칭은 계속 금지</option><option value="custom">사용자 하드캐논 지시 우선</option></select></div>
@@ -758,7 +759,7 @@
 
   function bindUI(){
     const p=document.getElementById('velourV40Panel'); if(!p)return;
-    const map={v4World:'world',v4Relationship:'relationship',v4Trajectory:'trajectory',v4HistoricalStyle:'historicalStyle',v43PeriodNote:'periodNote',v4SocialA:'socialA',v4SocialB:'socialB',v4MilitaryStatus:'militaryStatus',v4ReligiousRule:'religiousRule',v4ReligiousNote:'religiousNote',v4HardCanon:'hardCanon',v4Storyline:'storyline',v4Pacing:'pacing',v4Unlock:'customUnlockEpisode',v4AdultFrequency:'adultFrequency',v4Cooldown:'cooldown',v445PostUnlockPace:'postUnlockPace',v445PostUnlockInterval:'postUnlockInterval',v4Variety:'variety',v4VarietyWindow:'varietyWindow',v443DialogueMode:'sexualDialogueMode',v443FlirtUnlock:'flirtUnlockEpisode',v443ExplicitUnlock:'explicitTalkUnlockEpisode',v4415Kissing:'kissingDensity',v4415Foreplay:'foreplayLength',v4415InSceneCaress:'inSceneCaress',v4415BodyPraise:'bodyPraiseDirtyTalk',v4416BodyRichness:'bodyDescriptionRichness',v4416BodyWindow:'bodyDescriptionWindow',v4Dirty:'dirtyTalk',v4Profanity:'profanity',v4Insult:'insultMode'};
+    const map={v4World:'world',v4Relationship:'relationship',v4Trajectory:'trajectory',v4HistoricalStyle:'historicalStyle',v43PeriodNote:'periodNote',v4SocialA:'socialA',v4SocialB:'socialB',v4MilitaryStatus:'militaryStatus',v4ReligiousRule:'religiousRule',v4ReligiousNote:'religiousNote',v4HardCanon:'hardCanon',v4Storyline:'storyline',v4Pacing:'pacing',v4Unlock:'customUnlockEpisode',v4AdultFrequency:'adultFrequency',v4Cooldown:'cooldown',v445PostUnlockPace:'postUnlockPace',v445PostUnlockInterval:'postUnlockInterval',v4Variety:'variety',v4VarietyWindow:'varietyWindow',v443DialogueMode:'sexualDialogueMode',v443FlirtUnlock:'flirtUnlockEpisode',v443ExplicitUnlock:'explicitTalkUnlockEpisode',v4415Kissing:'kissingDensity',v4415Foreplay:'foreplayLength',v4415InSceneCaress:'inSceneCaress',v4415BodyPraise:'bodyPraiseDirtyTalk',v4416BodyRichness:'bodyDescriptionRichness',v4416BodyWindow:'bodyDescriptionWindow',v4Dirty:'dirtyTalk',v4DirtyFrequency:'dirtyTalkFrequency',v4Profanity:'profanity',v4Insult:'insultMode'};
     Object.entries(map).forEach(([id,key])=>{
       const el=p.querySelector('#'+id); if(!el)return;
       const ev=(el.tagName==='TEXTAREA'||el.type==='range'||el.type==='number'||el.tagName==='INPUT')?'input':'change';
@@ -858,6 +859,7 @@
     p.querySelectorAll('.v443-dialogue-custom').forEach(el=>el.style.display=state.sexualDialogueMode==='custom'?'block':'none');
     p.querySelectorAll('.v445-post-custom').forEach(el=>el.style.display=state.postUnlockPace==='custom'?'block':'none');
     const d=p.querySelector('#v4DirtyVal'); if(d)d.textContent=String(state.dirtyTalk);
+    const df=p.querySelector('#v4DirtyFrequencyVal'); if(df)df.textContent=String(state.dirtyTalkFrequency ?? 70);
     const pr=p.querySelector('#v4ProfanityVal'); if(pr)pr.textContent=String(state.profanity);
     const beats=storylineBeats(); const rawIdx=Math.max(0,Number(state.beatIndex||0)); const idx=Math.min(rawIdx,Math.max(0,beats.length-1));
     const bs=p.querySelector('#v4BeatStatus'); if(bs)bs.textContent=!beats.length?'스토리라인 미입력':rawIdx>=beats.length?`전체 ${beats.length}단계 완료`:`현재 ${idx+1}/${beats.length} · ${beats[idx]}`;

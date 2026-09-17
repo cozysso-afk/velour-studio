@@ -95,10 +95,11 @@
   function bodyPraiseDialogueDirective(state){
     const richness = String(state?.bodyDescriptionRichness || 'rich').toLowerCase();
     const dirty = Math.max(0, Math.min(100, Number(state?.dirtyTalk ?? 70)));
+    const dirtyFrequency = Math.max(0, Math.min(100, Number(state?.dirtyTalkFrequency ?? 70)));
     const rich = /rich|high|very_high|max|lush/.test(richness);
     const medium = /medium|balanced|normal/.test(richness);
     const density = rich ? '친밀감·욕망이 활성화된 장면에서는 외형/몸에 대한 직접 반응 대사를 높은 우선순위 후보로 사용하되 장면마다 횟수를 의무 할당하지 않는다. 지금 실제로 보이거나 접촉·자세·옷차림 때문에 강조된 특징이 있을 때 자연스럽게 선택한다.' : medium ? '친밀 장면에서는 외형/몸 반응 대사를 장면 맥락이 만들 때 자연스럽게 선택하고, 최근에 같은 부위·같은 평가를 썼다면 다른 관찰이나 다른 대화 기능으로 전환한다.' : '외형 칭찬 대사는 장면상 자연스러울 때만 드물게 사용한다.';
-    return `[BODY PRAISE TALK — 외형 묘사 풍부도의 실제 의미]\n- bodyDescriptionRichness=${richness}는 서술자의 신체 설명량이 아니라 “상대방이 상대의 외형/몸을 보고 느끼며 입 밖으로 표현하는 밀도”를 뜻한다.\n- ${density}\n- 기본은 쌍방이다. 남주→여주뿐 아니라 여주→남주도 각자의 성격과 욕망에 맞게 칭찬·감탄·도발·질문·반응형 대사를 한다. 한쪽만 계속 평가자처럼 말하지 않는다.\n- 더티톡 강도=${dirty}/100과 결합한다. 수위가 높을수록 외형 칭찬도 단순 미사여구보다 지금 보고 있거나 만지고 있는 부분, 상대 반응, 움직임과 연결된 직접적인 대사로 만든다.\n- 같은 고정 특징을 매번 같은 말로 복창하지 않는다. “너는 원래 ~한 체형이야” 같은 설정문 낭독이 아니라 그 순간의 시선·접촉·반응 때문에 튀어나오는 말이어야 한다.\n- 서술자는 대사를 받쳐주는 최소한의 시선·표정·움직임만 쓴다. 외형 설정을 대신 설명하는 해설 문단으로 되돌아가지 않는다.\n- 컵 문자·cm·정확한 치수는 사용자가 이번 화에 직접 요구하지 않는 한 대사에서도 설정표처럼 읊지 않는다.\n- 비친밀 장면에서는 외형 칭찬을 의무적으로 끼워 넣지 않는다. 맥락 없는 칭찬 때문에 사건 흐름을 끊지 않는다.`;
+    return `[BODY PRAISE TALK — 외형 묘사 풍부도의 실제 의미]\n- bodyDescriptionRichness=${richness}는 서술자의 신체 설명량이 아니라 “상대방이 상대의 외형/몸을 보고 느끼며 입 밖으로 표현하는 밀도”를 뜻한다.\n- ${density}\n- 기본은 쌍방이다. 남주→여주뿐 아니라 여주→남주도 각자의 성격과 욕망에 맞게 칭찬·감탄·도발·질문·반응형 대사를 한다. 한쪽만 계속 평가자처럼 말하지 않는다.\n- 더티톡 강도=${dirty}/100, 빈도=${dirtyFrequency}/100과 결합한다. 강도는 표현의 직접성, 빈도는 등장 성향이며 둘을 서로 대신하지 않는다. 수위가 높을수록 외형 칭찬도 단순 미사여구보다 지금 보고 있거나 만지고 있는 부분, 상대 반응, 움직임과 연결된 직접적인 대사로 만든다.\n- 같은 고정 특징을 매번 같은 말로 복창하지 않는다. “너는 원래 ~한 체형이야” 같은 설정문 낭독이 아니라 그 순간의 시선·접촉·반응 때문에 튀어나오는 말이어야 한다.\n- 서술자는 대사를 받쳐주는 최소한의 시선·표정·움직임만 쓴다. 외형 설정을 대신 설명하는 해설 문단으로 되돌아가지 않는다.\n- 컵 문자·cm·정확한 치수는 사용자가 이번 화에 직접 요구하지 않는 한 대사에서도 설정표처럼 읊지 않는다.\n- 비친밀 장면에서는 외형 칭찬을 의무적으로 끼워 넣지 않는다. 맥락 없는 칭찬 때문에 사건 흐름을 끊지 않는다.`;
   }
 
   // Response Vault buttons call qa.updateMemory() through their lexical handler.

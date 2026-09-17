@@ -8,7 +8,7 @@
   if (window.__VELOUR_CONTINUITY_VOICE_GUARD_BOOT__) return;
   window.__VELOUR_CONTINUITY_VOICE_GUARD_BOOT__ = true;
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const USER_FACT_PREFIX = '[사용자 확정 지속 상태';
   const MAX_USER_FACTS = 20;
 
@@ -106,11 +106,13 @@
 
   function dialogueVariationDirective(state){
     const dirty = Math.max(0, Math.min(100, Number(state?.dirtyTalk ?? 70)));
+    const frequency = Math.max(0, Math.min(100, Number(state?.dirtyTalkFrequency ?? 70)));
     const praise = String(state?.bodyPraiseDirtyTalk || 'high').toLowerCase();
     return `
 [DIALOGUE FUNCTION ROTATION — 더티톡 수위와 빈도 분리]
-- 더티톡 강도=${dirty}/100은 대사가 등장했을 때 허용되는 직접성·노골성의 상한이다. 친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니며, 강도가 높아도 매 씬·매 문단에 반복하지 않는다.
-- 더티톡의 기능을 하나로 취급하지 않는다. 몸/외형 반응, 욕망 표현, 도발·놀림, 요구·질문, 상대 반응 코멘트, 감정 노출, 감각 보고, 절정/사정 예고를 서로 다른 기능군으로 본다.
+- 더티톡 강도=${dirty}/100은 대사가 등장했을 때 허용되는 직접성·노골성의 상한이다. 강도는 등장 횟수를 뜻하지 않는다.
+- 더티톡 빈도=${frequency}/100은 친밀 장면에서 더티톡을 선택할 가능성과 밀도 성향이다. 0에 가까우면 매우 드물게, 50 전후면 필요할 때 자연스럽게, 70 이상이면 적극적으로 사용한다. 단, 정확한 대사 개수를 할당하지 말고 장면 리듬과 캐릭터 대화에 맞춰 분산한다.
+- 빈도가 높아도 같은 기능군을 늘려 채우지 않는다. 더티톡의 기능을 하나로 취급하지 않는다. 몸/외형 반응, 욕망 표현, 도발·놀림, 요구·질문, 상대 반응 코멘트, 감정 노출, 감각 보고, 절정/사정 예고를 서로 다른 기능군으로 본다.
 - 감각 보고와 절정/사정 예고는 여러 기능 중 하나일 뿐 기본값이 아니다. 직전 장면이나 최근 제공 본문에서 이미 많이 썼다면 이번 장면에서는 우선순위를 크게 낮추고 다른 기능군을 선택한다.
 - 같은 의미군의 대사를 표현만 바꿔 연속 출력하지 않는다. 문장 표면이 달라도 목적이 같으면 반복으로 본다. 사용자가 이번 화에 특정 표현을 직접 요구한 경우만 예외다.
 - bodyPraiseDirtyTalk=${praise}. high/normal이면 현재 장면에서 실제로 보이거나 움직임 때문에 강조된 외형·몸 특징에 대한 반응을 적극적인 후보로 둔다. 단, 같은 부위와 같은 평가를 기계적으로 회전하거나 매 장면 의무 삽입하지 않는다.
