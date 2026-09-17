@@ -1,6 +1,6 @@
 name: One-shot dirty-talk frequency separation
 
-# trigger revision 2
+# trigger revision 3
 on:
   push:
     paths:
@@ -16,6 +16,35 @@ jobs:
       - uses: actions/checkout@v4
       - name: Apply patch
         run: python scripts/one-shot-dirty-talk-frequency.py
+      - name: Align existing regression cache expectations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'scripts/test-hard-canon-lock.mjs': [
+              ('continuity-vault-hotfix\\.js\\?v=5','continuity-vault-hotfix\\.js\\?v=6'),
+              ('vault-accept-hotfix\\.js\\?v=16','vault-accept-hotfix\\.js\\?v=17'),
+            ],
+            'scripts/test-conditional-canon.mjs': [
+              ('vault-accept-hotfix.js\\?v=16','vault-accept-hotfix.js\\?v=17'),
+              ('continuity-vault-hotfix.js\\?v=5','continuity-vault-hotfix.js\\?v=6'),
+            ],
+            'scripts/test-dialogue-continuity-regression.mjs': [
+              ('assert.match(voice, /친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니/);','assert.match(voice, /강도는 등장 횟수를 뜻하지 않는다/);'),
+              ('continuity-vault-hotfix\\.js\\?v=5','continuity-vault-hotfix\\.js\\?v=6'),
+              ('vault-accept-hotfix\\.js\\?v=16','vault-accept-hotfix\\.js\\?v=17'),
+              ('continuity-voice-guard\\.js\\?v=4','continuity-voice-guard\\.js\\?v=5'),
+            ],
+          }
+          for path, pairs in replacements.items():
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  if old not in s:
+                      raise SystemExit(f'missing regression marker in {path}: {old}')
+                  s = s.replace(old, new)
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Validate JavaScript and regressions
         run: |
           node --check velour-v4.4.38.js
@@ -42,6 +71,6 @@ jobs:
                   velour-v4.4.38-vault-accept-hotfix.js \
                   index.html scripts/build-github-pages-canonical.mjs \
                   scripts/test-hard-canon-lock.mjs scripts/test-conditional-canon.mjs \
-                  scripts/test-dirty-talk-frequency.mjs
+                  scripts/test-dialogue-continuity-regression.mjs scripts/test-dirty-talk-frequency.mjs
           git commit -m 'Separate dirty-talk intensity and frequency'
           git push
