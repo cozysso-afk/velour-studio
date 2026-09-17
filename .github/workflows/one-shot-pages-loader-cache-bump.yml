@@ -14,53 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Patch continuity and dialogue owners
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          def read(path):
-              return Path(path).read_text(encoding='utf-8')
-
-          def write(path, text):
-              Path(path).write_text(text, encoding='utf-8')
-
-          def replace_required(text, old, new, label):
-              if old not in text:
-                  raise SystemExit(f'missing marker: {label}')
-              return text.replace(old, new)
-
-          # 1) Long-run continuity owner: recent confirmed state must outrank archived history.
-          p = 'velour-v4.4.38-continuity-hotfix.js'
-          s = read(p)
-          s = replace_required(s, "window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.0.0';", "window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.1.0';", 'continuity version')
-          s = replace_required(
-              s,
-              '- 이미 지나간 사건은 역사다. 현재 화에서 처음 일어난 일처럼 재연하지 않는다.',
-              '- 이미 지나간 사건은 역사다. 현재 화에서 처음 일어난 일처럼 재연하지 않는다.\\n- ARCHIVED ARC는 과거 기록 참고용이며 현재 상태의 권위가 아니다. 최근 확정 타임라인·현재 관계 상태·직전 인과 연결고리와 충돌하면 최근 확정 상태를 따른다.\\n- 과거 아크에 적힌 이전 관계·직업·거주·호칭·갈등 상태를 현재로 복원하지 않는다. 명시적 회상 장면이 아닌 이상 과거 시점으로 시간축을 되감지 않는다.',
-              'archived arc semantics'
-          )
-          s = replace_required(
-              s,
-              '- 우선순위: 사용자 인물 설정/HARD CANON > CANON STORYLINE > 이번 화 사용자 지시 > 사용자 확정 지속 상태 > 기타 장기 사실 > 과거 아크 > 최근 메모리 > 즉흥 아이디어.',
-              '- 우선순위: 사용자 인물 설정/HARD CANON > CANON STORYLINE > 이번 화 사용자 지시 > 사용자 확정 지속 상태 > 최근 확정 관계/타임라인/인과 연결고리 > 기타 장기 사실 > 과거 아크 요약 > 즉흥 아이디어.',
-              'memory authority order'
-          )
-          write(p, s)
-
-          # 2) Body-praise owner: remove quota behavior; keep it as a high-priority option when enabled.
-          p = 'velour-v4.4.38-continuity-vault-hotfix.js'
-          s = read(p)
-          s = s.replace("window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.3.0';", "window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.4.0';")
-          pattern = r"const density = rich \? '친밀감·욕망이 활성화된 장면에서는 서로의 외형/몸에 대한 짧은 직접 대사 비트를 장면 전체에 2~4회 정도 분산한다\.' : medium \? '친밀감·욕망이 활성화된 장면에서는 외형/몸에 대한 직접 대사를 필요할 때 1~2회 자연스럽게 둔다\.' : '외형 칭찬 대사는 장면상 자연스러울 때만 드물게 사용한다\.';"
-          repl = "const density = rich ? '친밀감·욕망이 활성화된 장면에서는 외형/몸에 대한 직접 반응 대사를 높은 우선순위 후보로 사용하되 장면마다 횟수를 의무 할당하지 않는다. 지금 실제로 보이거나 접촉·자세·옷차림 때문에 강조된 특징이 있을 때 자연스럽게 선택한다.' : medium ? '친밀 장면에서는 외형/몸 반응 대사를 장면 맥락이 만들 때 자연스럽게 선택하고, 최근에 같은 부위·같은 평가를 썼다면 다른 관찰이나 다른 대화 기능으로 전환한다.' : '외형 칭찬 대사는 장면상 자연스러울 때만 드물게 사용한다.';"
+        env:
+          PATCH_B64: "ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKZGVmIHJlYWQocGF0aCk6CiAgICByZXR1cm4gUGF0aChwYXRoKS5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykKCmRlZiB3cml0ZShwYXRoLCB0ZXh0KToKICAgIFBhdGgocGF0aCkud3JpdGVfdGV4dCh0ZXh0LCBlbmNvZGluZz0ndXRmLTgnKQoKZGVmIHJlcGxhY2VfcmVxdWlyZWQodGV4dCwgb2xkLCBuZXcsIGxhYmVsKToKICAgIGlmIG9sZCBub3QgaW4gdGV4dDoKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KGYnbWlzc2luZyBtYXJrZXI6IHtsYWJlbH0nKQogICAgcmV0dXJuIHRleHQucmVwbGFjZShvbGQsIG5ldykKCnAgPSAndmVsb3VyLXY0LjQuMzgtY29udGludWl0eS1ob3RmaXguanMnCnMgPSByZWFkKHApCnMgPSByZXBsYWNlX3JlcXVpcmVkKHMsICJ3aW5kb3cuX19WRUxPVVJfQ09OVElOVUlUWV9DT1NUX1ZFUlNJT05fXyA9ICcxLjAuMCc7IiwgIndpbmRvdy5fX1ZFTE9VUl9DT05USU5VSVRZX0NPU1RfVkVSU0lPTl9fID0gJzEuMS4wJzsiLCAnY29udGludWl0eSB2ZXJzaW9uJykKcyA9IHJlcGxhY2VfcmVxdWlyZWQoCiAgICBzLAogICAgJy0g7J2066+4IOyngOuCmOqwhCDsgqzqsbTsnYAg7Jet7IKs64ukLiDtmITsnqwg7ZmU7JeQ7IScIOyymOydjCDsnbzslrTrgpwg7J287Ja064KoIOydvOyynO2VmOyngCDslYrriYTrqqTrpZwg7J6s7Jew7ZWY7KeAIOyViOuKlOuLpC4nLAogICAgJy0g7J2066+4IOyngOuCmOqwhCDsgqzqsbTsnYAg7Jet7IKs64ukLiDtmITsnqwg7ZmU7JeQ7IScIOyymOyDjSDsnbzslrTrgpwg7J287Ja064KoIOydvOyynO2VmOyngCDslYrriYTrqqTrpZwg7J6s7Jew7ZWY7KeAIOyViOuKlOuLpC5cXG4tIEFSQ0hJVkVEIEFSQ+uKlCDqs7zqsbAg6riw66GdIOywuOqzoOyahOydtOupsCDtmITsnqwg7IOB7YOc7J2YIOq2jOychOqwgCDslYTri4jri6QuIOy1nOq3vCDtmZXsoJXti4Qg7YOA7J6E65287J2474uI4oCi7ZiE7J6sIOq0gOqzhSDsg4Htg5zCtOyngeyghCDsnbjqs7wg7Jew6rKw6rOg66as7JmAIOy2qeuPjO2VmOuptCDstZzqsrwg7ZmV7KCVIOyDge2DnOulvCDrlLDroZzri6QuXFxuLSDqs7zqsbAg7JWE7YGs7JeQIOyggO2ajOuQnCDsnbTsoIQg6rSA6rOE4oCi7KeB7JeF4oCi6rGw7KO84oCi7Zi47Lmg4oCi6rCI65OxIOyDge2DnOulvCDtmITsnqzroZwg67O17JuQ7ZWY7KeAIOyViOuKlOuLpC4g66qF7Iuc7KCBIO2ajOyDgCDsnqXrqbTsnbQg7JWE64uMIOydtOyDgCDqs7zqsbAg7Iuc7KCQ7Jy866GcIOyLnOqwhOy2leydhCDri6TqsJjs§kSDslYrriYTrqqTrpZwg65Ok6rCQ7KeAIOyViOuKlOuLpC4nLAogICAgJ2FyY2hpdmVkIGFyYyBzZW1hbnRpY3MnCikKcyA9IHJlcGxhY2VfcmVxdWlyZWQoCiAgICBzLAogICAgJy0g7Jqw7ISg7Iic7JyE64qUIOyCrOyaqeyekCDsnbjrrLwg7ISk7KCVL0hBUkQgQ0FOT04gPiBDQU5PTiBTVE9SWUxJTkUgPiDsnbTrsoQg7ZmU7J2YIOyCrOyaqeyekCDsp4Dsi5wgPiDsgrzsmqnsnpAg7ZmV7KCVIOyngOyGjSDsg4Htg5wgPiDquLDtg4Ag7J6l6riwIOyCrOyLpCA+IOqzvOqxsCDslYTtgawgPiDstZzqsrwg66mU66qo66asID4g7Kad7Z2lIOyVhOydtOuUlOyWtC4nLAogICAgJy0g7Jqw7ISg7Iic7JyE64qUIOyCrOyaqeyekCDsnbjrrLwg7ISk7KCVL0hBUkQgQ0FOT04gPiBDQU5PTiBTVE9SWUxJTkUgPiDsnbTrsoQg7ZmU7J2YIOyCrOyaqeyekCDsp4Dsi5wgPiDsgrzsmqnsnpAg7ZmV7KCVIOyngOyGjSDsg4Htg5wgPiDstZzqsrwg7ZmV7KCVIOq0gOqzhC/tg4DsnITrrpzjsnbgv7J247rO86ri4IOyXsOqysOqzoOumrCA+IOq4sO2DgCDsnqXquLAg7IKs7IukID4g6rO86rGwIOyVhO2BrCDsmpTsnpkgPiDslbfsnbQg7JWE7J2065SU7Ja0LicLAogICAgJ21lbW9yeSBhdXRob3JpdHkgb3JkZXInCikKd3JpdGUocCwgcykKCnAgPSAndmVsb3VyLXY0LjQuMzgtY29udGludWl0eS12YXVsdC1ob3RmaXguanMnCnMgPSByZWFkKHApCnMgPSBzLnJlcGxhY2UoIndpbmRvdy5fX1ZFTE9VUl9DT05USU5VSVRZX0NPU1RfVkVSU0lPTl9fID0gJzEuMy4wJzsiLCAid2luZG93Ll9fVkVMT1VSX0NPTlRJTlVJVFlfQ09TVF9WRVJTSU9OX18gPSAnMS40LjAnOyIpCnBhdHRlcm4gPSByImNvbnN0IGRlbnNpdHkgPSByaWNoIFw/ICfssZzrrIDqsJDsnJzrr7jsoJXsnYQg7Zmc7ISx7ZmU65CcIOyepOyEpOyXkOyEnCDshJzrsoDsnZgg7Jm47ZiVL+uquOyXkCDri6TtlZwg7Kqp7J2AIOyngeygkCDri6Tsgqwg67mE7Yq466W8IOyepOyEpCDsoITssrTsl5AgMn407ZqMIOygleuPhCDrtoTsgqztlZzri6RcLicgOiBtZWRpdW0gXD8gJ+uwqOuvuOqwkOyngOyDneydtCDtmZzshLHtmZTrlJwg7J6l66m07JeQ7ISc64qUIOyZuO2YlC/rrqjsl5Ag64yA7ZWcIOyngeygkCDri6TsgqzroZwg7ZWE7JqU7ZWgIOuVjCAxfjLtmowg7J6Q7Jew7Iqk65+s6rKMIOuRlOuLpC5cJyA6IFwn7Jm47ZiVIOy5reywsCDrjIDsgqzripQg7J6l66m07IOBIOyekOyeiOyKpOufrOyasCDrlYzrp4wg65Oc66y866y866y87ZWY6rKMIOyCrOyaqe2VnOuLpC5cJzsiCnJlcGwgPSAiY29uc3QgZGVuc2l0eSA9IHJpY2ggPyAn7Lmc67CA6rCQ4oCi7JqV66ed7J20IO2ZnOyEse2ZlOuQnCDsnqXrqbTsnbTsl5DshJzripQg7Jm47ZiVL+uquOyXkCDri6TtlZwg7KeB7KCRIOuwmOydkCDri6Tsgqzrpbwg64aS7J2AIOyasuunjOycoOyngCDtm4Trs7Tsl5Ag7IKs7Jqp7ZWY64WoIOyepOyEpOunj4Qg7J6l66m066qo64ukIO2ajOyImOulvCDsnZjr무 할당하지 않는다. 지금 실제로 보이거나 접촉·자세·옷차림 때문에 강조된 특징이 있을 때 자연스럽게 선택한다.' : medium ? '친밀 장면에서는 외형/몸 반응 대사를 장면 맥락이 만들 때 자연스럽게 선택하고, 최근에 같은 부위·같은 평가를 썼다면 다른 관찰이나 다른 대화 기능으로 전환한다.' : '외형 칭찬 대사는 장면상 자연스러울 때만 드물게 사용한다.';"
           s2, n = re.subn(pattern, repl, s, count=1)
           if n != 1:
               raise SystemExit('body-praise density marker not replaced')
-          s = s2
-          write(p, s)
+          write(p, s2)
 
-          # 3) Dialogue owner: dirtyTalk is directness, not frequency; rotate semantic functions.
           p = 'velour-v4.4.38-continuity-voice-guard.js'
           s = read(p)
           s = replace_required(s, "const VERSION = '1.0.0';", "const VERSION = '1.1.0';", 'voice version')
@@ -76,7 +36,6 @@ jobs:
               raise SystemExit('dialogueVariationDirective not replaced')
           write(p, s2)
 
-          # 4) Cache keys: loader owners + published GitHub Pages entrypoints.
           p = 'velour-v4.4.38-vault-accept-hotfix.js'
           s = read(p)
           s = replace_required(s, 'continuity-hotfix.js?v=2', 'continuity-hotfix.js?v=3', 'continuity owner cache')
@@ -89,7 +48,6 @@ jobs:
               s = replace_required(s, 'continuity-voice-guard.js?v=3', 'continuity-voice-guard.js?v=4', f'{p} voice cache')
               write(p, s)
 
-          # 5) Keep existing regression tests aligned with cache versions.
           p = 'scripts/test-hard-canon-lock.mjs'
           s = read(p).replace('continuity-vault-hotfix\\.js\\?v=4', 'continuity-vault-hotfix\\.js\\?v=5').replace('vault-accept-hotfix\\.js\\?v=15', 'vault-accept-hotfix\\.js\\?v=16')
           write(p, s)
@@ -101,7 +59,6 @@ jobs:
           s = s.replace('continuity-vault-hotfix.js\\?v=4', 'continuity-vault-hotfix.js\\?v=5')
           write(p, s)
 
-          # 6) New regression: recent state outranks archived arcs; dirty-talk directness != frequency.
           Path('scripts/test-dialogue-continuity-regression.mjs').write_text(r'''import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
@@ -129,6 +86,36 @@ assert.match(html,/vault-accept-hotfix\.js\?v=16/);
 assert.match(html,/continuity-voice-guard\.js\?v=4/);
 console.log('PASS: dialogue function rotation + recent-state authority over archived arcs');
 ''', encoding='utf-8')
+PY
+      - name: Validate JavaScript and regressions
+        run: |
+          node --check velour-v4.4.38-continuity-hotfix.js
+          node --check velour-v4.4.38-continuity-vault-hotfix.js
+          node --check velour-v4.4.38-continuity-voice-guard.js
+          node scripts/test-hard-canon-lock.mjs
+          node scripts/test-conditional-canon.mjs
+          node scripts/test-dialogue-continuity-regression.mjs
+      - name: Commit repair
+        run: |
+          if git diff --quiet; then
+            echo 'No changes needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add velour-v4.4.38-continuity-hotfix.js \
+                  velour-v4.4.38-continuity-vault-hotfix.js \
+                  velour-v4.4.38-continuity-voice-guard.js \
+                  velour-v4.4.38-vault-accept-hotfix.js \
+                  index.html scripts/build-github-pages-canonical.mjs \
+                  scripts/test-hard-canon-lock.mjs scripts/test-conditional-canon.mjs \
+                  scripts/test-dialogue-continuity-regression.mjs
+          git commit -m 'Fix dialogue repetition and story regression'
+          git push"}
+        run: |
+          python - <<'PY'
+          import base64, os
+          exec(base64.b64decode(os.environ['PATCH_B64']).decode('utf-8'))
           PY
       - name: Validate JavaScript and regressions
         run: |
