@@ -27,8 +27,8 @@ __velourLoadHotfix('__VELOUR_QUALITY_RESTORE_LOADER__','./velour-v4.4.38-quality
 __velourLoadHotfix('__VELOUR_SCENE_AGENCY_LOADER__','./velour-v4.4.38-scene-agency-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_EPISODE_BRANCH_LOADER__','./velour-v4.4.38-episode-branch-hotfix.js?v=3');
 __velourLoadHotfix('__VELOUR_USAGE_DASHBOARD_LOADER__','./velour-v4.4.38-usage-dashboard-hotfix.js?v=2');
-__velourLoadHotfix('__VELOUR_CONTINUITY_COST_LOADER__','./velour-v4.4.38-continuity-hotfix.js?v=2');
-__velourLoadHotfix('__VELOUR_CONTINUITY_VAULT_EDGE_LOADER__','./velour-v4.4.38-continuity-vault-hotfix.js?v=4');
+__velourLoadHotfix('__VELOUR_CONTINUITY_COST_LOADER__','./velour-v4.4.38-continuity-hotfix.js?v=3');
+__velourLoadHotfix('__VELOUR_CONTINUITY_VAULT_EDGE_LOADER__','./velour-v4.4.38-continuity-vault-hotfix.js?v=5');
 __velourLoadHotfix('__VELOUR_INTERNAL_LABEL_FIREWALL_LOADER__','./velour-v4.4.38-internal-label-firewall.js?v=1');
 __velourLoadHotfix('__VELOUR_PROSE_QA_LOADER__','./velour-v4.4.38-prose-qa-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_STYLE_DNA_LOADER__','./velour-v4.4.38-style-dna-hotfix.js?v=3');

@@ -61,10 +61,10 @@ assert.match(owner, /mode:\s*'full-hard-canon'/);
 assert.match(owner, /방학을 개강으로 바꾸지 않는다/);
 
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js', 'utf8');
-assert.match(loader, /continuity-vault-hotfix\.js\?v=4/);
+assert.match(loader, /continuity-vault-hotfix\.js\?v=5/);
 assert.match(loader, /hard-canon-lock-hotfix\.js\?v=1/);
 
 const build = readFileSync('scripts/build-github-pages-canonical.mjs', 'utf8');
-assert.match(build, /vault-accept-hotfix\.js\?v=15/);
+assert.match(build, /vault-accept-hotfix\.js\?v=16/);
 
 console.log('PASS: owner no longer prunes HARD CANON; full canon survives prompt assembly; legacy campus\/자취방 cannot override residence or vacation state');

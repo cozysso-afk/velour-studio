@@ -10,7 +10,7 @@
   'use strict';
   if (window.__VELOUR_CONTINUITY_COST_HOTFIX__) return;
   window.__VELOUR_CONTINUITY_COST_HOTFIX__ = true;
-  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.0.0';
+  window.__VELOUR_CONTINUITY_COST_VERSION__ = '1.1.0';
 
   const qa = window.__VELOUR_STORAGE_QA__ || {};
   const USER_FACT_PREFIX = '[사용자 확정 지속 상태';
@@ -149,7 +149,7 @@ ${otherDurable.length ? otherDurable.map(x => `- ${x}`).join('\n') : '- 추가 �
 
 [TIER 2 · ARCHIVED ARC MEMORY]
 ${arcs.length ? arcs.map(a => `- EP${a?.startEpisode || '?'}~${a?.endEpisode || '?'}: ${clean(a?.summary || '', 440)}`).join('\n') : '- 완결된 과거 아크 요약 없음.'}
-- 이미 지나간 사건은 역사다. 현재 화에서 처음 일어난 일처럼 재연하지 않는다.
+- 이미 지나간 사건은 역사다. 현재 화에서 처음 일어난 일처럼 재연하지 않는다.\n- ARCHIVED ARC는 과거 기록 참고용이며 현재 상태의 권위가 아니다. 최근 확정 타임라인·현재 관계 상태·직전 인과 연결고리와 충돌하면 최근 확정 상태를 따른다.\n- 과거 아크에 적힌 이전 관계·직업·거주·호칭·갈등 상태를 현재로 복원하지 않는다. 명시적 회상 장면이 아닌 이상 과거 시점으로 시간축을 되감지 않는다.
 
 [TIER 3 · RECENT ACTIVE MEMORY]
 ${timeline.length ? `최근 확정 타임라인:\n${timeline.map(x => `- ${x}`).join('\n')}` : '최근 확정 타임라인 없음.'}
@@ -157,7 +157,7 @@ ${timeline.length ? `최근 확정 타임라인:\n${timeline.map(x => `- ${x}`).
 - 직전 인과 연결고리: ${clean(runtime.causalCarry || '없음', 180)}
 ${threads.length ? `미회수 복선/약속/갈등:\n${threads.map(x => `- ${x}`).join('\n')}` : '미회수 복선/약속/갈등 없음.'}
 ${scenes.length ? `최근 장면 지문:\n${scenes.map(s => `- EP${s?.episode || '?'} | ${clean(s?.location || '?', 45)} | 목적 ${clean(s?.purpose || '?', 65)} | 엔딩 ${clean(s?.ending || '?', 55)}`).join('\n')}` : '최근 장면 지문 없음.'}
-- 우선순위: 사용자 인물 설정/HARD CANON > CANON STORYLINE > 이번 화 사용자 지시 > 사용자 확정 지속 상태 > 기타 장기 사실 > 과거 아크 > 최근 메모리 > 즉흥 아이디어.`;
+- 우선순위: 사용자 인물 설정/HARD CANON > CANON STORYLINE > 이번 화 사용자 지시 > 사용자 확정 지속 상태 > 최근 확정 관계/타임라인/인과 연결고리 > 기타 장기 사실 > 과거 아크 요약 > 즉흥 아이디어.`;
   }
 
   function stateSemanticsDirective(state){
