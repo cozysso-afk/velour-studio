@@ -1,6 +1,6 @@
 name: One-shot dirty-talk frequency separation
 
-# trigger revision 3
+# trigger revision 4
 on:
   push:
     paths:
@@ -20,23 +20,8 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          replacements = {
-            'scripts/test-hard-canon-lock.mjs': [
-              ('continuity-vault-hotfix\\.js\\?v=5','continuity-vault-hotfix\\.js\\?v=6'),
-              ('vault-accept-hotfix\\.js\\?v=16','vault-accept-hotfix\\.js\\?v=17'),
-            ],
-            'scripts/test-conditional-canon.mjs': [
-              ('vault-accept-hotfix.js\\?v=16','vault-accept-hotfix.js\\?v=17'),
-              ('continuity-vault-hotfix.js\\?v=5','continuity-vault-hotfix.js\\?v=6'),
-            ],
-            'scripts/test-dialogue-continuity-regression.mjs': [
-              ('assert.match(voice, /친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니/);','assert.match(voice, /강도는 등장 횟수를 뜻하지 않는다/);'),
-              ('continuity-vault-hotfix\\.js\\?v=5','continuity-vault-hotfix\\.js\\?v=6'),
-              ('vault-accept-hotfix\\.js\\?v=16','vault-accept-hotfix\\.js\\?v=17'),
-              ('continuity-voice-guard\\.js\\?v=4','continuity-voice-guard\\.js\\?v=5'),
-            ],
-          }
-          for path, pairs in replacements.items():
+
+          def replace_all(path, pairs):
               p = Path(path)
               s = p.read_text(encoding='utf-8')
               for old, new in pairs:
@@ -44,6 +29,21 @@ jobs:
                       raise SystemExit(f'missing regression marker in {path}: {old}')
                   s = s.replace(old, new)
               p.write_text(s, encoding='utf-8')
+
+          replace_all('scripts/test-hard-canon-lock.mjs', [
+              (r'continuity-vault-hotfix\.js\?v=5', r'continuity-vault-hotfix\.js\?v=6'),
+              (r'vault-accept-hotfix\.js\?v=16', r'vault-accept-hotfix\.js\?v=17'),
+          ])
+          replace_all('scripts/test-conditional-canon.mjs', [
+              (r'vault-accept-hotfix.js\?v=16', r'vault-accept-hotfix.js\?v=17'),
+              (r'continuity-vault-hotfix.js\?v=5', r'continuity-vault-hotfix.js\?v=6'),
+          ])
+          replace_all('scripts/test-dialogue-continuity-regression.mjs', [
+              ('assert.match(voice, /친밀 장면마다 더티톡을 넣으라는 빈도 지시가 아니/);','assert.match(voice, /강도는 등장 횟수를 뜻하지 않는다/);'),
+              (r'continuity-vault-hotfix\.js\?v=5', r'continuity-vault-hotfix\.js\?v=6'),
+              (r'vault-accept-hotfix\.js\?v=16', r'vault-accept-hotfix\.js\?v=17'),
+              (r'continuity-voice-guard\.js\?v=4', r'continuity-voice-guard\.js\?v=5'),
+          ])
           PY
       - name: Validate JavaScript and regressions
         run: |
