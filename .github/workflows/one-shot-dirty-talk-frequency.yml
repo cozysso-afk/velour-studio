@@ -1,0 +1,46 @@
+name: One-shot dirty-talk frequency separation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-dirty-talk-frequency.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python scripts/one-shot-dirty-talk-frequency.py
+      - name: Validate JavaScript and regressions
+        run: |
+          node --check velour-v4.4.38.js
+          node --check velour-v4.4.38-quality-restore.js
+          node --check velour-v4.4.38-continuity-vault-hotfix.js
+          node --check velour-v4.4.38-continuity-voice-guard.js
+          node scripts/test-hard-canon-lock.mjs
+          node scripts/test-conditional-canon.mjs
+          node scripts/test-dialogue-continuity-regression.mjs
+          node scripts/test-dirty-talk-frequency.mjs
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo 'No changes needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add velour-v4.4.38.js \
+                  velour-v4.4.38-ui-consolidation-hotfix.js \
+                  velour-v4.4.38-continuity-voice-guard.js \
+                  velour-v4.4.38-continuity-vault-hotfix.js \
+                  velour-v4.4.38-quality-restore.js \
+                  velour-v4.4.38-vault-accept-hotfix.js \
+                  index.html scripts/build-github-pages-canonical.mjs \
+                  scripts/test-hard-canon-lock.mjs scripts/test-conditional-canon.mjs \
+                  scripts/test-dirty-talk-frequency.mjs
+          git commit -m 'Separate dirty-talk intensity and frequency'
+          git push
