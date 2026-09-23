@@ -37,3 +37,12 @@
     reclaimNow: captureOrReclaim,
   };
 })();
+
+(() => {
+  if (window.__VELOUR_CONTEXTUAL_DIALOGUE_LOADER__) return;
+  window.__VELOUR_CONTEXTUAL_DIALOGUE_LOADER__ = true;
+  const script = document.createElement('script');
+  script.src = './velour-v4.4.38-contextual-dialogue-engine.js?v=1';
+  script.async = false;
+  document.head.appendChild(script);
+})();
