@@ -5,12 +5,17 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync('velour-v4.4.38-contextual-dialogue-engine.js', 'utf8');
+const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js', 'utf8');
+const canonicalBuild = readFileSync('scripts/build-github-pages-canonical.mjs', 'utf8');
 
 assert.match(source, /CONTEXTUAL DIALOGUE ENGINE V1/);
 assert.match(source, /stripLegacyDialogueDirectives/);
 assert.match(source, /dialogueMemory/);
 assert.match(source, /preferredFunctions/);
 assert.match(source, /상대가 방금 한 말·표정·행동/);
+assert.match(loader, /velour-v4\.4\.38-contextual-dialogue-engine\.js\?v=2/);
+assert.doesNotMatch(loader, /velour-v4\.4\.38-dialogue-context-hotfix/);
+assert.match(canonicalBuild, /velour-v4\.4\.38-vault-accept-hotfix\.js\?v=18/);
 
 const legacyPrompt = `BASE
 [BODY PRAISE TALK — legacy]
@@ -83,4 +88,4 @@ const memory = context.window.__VELOUR_LAST_DIALOGUE_MEMORY__;
 assert.ok(memory.total >= 6);
 assert.ok(memory.overused.includes('question'));
 
-console.log('PASS: contextual dialogue engine strips legacy overlap and rotates recent dialogue functions');
+console.log('PASS: contextual dialogue engine strips legacy overlap, rotates recent dialogue functions, and is wired to the cached loader');
