@@ -37,3 +37,4 @@ __velourLoadHotfix('__VELOUR_HARD_CANON_LOCK_LOADER__','./velour-v4.4.38-hard-ca
 __velourLoadHotfix('__VELOUR_CONTEXTUAL_DIALOGUE_LOADER__','./velour-v4.4.38-contextual-dialogue-engine.js?v=3');
 __velourLoadHotfix('__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__','./velour-v4.4.38-concept-relationship-governor.js?v=2');
 __velourLoadHotfix('__VELOUR_VERBAL_CHEMISTRY_V2_LOADER__','./velour-v4.4.38-verbal-chemistry-v2.js?v=1');
+__velourLoadHotfix('__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_LOADER__','./velour-v4.4.38-verbal-chemistry-refinement.js?v=1');
