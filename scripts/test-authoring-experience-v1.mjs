@@ -16,7 +16,10 @@ assert.match(source,/document\.querySelector\('#velourV33Panel \.v33-profile'\)/
 assert.match(source,/selectedText\('v4OccA'\)/);
 assert.match(source,/selectedText\('v4OccB'\)/);
 assert.match(source,/selectedText\('v4Relationship'\)/);
-assert.match(source,/role','relationshipNote/).catch?.(()=>{});
+assert.match(source,/assign\(cfg\.heroine,'role',occA\)/);
+assert.match(source,/assign\(cfg\.partners\[0\],'role',occB\)/);
+assert.match(source,/role\.style\.display = 'none'/);
+assert.match(source,/rel\.style\.display = 'none'/);
 
 const groupIds = [...source.matchAll(/\{id:'(space|constraint|reveal|social|speculative|legacy)', label:/g)].map(m=>m[1]);
 assert.deepEqual(groupIds,['space','constraint','reveal','social','speculative','legacy']);
