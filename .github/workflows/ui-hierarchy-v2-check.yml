@@ -37,13 +37,16 @@ jobs:
                   s=s.replace(marker,addition,1)
               p.write_text(s)
 
-          for name in [
-              'scripts/test-core-character-textarea.mjs',
-              'scripts/test-authoring-experience-v1.mjs',
-              'scripts/test-character-card-interaction-fix.mjs'
-          ]:
+          replacements={
+              'scripts/test-core-character-textarea.mjs':[('v=29','v=30')],
+              'scripts/test-authoring-experience-v1.mjs':[('v=29','v=30')],
+              'scripts/test-character-card-interaction-fix.mjs':[('v=29','v=30')],
+              'scripts/test-verbal-chemistry-v2.mjs':[('v=27','v=30')]
+          }
+          for name,pairs in replacements.items():
               p=Path(name)
-              s=p.read_text().replace('v=29','v=30')
+              s=p.read_text()
+              for old,new in pairs:s=s.replace(old,new)
               p.write_text(s)
           PY
 
@@ -100,6 +103,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html scripts/build-github-pages-canonical.mjs scripts/test-core-character-textarea.mjs scripts/test-authoring-experience-v1.mjs scripts/test-character-card-interaction-fix.mjs scripts/test-ui-hierarchy-v2.mjs
+          git add index.html scripts/build-github-pages-canonical.mjs scripts/test-core-character-textarea.mjs scripts/test-authoring-experience-v1.mjs scripts/test-character-card-interaction-fix.mjs scripts/test-verbal-chemistry-v2.mjs scripts/test-ui-hierarchy-v2.mjs
           git commit -m "Polish authoring UI hierarchy"
           git push origin HEAD:feat/ui-hierarchy-cleanup-v1
