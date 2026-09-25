@@ -31,18 +31,19 @@ jobs:
         run: node scripts/test-verbal-chemistry-refinement.mjs
       - name: Existing relationship governor regression
         run: node scripts/test-concept-relationship-governor.mjs
-      - name: Bust production parent-loader cache
+      - name: Ensure production parent-loader cache is bumped
         run: |
           python - <<'PY'
           from pathlib import Path
+          old='velour-v4.4.38-vault-accept-hotfix.js?v=23'
+          new='velour-v4.4.38-vault-accept-hotfix.js?v=24'
           for name in ['index.html','scripts/build-github-pages-canonical.mjs']:
               p=Path(name)
               s=p.read_text()
-              old='velour-v4.4.38-vault-accept-hotfix.js?v=23'
-              new='velour-v4.4.38-vault-accept-hotfix.js?v=24'
-              if old not in s:
-                  raise SystemExit(f'{name}: expected v23 loader marker not found')
-              p.write_text(s.replace(old,new))
+              if old in s:
+                  p.write_text(s.replace(old,new))
+              elif new not in s:
+                  raise SystemExit(f'{name}: neither v23 nor v24 loader marker found')
           PY
       - name: Commit cache bump if needed
         run: |
