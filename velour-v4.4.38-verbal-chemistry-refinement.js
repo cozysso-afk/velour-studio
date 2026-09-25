@@ -7,10 +7,17 @@
 (() => {
   'use strict';
 
-  const VERSION='2.2.0';
+  const VERSION='2.2.1';
   const GUARD='__VELOUR_VERBAL_CHEMISTRY_REFINEMENT__';
   const YEAR_TOKEN='__VELOUR_YEARSPAN_';
   const clean=(v,max=120)=>String(v||'').replace(/\s+/g,' ').trim().slice(0,max);
+  const INSULT_PREFIXES=[
+    '싸가지없는','재수없는','빌어먹을','좆같은','개같은','더러운','미친','씨발','시발','씨팔','시팔',
+    '걸레','화냥','독한','천한','망할','못된','나쁜','썅','쌍','좆'
+  ];
+  const PARTICLES='아|야|이|은|는|을|를|도|만|하고|과|와|에게|한테|이라고|이라|이랑|으로|처럼|보다|밖에|부터|까지|조차|마저|의|께서|같은|같이';
+  const escapeRx=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const PREFIX_ALT=INSULT_PREFIXES.slice().sort((a,b)=>b.length-a.length).map(escapeRx).join('|');
 
   function snapshot(){try{return window.__VELOUR_V4_STATE_SNAPSHOT__?.()||{};}catch(_){return {};}}
   function insultMode(){
@@ -31,6 +38,8 @@
     const p=String(prefix||'').replace(/\s+/g,'');
     const mapped={
       '미친':'미친 인간','썅':'빌어먹을 인간','쌍':'빌어먹을 인간','개같은':'개같은 인간',
+      '씨발':'빌어먹을 인간','시발':'빌어먹을 인간','씨팔':'빌어먹을 인간','시팔':'빌어먹을 인간',
+      '좆같은':'더러운 인간','좆':'더러운 인간','빌어먹을':'빌어먹을 인간',
       '걸레':'천박한 인간','화냥':'천박한 인간','독한':'독한 인간','천한':'천한 인간',
       '더러운':'더러운 인간','망할':'망할 인간','못된':'못된 인간','나쁜':'나쁜 인간',
       '재수없는':'재수없는 인간','싸가지없는':'싸가지없는 인간'
@@ -38,19 +47,22 @@
     return `${mapped[p]||'못된 인간'}${suffix||''}`;
   }
 
+  function prefixedGenderedRegex(flags='g'){
+    return new RegExp(`(${PREFIX_ALT})\\s*년(${PARTICLES})?`,flags);
+  }
+
   function sanitizeGenderedInsults(text,mode=insultMode()){
     let out=String(text||'');
     if(!firewallActive(mode)||!out)return out;
     const protectedYear=protectYearSpans(out);out=protectedYear.text;
 
-    // Prefix + gendered noun. Raw examples are never injected into the model prompt;
-    // these patterns exist only in deterministic post-generation code.
-    out=out.replace(/(미친|썅|쌍|개같은|걸레|화냥|독한|천한|더러운|망할|못된|나쁜|재수없는|싸가지없는)\s*년(아|이|은|는|을|를|도|만|하고|과|에게|한테)?/g,
-      (_all,prefix,suffix)=>replacement(prefix,suffix||''));
+    // Person-directed gendered insults are deterministic post-generation filters only.
+    // They are never injected as examples into the model prompt.
+    out=out.replace(prefixedGenderedRegex('g'),(_all,prefix,suffix)=>replacement(prefix,suffix||''));
     // Standalone profanity form "개년" is handled separately so numeric year-span terms can be protected first.
-    out=out.replace(/(^|[\s“”'"(])개\s*년(아|이|은|는|을|를|도|만|하고|과|에게|한테)?(?=[!?,.…\s)”'"}]|$)/g,
+    out=out.replace(new RegExp(`(^|[\\s“”'"(])개\\s*년(${PARTICLES})?(?=[!?,.…\\s)”'"}]|$)`,'g'),
       (_all,lead,suffix)=>`${lead}개같은 인간${suffix||''}`);
-    out=out.replace(/(^|[\s“”'"(])((?:이|저|그)\s*)년(아|이|은|는|을|를|도|만|하고|과|에게|한테)?(?=[!?,.…\s)”'"}]|$)/g,
+    out=out.replace(new RegExp(`(^|[\\s“”'"(])((?:이|저|그)\\s*)년(${PARTICLES})?(?=[!?,.…\\s)”'"}]|$)`,'g'),
       (_all,lead,det,suffix)=>`${lead}${det}인간${suffix||''}`);
     out=out.replace(/(^|[\s“”'"(])년아(?=[!?,.…\s)”'"}]|$)/g,'$1인간아');
     return protectedYear.restore(out);
@@ -61,9 +73,9 @@
     const protectedYear=protectYearSpans(String(text||''));
     const src=protectedYear.text;
     return [
-      /(?:미친|썅|쌍|개같은|걸레|화냥|독한|천한|더러운|망할|못된|나쁜|재수없는|싸가지없는)\s*년(?:아|이|은|는|을|를|도|만|하고|과|에게|한테|[!?,.…\s]|$)/,
-      /(?:^|[\s“”'"(])개\s*년(?:아|이|은|는|을|를|도|만|하고|과|에게|한테|[!?,.…\s]|$)/,
-      /(?:^|[\s“”'"(])(?:이|저|그)\s*년(?:아|이|은|는|을|를|도|만|하고|과|에게|한테|[!?,.…\s]|$)/,
+      prefixedGenderedRegex(''),
+      new RegExp(`(?:^|[\\s“”'"(])개\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
+      new RegExp(`(?:^|[\\s“”'"(])(?:이|저|그)\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
       /(?:^|[\s“”'"(])년아(?:[!?,.…\s]|$)/
     ].some(rx=>rx.test(src));
   }
@@ -115,9 +127,8 @@
     window[GUARD]=true;
     window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__=VERSION;
     window.__VELOUR_LANGUAGE_FIREWALL_QA__={version:VERSION,insultMode,protectYearSpans,sanitizeGenderedInsults,containsForbiddenGenderedInsult,sanitizeSurfaces,sanitizeVaultList};
-    // Backward-compatible QA alias used by the branch regression suite.
     window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_QA__=window.__VELOUR_LANGUAGE_FIREWALL_QA__;
-    console.info('✦ VELOUR Verbal Chemistry V2.2 language firewall loaded');return true;
+    console.info('✦ VELOUR Verbal Chemistry V2.2.1 language firewall loaded');return true;
   }
   if(!install()){let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>120)clearInterval(timer);},80);}
 })();
