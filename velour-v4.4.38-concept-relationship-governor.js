@@ -1,7 +1,7 @@
 'use strict';
 
 /* VELOUR — concept + relationship progression governor.
-   Final prompt layer that unifies legacy tropes/recommended relationships,
+   Final prompt layer that unifies user-selected legacy tropes, recommended relationships,
    V4 relationship state/trajectory/dynamics, and V3.5 crossovers.
    It prevents future relationship-state leakage and tracks repeated dialogue
    by semantic family without replaying disliked lines into the model prompt.
@@ -9,9 +9,10 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const GUARD = '__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR__';
   const V33_KEY = 'VELOUR_STORY_ENGINE_V33';
+  const LEGACY_TOUCHED = 'velourLegacyTropeTouched';
   const PHASE_RANK = { setup: 0, build: 1, transition: 2, payoff: 3 };
   const PHASE_LABEL = {
     setup: 'SETUP · 현재 관계 유지 / 변화 원인만 축적',
@@ -97,10 +98,32 @@
     return uniq(qsa(selector).map(el => el.closest('label')?.textContent || el.value || ''));
   }
 
+  function legacyTropeWrap(){ return document.getElementById('tropeTags'); }
+
+  function legacyTropesWereUserTouched(){
+    return legacyTropeWrap()?.dataset?.[LEGACY_TOUCHED] === '1';
+  }
+
+  function activeLegacyTropes(){
+    return legacyTropesWereUserTouched() ? textLabels('#tropeTags > .tag-pill.active') : [];
+  }
+
+  function installLegacyTropeTouchTracker(){
+    const wrap = legacyTropeWrap();
+    if (!wrap || wrap.dataset.velourTropeTrackerInstalled === '1') return;
+    wrap.dataset.velourTropeTrackerInstalled = '1';
+    wrap.addEventListener('click', event => {
+      if (!event.target?.closest?.('.tag-pill')) return;
+      wrap.dataset[LEGACY_TOUCHED] = '1';
+    });
+  }
+
   function conceptSelectionsFromDom(){
     return {
       recommendedRelationshipIds: uniq(qsa('[data-v33rel].active').map(el => el.dataset.v33rel)),
-      crossoverIds: uniq(qsa('#v33Tags .v33-tag.on[data-id]').map(el => el.dataset.id))
+      crossoverIds: uniq(qsa('#v33Tags .v33-tag.on[data-id]').map(el => el.dataset.id)),
+      legacyTropeLabels: activeLegacyTropes(),
+      legacyTropeTouched: legacyTropesWereUserTouched()
     };
   }
 
@@ -114,7 +137,7 @@
       pacing: clean(state.pacing || 'slow', 40),
       episode: liveEpisodeNumber(state),
       dynamics: checkedLabelTexts('#v4Dynamics input:checked'),
-      legacyTropes: textLabels('#tropeTags > .tag-pill.active'),
+      legacyTropes: activeLegacyTropes(),
       recommendedRelationships: textLabels('[data-v33rel].active'),
       crossovers: textLabels('#v33Tags .v33-tag.on[data-id]').slice(0, mixCount),
       nextInstruction: clean(document.getElementById('v33Next')?.value || '', 1000),
@@ -147,7 +170,7 @@
     const currentCanon = clean(state?.hardCanon, 1800);
     const directInstruction = /(?:이번\s*화|이번\s*에피소드|지금|오늘).{0,30}(?:연인|사귀|고백|쌍방|관계).{0,30}(?:확정|전환|되기로|된다|시작|받아들|정리)/i.test(instruction)
       || /(?:연인이\s*된다|사귀기로\s*한다|고백.{0,16}받아들인다|관계를\s*확정한다)/i.test(instruction);
-    const canonAlreadyCurrent = /(?:현재|이미|지금).{0,24}(?:연인|부부|사귀는\s*사이|쌍방|서로\s*좋아)/i.test(currentCanon);
+    const canonAlreadyCurrent = /(?:현재|이미|지금).{0,18}(?:두\s*사람은?|둘은?)?.{0,12}(?:연인\s*관계(?:다|이다)|부부(?:다|이다)|사귀는\s*사이(?:다|이다)|쌍방\s*감정(?:이다|인\s*상태))/i.test(currentCanon);
     return directInstruction || canonAlreadyCurrent;
   }
 
@@ -245,6 +268,7 @@
 - 핵심 현재 관계=${core}. 관계 변화 목적지=${destination}. 현재 페이싱=${concepts.pacing}. 현재 EP.${concepts.episode}.
 - 선택된 관계/트로프 보조축=${mods.length ? mods.join(' / ') : '없음'}. 선택된 크로스오버=${cross.length ? cross.join(' / ') : '없음'}.
 - ‘선택된 트로프’와 ‘이미 성립한 현재 사실’을 구분한다. 트로프는 장기적인 맛·갈등·역할 후보이지, 첫 화부터 그 결과가 이미 완성됐다는 뜻이 아니다.
+- 구형 HTML 트로프는 기본 active 값을 자동 설정으로 취급하지 않는다. 사용자가 실제로 해당 영역을 조작한 경우의 활성 항목만 보조 모티프로 인정한다.
 - 추천 관계 태그는 인물의 역할·직업·사회적 구도를 구체화하는 보조축이다. 현재 관계 상태와 충돌하면 현재 관계를 덮어쓰지 말고 역할/상황 정보만 사용한다.
 - 관계 변화 방향은 목적지다. 현재 화의 사실로 미리 당겨 쓰지 않는다. 현재 관계→감정 변화→상대 반응→재협상→목표 상태의 순서를 실제 장면으로 통과한다.
 - 크로스오버가 선택되어 있으면 장식 문구로만 두지 않는다. 새 이야기의 첫 화에서는 사용자 첫 장면/HARD CANON과 충돌하지 않는 항목 하나를 장소·사건·반전의 실질 원인으로 작동시킨다. 이어쓰기에서는 이미 해결된 기믹을 반복 발동하지 말고 현재 인과선에 맞는 항목만 사용한다. 여러 개를 골랐으면 한 화에 전부 소비하지 않는다.
@@ -303,8 +327,14 @@ ${explicit || alreadyTarget ? '- 이번 화 직접 지시 또는 명시적 현�
     const s = selection && typeof selection === 'object' ? selection : {};
     const recommended = new Set(Array.isArray(s.recommendedRelationshipIds) ? s.recommendedRelationshipIds.map(String) : []);
     const crossovers = new Set(Array.isArray(s.crossoverIds) ? s.crossoverIds.map(String) : []);
+    const legacyLabels = new Set(Array.isArray(s.legacyTropeLabels) ? s.legacyTropeLabels.map(x => clean(x, 180)) : []);
     qsa('[data-v33rel]').forEach(el => el.classList.toggle('active', recommended.has(String(el.dataset.v33rel || ''))));
     qsa('#v33Tags .v33-tag[data-id]').forEach(el => el.classList.toggle('on', crossovers.has(String(el.dataset.id || ''))));
+    const wrap = legacyTropeWrap();
+    if (wrap && s.legacyTropeTouched) {
+      wrap.dataset[LEGACY_TOUCHED] = '1';
+      qsa('#tropeTags > .tag-pill').forEach(el => el.classList.toggle('active', legacyLabels.has(clean(el.textContent || '', 180))));
+    }
     try {
       const cfg = JSON.parse(localStorage.getItem(V33_KEY) || '{}');
       if (cfg && typeof cfg === 'object') {
@@ -316,6 +346,7 @@ ${explicit || alreadyTarget ? '- 이번 화 직접 지시 또는 명시적 현�
 
   function installStateSelectionBridge(){
     if (window.__VELOUR_CONCEPT_SELECTION_BRIDGE__) return;
+    installLegacyTropeTouchTracker();
     const oldSnapshot = window.__VELOUR_V4_STATE_SNAPSHOT__;
     if (typeof oldSnapshot === 'function') {
       window.__VELOUR_V4_STATE_SNAPSHOT__ = function(){
@@ -340,8 +371,9 @@ ${explicit || alreadyTarget ? '- 이번 화 직접 지시 또는 명시적 현�
       const wrapped = function(){
         const out = old.apply(this, arguments);
         const apply = () => {
-          const s = snapshot();
-          if (s?.conceptSelections) applyConceptSelections(s.conceptSelections);
+          let restored = {};
+          try { restored = oldSnapshot?.() || {}; } catch (_) {}
+          if (restored?.conceptSelections) applyConceptSelections(restored.conceptSelections);
         };
         if (out && typeof out.then === 'function') out.finally(() => setTimeout(apply, 0));
         else setTimeout(apply, 0);
@@ -389,6 +421,8 @@ ${explicit || alreadyTarget ? '- 이번 화 직접 지시 또는 명시적 현�
       version: VERSION,
       collectConcepts,
       conceptSelectionsFromDom,
+      activeLegacyTropes,
+      legacyTropesWereUserTouched,
       paceThresholds,
       relationshipPhase,
       destinationFor,
