@@ -86,17 +86,19 @@ assert.match(prompt,/voice fingerprint/);
 assert.match(prompt,/성별을 낮춰 부르는 사람 멸칭은 사용하지 않는다/);
 
 vm.runInNewContext(firewall,context,{filename:'velour-v4.4.38-verbal-chemistry-refinement.js'});
-assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__,'2.2.1');
+assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__,'2.2.2');
 const fw=window.__VELOUR_LANGUAGE_FIREWALL_QA__;
 assert.ok(fw);
 
-const abusive='그는 상대를 미친년이라고 불렀다. 저 년아! 개년아. 씨발년. 시발 년이라고 했다. 씨팔년은 안 된다. 좆같은년까지 막아야 한다.';
+const abusive='그는 상대를 미친년이라고 불렀다. 저 년아! 개년아. 씨발년. 시발 년이라고 했다. 씨팔년은 안 된다. 좆같은년까지 막아야 한다. 요망한 년이라고도 했다. 발칙한 년은 더 이상 나오면 안 된다.';
 const cleaned=fw.sanitizeGenderedInsults(abusive,'off');
 assert.equal(fw.containsForbiddenGenderedInsult(cleaned,'off'),false);
-for(const token of ['미친년','년아','씨발년','시발 년','씨팔년','좆같은년']) assert.ok(!cleaned.includes(token),token);
+for(const token of ['미친년','년아','씨발년','시발 년','씨팔년','좆같은년','요망한 년','발칙한 년']) assert.ok(!cleaned.includes(token),token);
 assert.ok(cleaned.includes('빌어먹을 인간'));
+assert.ok(cleaned.includes('요망한 인간'));
+assert.ok(cleaned.includes('발칙한 인간'));
 
-const years='5개년 계획과 3개년 사업을 검토했다. 내년에는 다시 만나고, 몇 년 뒤 작년 일을 떠올렸다.';
+const years='5개년 계획과 3개년 사업을 검토했다. 내년에는 다시 만나고, 몇 년 뒤 작년 일을 떠올렸다. 수십 년 동안 이어졌고 10 년 후 다시 검토했다.';
 assert.equal(fw.sanitizeGenderedInsults(years,'off'),years);
 assert.equal(fw.containsForbiddenGenderedInsult(years,'off'),false);
 assert.equal(fw.sanitizeGenderedInsults(abusive,'custom'),abusive);
@@ -110,9 +112,9 @@ assert.equal(fw.containsForbiddenGenderedInsult(storyHistory,'off'),false);
 assert.equal(fw.containsForbiddenGenderedInsult(sessionEpisodes[0].text,'off'),false);
 
 assert.match(loader,/verbal-chemistry-v2\.js\?v=2/);
-assert.match(loader,/verbal-chemistry-refinement\.js\?v=3/);
+assert.match(loader,/verbal-chemistry-refinement\.js\?v=4/);
 assert.match(loader,/vault-language-firewall\.js\?v=1/);
 assert.match(vaultBridge,/data-vault-accept/);
 assert.match(vaultBridge,/sanitizeAndPersist/);
 
-console.log('PASS: V2.2.1 language firewall blocks profanity-prefixed gendered insults and preserves year expressions');
+console.log('PASS: V2.2.2 language firewall blocks standalone gendered slurs and preserves year expressions');
