@@ -10,7 +10,7 @@
   'use strict';
   if (window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__) return;
 
-  const VERSION='1.0.2';
+  const VERSION='1.0.3';
   const GUARD='__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__';
   const KEY='VELOUR_ENSEMBLE_CHARACTER_PREFS_V1';
   const MAX_PARTNERS=5;
@@ -209,13 +209,16 @@
   function directive(state,cfg=loadCfg()){
     const partners=activePartners(cfg),focus=focusPartner(cfg,state);
     const positionCandidates=focus?mutualPositionCandidates(cfg.heroine,focus,state):[];
-    const caressCandidates=focus?mutualCaressCandidates(cfg.heroine,focus):[];
+    const depthActive=!!window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_QA__;
+    const caressCandidates=!depthActive&&focus?mutualCaressCandidates(cfg.heroine,focus):[];
     const modeLabel=cfg.mode==='one_to_many'?'1:다 · 여주 1명과 여러 상대 캐릭터':'1:1';
     return `===== VELOUR ENSEMBLE CHARACTER · PREFERENCE ENGINE V1 =====
 [캐릭터 구조]
 - 모드: ${modeLabel}.
 - 이 프리셋은 빠른 기본값이다. 사용자 인물 설정 원문과 최신 HARD CANON이 더 구체적이거나 충돌하면 그쪽이 우선한다.
 - 모든 말투·성격·성향은 캐릭터별로 독립 유지한다. 다른 인물의 말버릇·지식·감정·관계 권리를 복사하지 않는다.
+- 아래 캐릭터 프로필의 이름은 고정 식별자다. 사용자 이번 화 지시나 HARD CANON이 명시적으로 개명하지 않는 한 새 본명·별명을 임의 생성하거나 서로의 이름을 바꾸지 않는다.
+- 1:다에서는 각 상대의 이름·말투·관계메모·지식·감정 상태를 해당 edge에 묶고 다른 상대에게 전이하지 않는다.
 - 1:다 모드는 여러 개의 독립적인 1:1 관계 edge를 뜻한다. 자동으로 모두가 같은 관계가 되거나, 동시에 같은 장면의 친밀 관계가 되었다고 가정하지 않는다.
 - 특별한 인과나 사용자 지시가 없으면 한 장면의 중심 상대는 1명으로 유지해 캐릭터 목소리와 관계 진전을 섞지 않는다.
 - 친밀 설정은 성인 캐릭터 사이에서 기존 동의·관계 단계·페이싱 게이트가 이미 허용한 장면에만 적용한다. 이 엔진 자체가 장면을 조기 해금하지 않는다.
@@ -232,14 +235,14 @@ ${partners.map(p=>characterLine(p,false,state)).join('\n')}
 [캐릭터별 친밀 취향 — 주력 / 허용 / OFF]
 ${preferenceLine(cfg.heroine,POSITION_CATALOG,'positionModes','구도')}
 ${focus?preferenceLine(focus,POSITION_CATALOG,'positionModes','구도'):''}
-${preferenceLine(cfg.heroine,CARESS_CATALOG,'caressModes','애정·애무')}
-${focus?preferenceLine(focus,CARESS_CATALOG,'caressModes','애정·애무'):''}
+${depthActive?'- 애정·애무/자극 상세 취향은 뒤의 INTIMACY PREFERENCE DEPTH가 단일 권위다. 이 레거시 caress 저장값은 하위호환용으로만 유지하며 중복 지시하지 않는다.':preferenceLine(cfg.heroine,CARESS_CATALOG,'caressModes','애정·애무')}
+${depthActive?'':(focus?preferenceLine(focus,CARESS_CATALOG,'caressModes','애정·애무'):'')}
 - OFF는 자동 생성 후보에서 완전히 제외한다. 주력은 장면에 적합할 때 강하게 우선하지만 매번 의무 반복하지 않는다.
 - 두 인물이 함께 있는 장면에서는 둘 다 OFF가 아닌 교집합만 사용한다. 한쪽의 주력이라도 다른 쪽이 OFF면 사용하지 않는다.
 - 기존 전역 친밀 패턴 설정이 더 좁으면 그 전역 허용 범위와의 교집합만 사용한다.
 - 최근 사용 기록과 같은 항목을 단어만 바꿔 되풀이하지 않는다. 주력 안에서도 저사용 후보를 먼저 회전한다.
 - 현재 focus와 상호 허용되는 저사용 구도 후보: ${positionCandidates.map(x=>x.label).join(' / ')||'없음 — 억지로 만들지 말 것'}.
-- 현재 focus와 상호 허용되는 애정·애무 후보: ${caressCandidates.map(x=>x.label).join(' / ')||'없음 — 일반적인 대화/거리 조절로 대체'}.
+${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에서만 결정한다.':`- 현재 focus와 상호 허용되는 애정·애무 후보: ${caressCandidates.map(x=>x.label).join(' / ')||'없음 — 일반적인 대화/거리 조절로 대체'}.`}
 - 다양성 때문에 부자연스럽게 전환하지 않는다. 상대 반응·환경·감정 변화 → 인물 선택 → 거리/동선 변화의 인과가 먼저다.
 ===== /VELOUR ENSEMBLE CHARACTER · PREFERENCE ENGINE V1 =====`;
   }

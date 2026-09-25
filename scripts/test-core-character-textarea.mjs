@@ -12,6 +12,6 @@ assert.match(authoring,/function setupCoreCharacterTextarea\(\)/);
 assert.match(authoring,/input\.addEventListener\('input', autoGrow\)/);
 assert.match(authoring,/min-height:112px/);
 assert.match(loader,/authoring-experience-v1\.js\?v=3/);
-assert.match(index,/vault-accept-hotfix\.js\?v=29/);
-assert.match(canonical,/vault-accept-hotfix\.js\?v=29/);
+assert.match(index,/vault-accept-hotfix\.js\?v=31/);
+assert.match(canonical,/vault-accept-hotfix\.js\?v=31/);
 console.log('PASS: core character memo is multiline and auto-grows on mobile');

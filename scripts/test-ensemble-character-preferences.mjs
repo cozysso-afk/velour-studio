@@ -45,7 +45,7 @@ const context={window,document,localStorage,console,setInterval(fn){fn();return 
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'velour-v4.4.38-ensemble-character-preferences.js'});
 
-assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.0.2');
+assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.0.3');
 const qa=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__;
 assert.ok(qa);
 assert.equal(qa.POSITION_CATALOG.length,40,'core mirror should keep all 40 current position entries');
