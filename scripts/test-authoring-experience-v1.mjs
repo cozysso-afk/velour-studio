@@ -46,7 +46,7 @@ const canonPos = loader.indexOf('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__');
 assert.ok(intimacyPos>=0 && authoringPos>intimacyPos && canonPos>authoringPos,'authoring layer must load after preference panels and before final live canon');
 assert.match(loader,/velour-v4\.4\.38-authoring-experience-v1\.js\?v=3/);
 
-assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=29/);
-assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=29/);
+assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=30/);
+assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=30/);
 
 console.log('PASS: authoring UI consolidation removes duplicate sources, groups crossovers by narrative axis, excludes legacy overlaps from auto-mix, and preserves final canon order');

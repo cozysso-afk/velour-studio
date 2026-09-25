@@ -42,7 +42,8 @@ const headAssets = `
 const runtimeScripts = `
 <script src="./velour-v3.5.js?v=3502"></script>
 <script src="./velour-v4.4.38.js?v=443707"></script>
-<script src="./velour-v4.4.38-vault-accept-hotfix.js?v=29"></script>
+<script src="./velour-v4.4.38-vault-accept-hotfix.js?v=30"></script>
+<script src="./velour-v4.4.38-ui-hierarchy-v2.js?v=1"></script>
 <script src="./velour-v4.4.38-state-isolation-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-state-isolation-reclaim-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-lock-ui-hotfix.js?v=4"></script>
