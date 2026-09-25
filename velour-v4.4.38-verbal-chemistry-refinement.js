@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const VERSION='2.2.1';
+  const VERSION='2.2.2';
   const GUARD='__VELOUR_VERBAL_CHEMISTRY_REFINEMENT__';
   const YEAR_TOKEN='__VELOUR_YEARSPAN_';
   const clean=(v,max=120)=>String(v||'').replace(/\s+/g,' ').trim().slice(0,max);
@@ -28,10 +28,14 @@
 
   function protectYearSpans(text){
     const kept=[];
+    const src=String(text||'');
+    const protect=m=>{const i=kept.push(m)-1;return `${YEAR_TOKEN}${i}__`;};
+    let out=src;
     const number='(?:\\d+|[일이삼사오육칠팔구십백천한두세네다섯여섯일곱여덟아홉열]+)';
-    const rx=new RegExp(`(${number}\\s*개년)(?=\\s*(?:계획|사업|정책|과정|주기|기간|동안|간|로드맵|프로젝트|전략|예산|목표|평균|단위|치)?(?:\\s|[.,!?…]|$))`,'g');
-    const protectedText=String(text||'').replace(rx,m=>{const i=kept.push(m)-1;return `${YEAR_TOKEN}${i}__`;});
-    return {text:protectedText,restore(value){return String(value||'').replace(new RegExp(`${YEAR_TOKEN}(\\d+)__`,'g'),(_m,n)=>kept[Number(n)]??_m);}};
+    out=out.replace(new RegExp(`(${number}\\s*개년)(?=\\s*(?:계획|사업|정책|과정|주기|기간|동안|간|로드맵|프로젝트|전략|예산|목표|평균|단위|치)?(?:\\s|[.,!?…]|$))`,'g'),protect);
+    const span='(?:\\d+|몇|수십|수백|수천|수만|십수|한두|두세|서너|여러|[일이삼사오육칠팔구십백천한두세네다섯여섯일곱여덟아홉열]+)';
+    out=out.replace(new RegExp(`(${span}\\s*년)(?=\\s*(?:간|동안|째|차|후|뒤|전|사이|이상|이하|내|마다|주기|기간)?(?:\\s|[.,!?…]|$))`,'g'),protect);
+    return {text:out,restore(value){return String(value||'').replace(new RegExp(`${YEAR_TOKEN}(\\d+)__`,'g'),(_m,n)=>kept[Number(n)]??_m);}};
   }
 
   function replacement(prefix,suffix=''){
@@ -50,6 +54,9 @@
   function prefixedGenderedRegex(flags='g'){
     return new RegExp(`(${PREFIX_ALT})\\s*년(${PARTICLES})?`,flags);
   }
+  function standaloneGenderedRegex(flags='g'){
+    return new RegExp(`(^|[\\s“”'\"(])년(${PARTICLES})?(?=[!?,.…\\s)”'\"}]|$)`,flags);
+  }
 
   function sanitizeGenderedInsults(text,mode=insultMode()){
     let out=String(text||'');
@@ -60,11 +67,14 @@
     // They are never injected as examples into the model prompt.
     out=out.replace(prefixedGenderedRegex('g'),(_all,prefix,suffix)=>replacement(prefix,suffix||''));
     // Standalone profanity form "개년" is handled separately so numeric year-span terms can be protected first.
-    out=out.replace(new RegExp(`(^|[\\s“”'"(])개\\s*년(${PARTICLES})?(?=[!?,.…\\s)”'"}]|$)`,'g'),
+    out=out.replace(new RegExp(`(^|[\\s“”'\"(])개\\s*년(${PARTICLES})?(?=[!?,.…\\s)”'\"}]|$)`,'g'),
       (_all,lead,suffix)=>`${lead}개같은 인간${suffix||''}`);
-    out=out.replace(new RegExp(`(^|[\\s“”'"(])((?:이|저|그)\\s*)년(${PARTICLES})?(?=[!?,.…\\s)”'"}]|$)`,'g'),
+    out=out.replace(new RegExp(`(^|[\\s“”'\"(])((?:이|저|그)\\s*)년(${PARTICLES})?(?=[!?,.…\\s)”'\"}]|$)`,'g'),
       (_all,lead,det,suffix)=>`${lead}${det}인간${suffix||''}`);
-    out=out.replace(/(^|[\s“”'"(])년아(?=[!?,.…\s)”'"}]|$)/g,'$1인간아');
+    // Any remaining standalone person-noun usage is forbidden in OFF/LIGHT mode.
+    // Year expressions have already been token-protected above, so adjective + "년" forms
+    // no longer require an ever-growing prefix dictionary.
+    out=out.replace(standaloneGenderedRegex('g'),(_all,lead,suffix)=>`${lead}인간${suffix||''}`);
     return protectedYear.restore(out);
   }
 
@@ -74,9 +84,9 @@
     const src=protectedYear.text;
     return [
       prefixedGenderedRegex(''),
-      new RegExp(`(?:^|[\\s“”'"(])개\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
-      new RegExp(`(?:^|[\\s“”'"(])(?:이|저|그)\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
-      /(?:^|[\s“”'"(])년아(?:[!?,.…\s]|$)/
+      new RegExp(`(?:^|[\\s“”'\"(])개\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
+      new RegExp(`(?:^|[\\s“”'\"(])(?:이|저|그)\\s*년(?:${PARTICLES}|[!?,.…\\s]|$)`),
+      standaloneGenderedRegex('')
     ].some(rx=>rx.test(src));
   }
 
@@ -128,7 +138,7 @@
     window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__=VERSION;
     window.__VELOUR_LANGUAGE_FIREWALL_QA__={version:VERSION,insultMode,protectYearSpans,sanitizeGenderedInsults,containsForbiddenGenderedInsult,sanitizeSurfaces,sanitizeVaultList};
     window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_QA__=window.__VELOUR_LANGUAGE_FIREWALL_QA__;
-    console.info('✦ VELOUR Verbal Chemistry V2.2.1 language firewall loaded');return true;
+    console.info('✦ VELOUR Verbal Chemistry V2.2.2 language firewall loaded');return true;
   }
   if(!install()){let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>120)clearInterval(timer);},80);}
 })();
