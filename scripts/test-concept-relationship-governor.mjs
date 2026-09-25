@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync('velour-v4.4.38-concept-relationship-governor.js', 'utf8');
+const relationGuardSource = readFileSync('velour-v4.4.38-continuity-relation-grammar-hotfix.js', 'utf8');
 
 function cls(active=false){
   const set = new Set(active ? ['active'] : []);
@@ -67,7 +68,11 @@ vm.runInNewContext(source, context, { filename:'velour-v4.4.38-concept-relations
 
 assert.equal(window.__VELOUR_CONCEPT_RELATIONSHIP_VERSION__, '1.0.0');
 const qa = window.__VELOUR_CONCEPT_RELATIONSHIP_QA__;
-assert.equal(qa.relationshipPhase(state, qa.collectConcepts(state)), 'setup');
+const c = qa.collectConcepts(state);
+assert.equal(qa.relationshipPhase(state, c), 'setup');
+assert.equal(qa.relationshipPhase({...state,pacing:'slow'}, {...c,episode:7}), 'build');
+assert.equal(qa.relationshipPhase({...state,pacing:'slow'}, {...c,episode:8}), 'transition');
+assert.equal(qa.relationshipPhase({...state,pacing:'slow'}, {...c,episode:12}), 'payoff');
 assert.equal(qa.classifyCliche('네가 먼저 시작한 거야.'), 'blame_flip');
 assert.equal(qa.classifyCliche('갈 것 같아.'), 'outcome_forecast');
 assert.equal(qa.classifyCliche('나한테 싸.'), 'directed_outcome');
@@ -87,5 +92,7 @@ assert.doesNotMatch(output, /네가 먼저 시작한 거야|갈 것 같아|나�
 assert.match(output, /책임 전가형 도발/);
 assert.match(output, /결과·절정 예고/);
 assert.match(output, /상대에게 결과를 요구하는 지시/);
+assert.doesNotMatch(relationGuardSource, /네가 먼저 시작한 거다|아앙 갈 것 같아|쌀 것 같아|나한테 싸/);
+assert.match(relationGuardSource, /concept-relationship-governor\.js\?v=1/);
 
 console.log('PASS: concept resolver, slow relationship guard, and cliche cooldown work together');
