@@ -86,15 +86,15 @@ assert.match(prompt,/voice fingerprint/);
 assert.match(prompt,/성별을 낮춰 부르는 사람 멸칭은 사용하지 않는다/);
 
 vm.runInNewContext(firewall,context,{filename:'velour-v4.4.38-verbal-chemistry-refinement.js'});
-assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__,'2.2.0');
+assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_VERSION__,'2.2.1');
 const fw=window.__VELOUR_LANGUAGE_FIREWALL_QA__;
 assert.ok(fw);
 
-const abusive='그는 상대를 미친년이라고 불렀다. 저 년아! 개년아.';
+const abusive='그는 상대를 미친년이라고 불렀다. 저 년아! 개년아. 씨발년. 시발 년이라고 했다. 씨팔년은 안 된다. 좆같은년까지 막아야 한다.';
 const cleaned=fw.sanitizeGenderedInsults(abusive,'off');
 assert.equal(fw.containsForbiddenGenderedInsult(cleaned,'off'),false);
-assert.ok(!cleaned.includes('미친년'));
-assert.ok(!cleaned.includes('년아'));
+for(const token of ['미친년','년아','씨발년','시발 년','씨팔년','좆같은년']) assert.ok(!cleaned.includes(token),token);
+assert.ok(cleaned.includes('빌어먹을 인간'));
 
 const years='5개년 계획과 3개년 사업을 검토했다. 내년에는 다시 만나고, 몇 년 뒤 작년 일을 떠올렸다.';
 assert.equal(fw.sanitizeGenderedInsults(years,'off'),years);
@@ -115,4 +115,4 @@ assert.match(loader,/vault-language-firewall\.js\?v=1/);
 assert.match(vaultBridge,/data-vault-accept/);
 assert.match(vaultBridge,/sanitizeAndPersist/);
 
-console.log('PASS: Verbal Chemistry V2.2 unified planner, tactic states, voice guard, beat budget and language firewall');
+console.log('PASS: V2.2.1 language firewall blocks profanity-prefixed gendered insults and preserves year expressions');
