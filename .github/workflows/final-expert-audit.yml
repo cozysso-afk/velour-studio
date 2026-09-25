@@ -18,49 +18,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply final audit fixes
+      - name: Apply final audit cache fixes
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          p=Path('velour-v4.4.38-intimacy-preference-depth.js')
-          s=p.read_text()
-          s=s.replace("'\\\"':'&quot'", "'\\\"':'&quot;'")
+          p = Path('velour-v4.4.38-intimacy-preference-depth.js')
+          s = p.read_text()
+          s = s.replace("'\\\"':'&quot'", "'\\\"':'&quot;'")
           p.write_text(s)
 
-          p=Path('velour-v4.4.38-vault-accept-hotfix.js')
-          s=p.read_text()
-          s=s.replace('velour-v4.4.38-intimacy-preference-depth.js?v=1','velour-v4.4.38-intimacy-preference-depth.js?v=2')
+          p = Path('velour-v4.4.38-vault-accept-hotfix.js')
+          s = p.read_text()
+          s = s.replace('velour-v4.4.38-intimacy-preference-depth.js?v=1', 'velour-v4.4.38-intimacy-preference-depth.js?v=2')
           p.write_text(s)
 
-          p=Path('scripts/test-intimacy-preference-depth.mjs')
-          s=p.read_text()
-          s=s.replace("assert.equal(window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_VERSION__,'1.0.0');", "assert.equal(window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_VERSION__,'1.0.1');")
-          s=s.replace(r"assert.match(loader,/intimacy-preference-depth\\.js\\?v=1/);", r"assert.match(loader,/intimacy-preference-depth\\.js\\?v=2/);")
-          marker="const prompt=window.buildPrompt();"
-          if 'neutral defaults must not auto-activate' not in s:
-              insert="""
-const neutral=qa.normalizeCfg({});
-const neutralStim=qa.mutualStimCandidates(heroine,partner,neutral,30,baseState);
-assert.equal(neutralStim.length,0,'neutral defaults must not auto-activate detailed play candidates');
-const neutralCompat=qa.styleCompatibility(heroine,partner,neutral);
-assert.equal(neutralCompat.complements.length,0,'neutral defaults must not auto-activate S/M or control complements');
-assert.equal(neutralCompat.shared.length,0,'neutral defaults must not auto-activate setting/exposure preferences');
-const sigBefore=qa.characterSignature(ensembleCfg);
-ensembleCfg.partners.push({id:'p2',name:'태현'});
-const sigAfter=qa.characterSignature(ensembleCfg);
-assert.notEqual(sigBefore,sigAfter,'dynamic partner changes must invalidate the depth UI signature');
-ensembleCfg.partners.pop();
-
-"""
-              s=s.replace(marker,insert+marker)
-          p.write_text(s)
-
-          for name in ['index.html','scripts/build-github-pages-canonical.mjs']:
-              p=Path(name)
-              s=p.read_text()
+          for name in ['index.html', 'scripts/build-github-pages-canonical.mjs']:
+              p = Path(name)
+              s = p.read_text()
               if 'velour-v4.4.38-vault-accept-hotfix.js?v=25' in s:
-                  s=s.replace('velour-v4.4.38-vault-accept-hotfix.js?v=25','velour-v4.4.38-vault-accept-hotfix.js?v=26')
+                  s = s.replace('velour-v4.4.38-vault-accept-hotfix.js?v=25', 'velour-v4.4.38-vault-accept-hotfix.js?v=26')
               elif 'velour-v4.4.38-vault-accept-hotfix.js?v=26' not in s:
                   raise SystemExit(f'{name}: expected parent loader cache v25/v26 not found')
               p.write_text(s)
@@ -101,6 +78,6 @@ ensembleCfg.partners.pop();
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add velour-v4.4.38-intimacy-preference-depth.js velour-v4.4.38-vault-accept-hotfix.js scripts/test-intimacy-preference-depth.mjs index.html scripts/build-github-pages-canonical.mjs
+          git add velour-v4.4.38-intimacy-preference-depth.js velour-v4.4.38-vault-accept-hotfix.js index.html scripts/build-github-pages-canonical.mjs
           git commit -m "Finalize ensemble intimacy preference audit"
           git push origin HEAD:feat/ensemble-character-preferences-v2
