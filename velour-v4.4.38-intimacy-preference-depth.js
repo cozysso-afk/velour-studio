@@ -9,16 +9,14 @@
   'use strict';
   if (window.__VELOUR_INTIMACY_PREFERENCE_DEPTH__) return;
 
-  const VERSION='1.0.0';
+  const VERSION='1.0.1';
   const GUARD='__VELOUR_INTIMACY_PREFERENCE_DEPTH__';
   const KEY='VELOUR_INTIMACY_PREFERENCE_DEPTH_V1';
   const MODE_ORDER=['allowed','priority','off'];
   const normalizeMode=v=>MODE_ORDER.includes(String(v))?String(v):'allowed';
   const clean=(v,max=80)=>String(v||'').replace(/\s+/g,' ').trim().slice(0,max);
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
 
-  // Individual style tendencies. These describe what a character tends to enjoy;
-  // they are not all same-ID mutual requirements. Complementary pairs are handled below.
   const STYLE_CATALOG=[
     ['tender_sensual','다정·감각 중심'],
     ['slow_foreplay','긴 전희·천천히 고조'],
@@ -41,7 +39,6 @@
     ['aftercare_high','애프터케어 중시']
   ].map(([id,label])=>({id,label}));
 
-  // Mutual acts/sensory preferences. Labels stay clinical/setting-oriented rather than prose-like.
   const STIM_CATALOG=[
     ['long_kiss','긴 키스'],
     ['deep_kiss','깊은 입맞춤'],
@@ -88,6 +85,9 @@
     return [cfg.heroine,...partners].filter(Boolean);
   }
   function profileId(c){return clean(c?.id,48)||clean(c?.name,48)||'character';}
+  function characterSignature(cfg=ensembleCfg()){
+    return characterList(cfg).map(c=>`${profileId(c)}:${clean(c?.name,48)}`).join('|');
+  }
 
   function normalizeCfg(raw){
     const src=raw&&typeof raw==='object'?raw:{};
@@ -122,12 +122,25 @@
     if(!ecfg)return null;
     try{return ensembleQA()?.focusPartner?.(ecfg,state)||null;}catch(_){return null;}
   }
-  function mutualStimCandidates(a,b,cfg=loadCfg(),limit=10){
+  function stableRank(seed){
+    let h=2166136261;
+    for(const ch of String(seed||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
+    return h>>>0;
+  }
+  function mutualStimCandidates(a,b,cfg=loadCfg(),limit=10,state={}){
     if(!a||!b)return [];
     const pa=getProfile(a,cfg),pb=getProfile(b,cfg);
-    return STIM_CATALOG.filter(item=>pa.stimModes[item.id]!=='off'&&pb.stimModes[item.id]!=='off')
-      .map(item=>({id:item.id,label:item.label,score:(pa.stimModes[item.id]==='priority'?2:0)+(pb.stimModes[item.id]==='priority'?2:0)}))
-      .sort((x,y)=>y.score-x.score||x.id.localeCompare(y.id)).slice(0,limit);
+    const ep=Number(state?.runtime?.confirmedEpisode||0)+1;
+    return STIM_CATALOG
+      .filter(item=>pa.stimModes[item.id]!=='off'&&pb.stimModes[item.id]!=='off')
+      .map(item=>({
+        id:item.id,label:item.label,
+        score:(pa.stimModes[item.id]==='priority'?2:0)+(pb.stimModes[item.id]==='priority'?2:0),
+        rank:stableRank(`${ep}|${profileId(a)}|${profileId(b)}|${item.id}`)
+      }))
+      .filter(item=>item.score>0)
+      .sort((x,y)=>y.score-x.score||x.rank-y.rank)
+      .slice(0,limit);
   }
   function styleCompatibility(a,b,cfg=loadCfg()){
     if(!a||!b)return {complements:[],shared:[],warnings:[]};
@@ -135,14 +148,18 @@
     const on=(p,id)=>normalizeMode(p.styleModes[id])!=='off';
     const pri=(p,id)=>normalizeMode(p.styleModes[id])==='priority';
     for(const [left,right,title] of COMPLEMENTS){
-      if((on(pa,left)&&on(pb,right))||(on(pa,right)&&on(pb,left))){
+      const compatible=(on(pa,left)&&on(pb,right))||(on(pa,right)&&on(pb,left));
+      const activated=pri(pa,left)||pri(pa,right)||pri(pb,left)||pri(pb,right);
+      if(compatible&&activated){
         const score=(pri(pa,left)||pri(pa,right)?1:0)+(pri(pb,left)||pri(pb,right)?1:0);
         complements.push({title,score});
       }
     }
     for(const item of STYLE_CATALOG){
       if(!CONTEXT_SHARED.has(item.id))continue;
-      if(on(pa,item.id)&&on(pb,item.id))shared.push({id:item.id,label:item.label,score:(pri(pa,item.id)?1:0)+(pri(pb,item.id)?1:0)});
+      if(on(pa,item.id)&&on(pb,item.id)&&(pri(pa,item.id)||pri(pb,item.id))){
+        shared.push({id:item.id,label:item.label,score:(pri(pa,item.id)?1:0)+(pri(pb,item.id)?1:0)});
+      }
     }
     if(shared.some(x=>x.id==='exposure_fantasy'))warnings.push('공공장소의 비동의 노출이나 불법 행위로 실행하지 말고, 사생활이 확보된 합법적 상황/판타지 긴장으로만 번역');
     return {complements:complements.sort((x,y)=>y.score-x.score),shared:shared.sort((x,y)=>y.score-x.score),warnings};
@@ -159,19 +176,20 @@
   function directive(state,cfg=loadCfg()){
     const ecfg=ensembleCfg();if(!ecfg)return '';
     const chars=characterList(ecfg),focus=focusCharacter(state,ecfg),compat=focus?styleCompatibility(ecfg.heroine,focus,cfg):{complements:[],shared:[],warnings:[]};
-    const stim=focus?mutualStimCandidates(ecfg.heroine,focus,cfg):[];
+    const stim=focus?mutualStimCandidates(ecfg.heroine,focus,cfg,10,state):[];
     return `===== VELOUR INTIMACY PREFERENCE DEPTH V1 =====
 [캐릭터별 성적 성향 · 자극 선호]
 - 이 블록은 성인 캐릭터의 합의된 취향 프로필이다. 장면 자체를 조기 해금하지 않는다. 기존 동의, 관계 단계, 페이싱, HARD CANON이 항상 우선한다.
-- 주력=적절한 장면에서 높은 우선순위, 허용=상황 맞으면 사용, OFF=자동 후보에서 완전히 제외.
+- 주력=적절한 장면에서 높은 우선순위, 허용=상황 맞으면 수동 후보, OFF=자동 후보에서 완전히 제외.
+- 주력 지정이 없는 강한 성향·플레이를 이 블록만 보고 먼저 꺼내지 않는다. 허용은 금지가 아니라 가능 범위일 뿐 자동 추천 신호가 아니다.
 - 강한 취향이라도 매 장면 의무 반복하지 않는다. 최근 장면의 방식·리듬을 반복하지 말고 인물/상황 인과를 우선한다.
 ${chars.map(c=>profileLine(c,getProfile(c,cfg))).join('\n')}
 
 [현재 focus 상호 적합성]
 - focus=${focus?.name||'없음'}.
-- 상호 허용 자극·플레이 후보: ${stim.map(x=>x.label).join(' / ')||'없음'}.
-- 보완 성향 조합: ${compat.complements.map(x=>x.title).join(' / ')||'없음'}.
-- 함께 허용된 공간/맥락 성향: ${compat.shared.map(x=>x.label).join(' / ')||'없음'}.
+- 상호 적합한 주력 기반 자극·플레이 후보: ${stim.map(x=>x.label).join(' / ')||'없음 — 세부 플레이를 억지로 추가하지 말 것'}.
+- 주력으로 활성화된 보완 성향 조합: ${compat.complements.map(x=>x.title).join(' / ')||'없음'}.
+- 주력으로 활성화된 공간/맥락 성향: ${compat.shared.map(x=>x.label).join(' / ')||'없음'}.
 - S/M·주도/맡김·통제 계열은 명시적 또는 확실한 상호 동의와 관계 단계가 전제다. 성향 라벨을 상대의 동의나 권리 포기로 해석하지 않는다.
 - 통증·제약·스팽킹 계열은 강도를 자동 상향하지 않는다. 설정된 범위를 넘는 행위를 임의 추가하지 않는다.
 - 성인 수유·유즙 관련 항목은 성인 캐릭터끼리의 설정으로만 취급하며 임신·출산·수유 상태를 임의로 만들어내지 않는다. HARD CANON에 근거가 없으면 생리적 사실을 발명하지 않는다.
@@ -202,11 +220,14 @@ ${compat.warnings.length?`- 추가 안전 제약: ${compat.warnings.join(' / ')}
   }
   function prefButtons(profile,catalog,key,kind){return catalog.map(item=>{const mode=normalizeMode(profile[key]?.[item.id]);return `<button type="button" data-depth-kind="${kind}" data-depth-id="${item.id}" data-label="${esc(item.label)}" data-mode="${mode}" style="text-align:left;border:1px solid rgba(245,196,107,.24);background:rgba(255,255,255,.035);color:#f7e7c4;border-radius:8px;padding:6px 7px;font-size:9px;line-height:1.35">${esc(item.label)} · ${mode==='priority'?'주력':mode==='off'?'OFF':'허용'}</button>`;}).join('');}
   function renderUI(){
-    if(document.getElementById('velourIntimacyDepthV1'))return;
     const anchor=document.getElementById('velourEnsemblePrefsV1');if(!anchor||!anchor.parentNode)return;
-    const ecfg=ensembleCfg();if(!ecfg)return;const cfg=loadCfg();
-    const wrap=document.createElement('div');wrap.id='velourIntimacyDepthV1';wrap.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(245,196,107,.18);border-radius:10px;background:rgba(255,255,255,.025)';
-    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.07em">INTIMACY DEPTH · 성적 성향/자극 선호</div><div style="font-size:9px;opacity:.66;line-height:1.5;margin-top:4px">캐릭터별 주력 → OFF → 허용 순환. 관계 단계와 동의 게이트를 해제하지 않습니다.</div>${characterList(ecfg).map(c=>{const p=getProfile(c,cfg);return `<details data-depth-char="${esc(profileId(c))}" style="margin-top:7px;border:1px solid rgba(245,196,107,.13);border-radius:9px;padding:7px"><summary style="font-size:9.5px;font-weight:800;cursor:pointer">${esc(c.name||'인물')} · 세부 취향</summary><details style="margin-top:6px"><summary style="font-size:9px;cursor:pointer">성적 스타일 ${STYLE_CATALOG.length}종</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px">${prefButtons(p,STYLE_CATALOG,'styleModes','style')}</div></details><details style="margin-top:6px"><summary style="font-size:9px;cursor:pointer">자극·플레이 ${STIM_CATALOG.length}종</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px">${prefButtons(p,STIM_CATALOG,'stimModes','stim')}</div></details></details>`;}).join('')}`;
+    const ecfg=ensembleCfg();if(!ecfg)return;
+    const signature=characterSignature(ecfg),existing=document.getElementById('velourIntimacyDepthV1');
+    if(existing?.dataset?.characterSignature===signature)return;
+    existing?.remove?.();
+    const cfg=loadCfg();
+    const wrap=document.createElement('div');wrap.id='velourIntimacyDepthV1';wrap.dataset.characterSignature=signature;wrap.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(245,196,107,.18);border-radius:10px;background:rgba(255,255,255,.025)';
+    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.07em">INTIMACY DEPTH · 성적 성향/자극 선호</div><div style="font-size:9px;opacity:.66;line-height:1.5;margin-top:4px">캐릭터별 주력 → OFF → 허용 순환. 허용은 자동 추천이 아니며, 관계 단계와 동의 게이트를 해제하지 않습니다.</div>${characterList(ecfg).map(c=>{const p=getProfile(c,cfg);return `<details data-depth-char="${esc(profileId(c))}" style="margin-top:7px;border:1px solid rgba(245,196,107,.13);border-radius:9px;padding:7px"><summary style="font-size:9.5px;font-weight:800;cursor:pointer">${esc(c.name||'인물')} · 세부 취향</summary><details style="margin-top:6px"><summary style="font-size:9px;cursor:pointer">성적 스타일 ${STYLE_CATALOG.length}종</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px">${prefButtons(p,STYLE_CATALOG,'styleModes','style')}</div></details><details style="margin-top:6px"><summary style="font-size:9px;cursor:pointer">자극·플레이 ${STIM_CATALOG.length}종</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px">${prefButtons(p,STIM_CATALOG,'stimModes','stim')}</div></details></details>`;}).join('')}`;
     anchor.insertAdjacentElement?.('afterend',wrap)||anchor.parentNode.appendChild(wrap);
     wrap.querySelectorAll?.('[data-depth-kind]').forEach(btn=>{paint(btn,btn.dataset.mode);btn.addEventListener('click',()=>{const id=btn.closest('[data-depth-char]')?.dataset.depthChar;if(!id)return;const now=loadCfg(),p=now.profiles[id]||baseProfile(id),key=btn.dataset.depthKind==='style'?'styleModes':'stimModes';p[key][btn.dataset.depthId]=cycleMode(p[key][btn.dataset.depthId]);now.profiles[id]=p;saveCfg(now);paint(btn,p[key][btn.dataset.depthId]);schedulePersist();});});
   }
@@ -217,8 +238,14 @@ ${compat.warnings.length?`- 추가 안전 제약: ${compat.warnings.join(' / ')}
     installStateBridge();const previousBuild=window.buildPrompt;
     window.buildPrompt=function(){const out=stripPrior(previousBuild.apply(this,arguments)),state=window.__VELOUR_V4_STATE_SNAPSHOT__?.()||{},cfg=loadCfg(),block=directive(state,cfg);window.__VELOUR_LAST_INTIMACY_PREFERENCE_DEPTH__={version:VERSION,focus:focusCharacter(state)?.name||'',at:new Date().toISOString()};return block?`${out}\n\n${block}`.trim():out;};
     window[GUARD]=true;window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_VERSION__=VERSION;
-    window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_QA__={STYLE_CATALOG,STIM_CATALOG,COMPLEMENTS,normalizeCfg,loadCfg,saveCfg,getProfile,mutualStimCandidates,styleCompatibility,directive,cycleMode};
-    renderUI();console.info('✦ VELOUR Intimacy Preference Depth V1 loaded');return true;
+    window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_QA__={STYLE_CATALOG,STIM_CATALOG,COMPLEMENTS,normalizeCfg,loadCfg,saveCfg,getProfile,mutualStimCandidates,styleCompatibility,directive,cycleMode,characterSignature};
+    renderUI();
+    if(typeof MutationObserver==='function'&&document.body){
+      const observer=new MutationObserver(()=>setTimeout(renderUI,0));
+      observer.observe(document.body,{subtree:true,childList:true});
+      window.__VELOUR_INTIMACY_DEPTH_UI_OBSERVER__=observer;
+    }
+    console.info('✦ VELOUR Intimacy Preference Depth V1 loaded');return true;
   }
   if(!install()){let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>200)clearInterval(timer);},80);}
   setTimeout(renderUI,400);
