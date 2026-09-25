@@ -17,7 +17,7 @@ assert.match(authoring,/kind === 'heroine' \? selectedText\('v4OccB'\) : selecte
 assert.match(authoring,/여주 적극성은 위 SCENE AGENCY에서 설정/);
 assert.match(authoring,/이 상대의 적극성은 이 카드에서 개별 설정/);
 assert.match(loader,/ensemble-character-preferences\.js\?v=2/);
-assert.match(loader,/authoring-experience-v1\.js\?v=2/);
-assert.match(index,/vault-accept-hotfix\.js\?v=28/);
-assert.match(canonical,/vault-accept-hotfix\.js\?v=28/);
+assert.match(loader,/authoring-experience-v1\.js\?v=3/);
+assert.match(index,/vault-accept-hotfix\.js\?v=29/);
+assert.match(canonical,/vault-accept-hotfix\.js\?v=29/);
 console.log('PASS: character card interaction/mapping fix');

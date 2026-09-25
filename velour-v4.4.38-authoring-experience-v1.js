@@ -13,7 +13,7 @@
   'use strict';
   if (window.__VELOUR_AUTHORING_EXPERIENCE_V1__) return;
 
-  const VERSION = '1.0.1';
+  const VERSION = '1.0.2';
   const GUARD = '__VELOUR_AUTHORING_EXPERIENCE_V1__';
   const V33_KEY = 'VELOUR_STORY_ENGINE_V33';
   const UX_KEY = 'VELOUR_AUTHORING_EXPERIENCE_V1';
@@ -146,7 +146,7 @@
       #v33Tags .velour-crossover-group .velour-crossover-body{display:flex;flex-wrap:wrap;gap:7px;padding:0 9px 9px}
       #v33Tags .v33-tag{font-size:11px!important;line-height:1.35!important;padding:7px 9px!important}
       #v33RandomMix{font-size:11px!important}
-      .velour-primary-story-card #inputChars{min-height:70px!important}
+      .velour-primary-story-card #inputChars{min-height:112px!important;line-height:1.55!important;white-space:pre-wrap!important}
       @media(max-width:430px){
         #velourCharacterPreferenceHub>summary{font-size:13px!important}
         #velourEnsemblePrefsV1,#velourIntimacyDepthV1{padding:10px!important}
@@ -171,6 +171,26 @@
       input.dataset.velourPlaceholderV2 = '1';
       input.placeholder = '예: 서진과 하윤. 둘만의 과거 사건이나 꼭 유지할 성격 포인트만 적어줘. 직업·외형은 아래 설정에서 선택하면 여기엔 다시 안 적어도 돼.';
     }
+  }
+
+  function setupCoreCharacterTextarea(){
+    const input = document.getElementById('inputChars');
+    if (!input || String(input.tagName || '').toUpperCase() !== 'TEXTAREA') return false;
+    input.rows = 5;
+    input.setAttribute('wrap','soft');
+    input.style.resize = 'vertical';
+    const autoGrow = () => {
+      input.style.height = 'auto';
+      const height = Math.min(Math.max(Number(input.scrollHeight || 0),112),320);
+      input.style.height = `${height}px`;
+      input.style.overflowY = Number(input.scrollHeight || 0) > 320 ? 'auto' : 'hidden';
+    };
+    if (input.dataset.velourAutoGrow !== '1') {
+      input.dataset.velourAutoGrow = '1';
+      input.addEventListener('input', autoGrow);
+    }
+    autoGrow();
+    return true;
   }
 
   function hideLegacyVisualProfile(){
@@ -492,6 +512,7 @@
     if (!document.getElementById('velourEnsemblePrefsV1') || !document.getElementById('velourIntimacyDepthV1')) return false;
     installCss();
     updatePrimaryLabels();
+    setupCoreCharacterTextarea();
     hideLegacyVisualProfile();
     syncBaseCharacterSources();
     consolidateCharacterPanels();
