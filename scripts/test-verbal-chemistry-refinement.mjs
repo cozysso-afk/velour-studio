@@ -110,7 +110,7 @@ assert.equal(fw.containsForbiddenGenderedInsult(storyHistory,'off'),false);
 assert.equal(fw.containsForbiddenGenderedInsult(sessionEpisodes[0].text,'off'),false);
 
 assert.match(loader,/verbal-chemistry-v2\.js\?v=2/);
-assert.match(loader,/verbal-chemistry-refinement\.js\?v=2/);
+assert.match(loader,/verbal-chemistry-refinement\.js\?v=3/);
 assert.match(loader,/vault-language-firewall\.js\?v=1/);
 assert.match(vaultBridge,/data-vault-accept/);
 assert.match(vaultBridge,/sanitizeAndPersist/);
