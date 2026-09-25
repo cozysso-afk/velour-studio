@@ -1,0 +1,70 @@
+name: authoring-experience-check
+
+on:
+  push:
+    branches:
+      - feat/ui-crossover-consolidation-v1
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ui-crossover-consolidation-v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Pass 1 - single-source and syntax audit
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          for name in ['index.html','scripts/build-github-pages-canonical.mjs']:
+              p=Path(name)
+              s=p.read_text()
+              if 'velour-v4.4.38-vault-accept-hotfix.js?v=26' in s:
+                  s=s.replace('velour-v4.4.38-vault-accept-hotfix.js?v=26','velour-v4.4.38-vault-accept-hotfix.js?v=27')
+              elif 'velour-v4.4.38-vault-accept-hotfix.js?v=27' not in s:
+                  raise SystemExit(f'{name}: expected cache v26/v27 not found')
+              p.write_text(s)
+          PY
+          node --check velour-v4.4.38-authoring-experience-v1.js
+          node --check velour-v4.4.38-vault-accept-hotfix.js
+          node scripts/test-authoring-experience-v1.mjs
+
+      - name: Pass 2 - ensemble and mobile preference audit
+        run: |
+          node scripts/test-ensemble-character-preferences.mjs
+          node scripts/test-intimacy-preference-depth.mjs
+          node scripts/test-live-canon-scene-governor.mjs
+
+      - name: Pass 3 - critical generation regression audit
+        run: |
+          node scripts/test-verbal-chemistry-refinement.mjs
+          node scripts/test-concept-relationship-governor.mjs
+          node scripts/test-verbal-chemistry-v2.mjs
+
+      - name: Verify loader order
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
+          const ensemble=s.indexOf('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__');
+          const depth=s.indexOf('__VELOUR_INTIMACY_PREFERENCE_DEPTH_LOADER__');
+          const authoring=s.indexOf('__VELOUR_AUTHORING_EXPERIENCE_V1_LOADER__');
+          const canon=s.indexOf('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__');
+          if(!(ensemble>=0 && depth>ensemble && authoring>depth && canon>authoring)) throw new Error('authoring loader order invalid');
+          NODE
+
+      - name: Commit cache bump if needed
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html scripts/build-github-pages-canonical.mjs
+          git commit -m "Bump authoring experience cache"
+          git push origin HEAD:feat/ui-crossover-consolidation-v1
