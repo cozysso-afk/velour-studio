@@ -3,13 +3,13 @@
 /* VELOUR — concept + relationship progression governor.
    Final prompt layer that unifies legacy tropes/recommended relationships,
    V4 relationship state/trajectory/dynamics, and V3.5 crossovers.
-   It also prevents future relationship-state leakage and tracks dialogue cliche families
-   without replaying disliked lines into the model prompt.
+   It prevents future relationship-state leakage and tracks repeated dialogue
+   by semantic family without replaying disliked lines into the model prompt.
 */
 (() => {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const GUARD = '__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR__';
   const V33_KEY = 'VELOUR_STORY_ENGINE_V33';
   const PHASE_RANK = { setup: 0, build: 1, transition: 2, payoff: 3 };
@@ -25,6 +25,11 @@
     balanced: { build: 2, transition: 5, payoff: 8 },
     fast: { build: 2, transition: 3, payoff: 5 }
   };
+  const TRANSITION_TRAJECTORIES = new Set([
+    'slow_romance','physical_to_emotion','friends_to_lovers','childhood_to_lovers',
+    'enemies_to_lovers','reunion_rebuild','fwb_to_lovers','one_sided_to_mutual',
+    'arranged_to_love','love_hate_to_love','contract_to_real'
+  ]);
 
   const TRAJECTORY_DESTINATION = {
     organic: '별도 고정 목적지 없음 · 현재 관계에서 인과적으로 발전',
@@ -76,6 +81,10 @@
         if (Number.isFinite(n) && n > 0) return Math.floor(n);
       }
     } catch (_) {}
+    try {
+      const confirmed = Number(window.__VELOUR_STORAGE_QA__?.confirmedEpisode?.() || 0);
+      if (Number.isFinite(confirmed) && confirmed >= 0) return Math.floor(confirmed) + 1;
+    } catch (_) {}
     const confirmed = Number(state?.runtime?.confirmedEpisode || 0);
     return Number.isFinite(confirmed) && confirmed >= 0 ? Math.floor(confirmed) + 1 : 1;
   }
@@ -96,6 +105,7 @@
   }
 
   function collectConcepts(state = snapshot()){
+    const mixCount = Math.max(1, Math.min(3, Number(document.getElementById('v33Mix')?.value || 2)));
     return {
       world: selectedOptionText('v4World') || clean(state.world, 180),
       coreRelationship: selectedOptionText('v4Relationship') || clean(state.relationship, 180),
@@ -104,9 +114,9 @@
       pacing: clean(state.pacing || 'slow', 40),
       episode: liveEpisodeNumber(state),
       dynamics: checkedLabelTexts('#v4Dynamics input:checked'),
-      legacyTropes: textLabels('#tropeTags .tag-pill.active'),
+      legacyTropes: textLabels('#tropeTags > .tag-pill.active'),
       recommendedRelationships: textLabels('[data-v33rel].active'),
-      crossovers: textLabels('#v33Tags .v33-tag.on[data-id]'),
+      crossovers: textLabels('#v33Tags .v33-tag.on[data-id]').slice(0, mixCount),
       nextInstruction: clean(document.getElementById('v33Next')?.value || '', 1000),
       stage: selectedOptionText('selectStage')
     };
@@ -133,9 +143,12 @@
   }
 
   function explicitTransitionOverride(state, concepts){
-    const src = `${clean(state?.hardCanon, 1600)} ${clean(concepts?.nextInstruction, 1000)}`;
-    if (!src.trim()) return false;
-    return /(?:연인|사귀|고백|쌍방|서로\s*좋아|관계\s*(?:정의|확정|전환)|재회|화해|신뢰\s*회복|계약.*진짜|진짜.*감정|독점|배타)/i.test(src);
+    const instruction = clean(concepts?.nextInstruction, 1200);
+    const currentCanon = clean(state?.hardCanon, 1800);
+    const directInstruction = /(?:이번\s*화|이번\s*에피소드|지금|오늘).{0,30}(?:연인|사귀|고백|쌍방|관계).{0,30}(?:확정|전환|되기로|된다|시작|받아들|정리)/i.test(instruction)
+      || /(?:연인이\s*된다|사귀기로\s*한다|고백.{0,16}받아들인다|관계를\s*확정한다)/i.test(instruction);
+    const canonAlreadyCurrent = /(?:현재|이미|지금).{0,24}(?:연인|부부|사귀는\s*사이|쌍방|서로\s*좋아)/i.test(currentCanon);
+    return directInstruction || canonAlreadyCurrent;
   }
 
   function currentStateAlreadyTarget(state){
@@ -185,7 +198,7 @@
 
   function clicheMemory(){
     const lines = extractDialogue(historyTail(), 32);
-    const recent = lines.slice(-10);
+    const recent = lines.slice(-12);
     const counts = Object.fromEntries(Object.keys(CLICHE_LABELS).map(k => [k, 0]));
     const recentCounts = Object.fromEntries(Object.keys(CLICHE_LABELS).map(k => [k, 0]));
     for (const line of lines) {
@@ -196,22 +209,30 @@
       const id = classifyCliche(line);
       if (id) recentCounts[id] += 1;
     }
-    const cooldown = Object.keys(CLICHE_LABELS).filter(id => counts[id] >= 2 || recentCounts[id] >= 1);
+    const cooldown = Object.keys(CLICHE_LABELS).filter(id => counts[id] >= 2 || recentCounts[id] >= 2);
     return { total: lines.length, recent: recent.length, counts, recentCounts, cooldown };
   }
 
+  function stripNamedBlock(prompt, titlePrefix){
+    const escaped = String(titlePrefix).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`\\n?\\[${escaped}[^\\]]*\\][\\s\\S]*?(?=\\n\\[[^\\n\\]]+\\]|$)`, 'g');
+    return String(prompt || '').replace(re, '\n');
+  }
+
   function stripLegacyConflicts(prompt){
-    return String(prompt || '')
+    let out = String(prompt || '');
+    out = stripNamedBlock(out, '장소·사건·기믹 크로스오버');
+    out = out
       .split('\n')
       .filter(line => {
         const t = line.trim();
         if (/^-\s*관계성\/Trope\s*:/.test(t)) return false;
         if (/기존\s*V3\.5\s*관계\s*태그.*비활성화/.test(t)) return false;
+        if (/치명적인\s*긴장감과\s*소유욕/.test(t)) return false;
         return true;
       })
-      .join('\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+      .join('\n');
+    return out.replace(/\n{3,}/g, '\n\n').trim();
   }
 
   function conceptDirective(state, concepts){
@@ -226,9 +247,9 @@
 - ‘선택된 트로프’와 ‘이미 성립한 현재 사실’을 구분한다. 트로프는 장기적인 맛·갈등·역할 후보이지, 첫 화부터 그 결과가 이미 완성됐다는 뜻이 아니다.
 - 추천 관계 태그는 인물의 역할·직업·사회적 구도를 구체화하는 보조축이다. 현재 관계 상태와 충돌하면 현재 관계를 덮어쓰지 말고 역할/상황 정보만 사용한다.
 - 관계 변화 방향은 목적지다. 현재 화의 사실로 미리 당겨 쓰지 않는다. 현재 관계→감정 변화→상대 반응→재협상→목표 상태의 순서를 실제 장면으로 통과한다.
-- 크로스오버가 선택되어 있으면 장식 문구로만 두지 않는다. 사용자 첫 장면/HARD CANON과 충돌하지 않는 범위에서 하나를 구체적인 장소·사건·반전의 원인으로 활성화한다. 여러 개를 골랐으면 한 화에 전부 소비하지 않는다.
+- 크로스오버가 선택되어 있으면 장식 문구로만 두지 않는다. 새 이야기의 첫 화에서는 사용자 첫 장면/HARD CANON과 충돌하지 않는 항목 하나를 장소·사건·반전의 실질 원인으로 작동시킨다. 이어쓰기에서는 이미 해결된 기믹을 반복 발동하지 말고 현재 인과선에 맞는 항목만 사용한다. 여러 개를 골랐으면 한 화에 전부 소비하지 않는다.
 - 추가 다이내믹은 현재 관계 단계가 허용하는 형태로만 발현한다. 미래의 소유권·배타성·연인 권리·관계 확정 결과를 트로프 선택만으로 선행시키지 않는다.
-- 사용자 HARD CANON과 이번 화 직접 지시가 이 Resolver보다 우선한다.`.trim();
+- 사용자 HARD CANON의 현재 사실과 이번 화 직접 지시가 이 Resolver보다 우선한다. HARD CANON에 적힌 미래 계획은 현재 사실로 승격하지 않는다.`.trim();
   }
 
   function relationshipDirective(state, concepts){
@@ -236,9 +257,11 @@
     const destination = destinationFor(state, concepts);
     const explicit = explicitTransitionOverride(state, concepts);
     const alreadyTarget = currentStateAlreadyTarget(state);
-    const physicalCurrent = ['fwb','fwb_repeat','physical_only','one_night'].includes(String(state?.relationship || ''));
+    const transitionTrajectory = TRANSITION_TRAJECTORIES.has(String(state?.trajectory || concepts.trajectoryId || ''));
+    const physicalCurrent = ['fwb','fwb_repeat','physical_only','one_night','undefined'].includes(String(state?.relationship || ''));
     const possessiveSelected = (state?.dynamics || []).includes('possessive') || (concepts.dynamics || []).some(x => /집착|소유욕/.test(x)) || (concepts.legacyTropes || []).some(x => /집착|소유욕/.test(x));
     const jealousySelected = (state?.dynamics || []).includes('jealousy') || (concepts.dynamics || []).some(x => /질투/.test(x));
+    const locked = transitionTrajectory && !explicit && !alreadyTarget && PHASE_RANK[phase] < PHASE_RANK.transition;
 
     let phaseRules = '';
     if (phase === 'setup') {
@@ -257,10 +280,11 @@
 - 페이싱은 분위기 장식이 아니라 관계 상태 전환 속도 제한이다. SLOW/ULTRA SLOW의 초반 화에서 목적지 행동을 먼저 실행하지 않는다.
 - 신체적 친밀도와 로맨틱 관계 상태는 별개 축이다. 이미 신체적으로 가까운 관계여도 연인 권리, 배타성, 소유권, 감정 확정이 자동으로 따라오지 않는다.
 ${phaseRules}
-${physicalCurrent ? '- 현재 관계가 신체적 합의를 포함하더라도 그 합의 범위를 로맨틱 독점·연인 권리로 자동 확대하지 않는다.' : ''}
-${possessiveSelected ? `- 집착/소유욕은 장기 다이내믹 후보다. ${phase === 'setup' ? 'SETUP에서는 겉으로 드러나는 소유 주장·통제·독점 행동으로 발현시키지 않는다.' : phase === 'build' ? 'BUILD에서는 본인도 설명하기 어려운 관심 변화 정도까지 허용하되 상대에 대한 권리 주장으로 바꾸지 않는다.' : '현재 단계와 상호성이 허용하는 범위에서만 점진적으로 발현한다.'}` : ''}
-${jealousySelected ? `- 질투 트로프도 관계 단계보다 앞서지 않는다. ${PHASE_RANK[phase] < PHASE_RANK.transition ? '초기에는 질투 장면을 관계 증명처럼 쓰지 말고, 감정의 정체를 아직 확정하지 않는다.' : '관계의 상호성과 기존 사건을 근거로 사용한다.'}` : ''}
-${explicit || alreadyTarget ? '- 이번 화 직접 지시/HARD CANON이 현재 전환을 명시했다면 그 명시 범위 안에서는 위 단계 제한보다 사용자 지시를 우선한다.' : '- 이번 화에는 관계 전환을 직접 명시한 사용자 지시가 없다. 자동 디렉터가 목적지를 앞당겨 완성하지 않는다.'}`.trim();
+${locked ? '- 현재는 관계 전환 잠금 상태다. 자동 디렉터·트로프·크로스오버가 목적지 결과를 앞당겨 완성해서는 안 된다.' : ''}
+${physicalCurrent && locked ? '- 현재가 비연애적/정의되지 않은 신체 관계라면 초반 변화는 비성적 관심, 머무는 시간, 일상 질문, 거리 조절, 스스로도 설명하지 못하는 신경 쓰임처럼 작은 예외로 축적한다. 이를 곧바로 연인 규칙으로 바꾸지 않는다.' : ''}
+${possessiveSelected ? `- 집착/소유욕은 장기 다이내믹 후보다. ${PHASE_RANK[phase] < PHASE_RANK.transition ? '초반에는 소유 주장·통제·독점 행동으로 발현시키지 않는다. 과한 관심이나 불편함이 생겨도 스스로 제어하며, 상대에 대한 권리로 바꾸지 않는다.' : '현재 단계와 상호성이 허용하는 범위에서만 점진적으로 발현한다.'}` : ''}
+${jealousySelected ? `- 질투 트로프도 관계 단계보다 앞서지 않는다. ${PHASE_RANK[phase] < PHASE_RANK.transition ? '초기에는 질투를 관계 증명이나 행동 통제의 근거로 쓰지 않고, 감정의 정체를 아직 확정하지 않는다.' : '관계의 상호성과 기존 사건을 근거로 사용한다.'}` : ''}
+${explicit || alreadyTarget ? '- 이번 화 직접 지시 또는 명시적 현재 CANON이 전환을 요구/확정했다면 그 명시 범위 안에서는 단계 제한보다 사용자 사실을 우선한다.' : '- 이번 화에는 관계 전환을 직접 명시한 사용자 지시가 없다. 미래 목적지를 현재 사실로 자동 승격하지 않는다.'}`.trim();
   }
 
   function clicheDirective(){
@@ -269,10 +293,10 @@ ${explicit || alreadyTarget ? '- 이번 화 직접 지시/HARD CANON이 현재 �
     return `
 [DIALOGUE CLICHE COOLDOWN V1]
 - 최근 확정 대사 ${memory.total}개를 의미군으로만 분석했다. 원문 대사는 이 프롬프트에 재주입하지 않는다.
-- 현재 냉각 대상=${labels.length ? labels.join(' / ') : '없음'}.
+- 실제 반복이 확인된 현재 냉각 대상=${labels.length ? labels.join(' / ') : '없음'}.
 - 냉각 대상 의미군은 직접적인 서사 콜백이 꼭 필요한 경우가 아니면 이번 화에서 사용하지 않는다. 단어만 바꿔 같은 목적을 반복해도 같은 반복으로 본다.
 - 긴장이 높아질수록 범용 클리셰를 세게 반복하는 대신, 상대가 방금 한 행동·표정·선택에만 성립하는 반응을 우선한다.
-- 동일한 책임전가형 도발, 결과 예고, 결과 요구, 범용 욕망 선언을 대화의 자동 후렴구로 만들지 않는다.`.trim();
+- 책임 전가형 도발, 결과 예고, 결과 요구, 범용 욕망 선언 중 최근 반복된 기능을 자동 후렴구로 만들지 않는다.`.trim();
   }
 
   function applyConceptSelections(selection){
