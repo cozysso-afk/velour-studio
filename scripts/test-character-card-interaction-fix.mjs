@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const ensemble=readFileSync('velour-v4.4.38-ensemble-character-preferences.js','utf8');
+const authoring=readFileSync('velour-v4.4.38-authoring-experience-v1.js','utf8');
+const loader=readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
+const index=readFileSync('index.html','utf8');
+const canonical=readFileSync('scripts/build-github-pages-canonical.mjs','utf8');
+assert.match(ensemble,/const VERSION='1\.0\.2'/);
+const block=(ensemble.match(/if\(target\?\.dataset\?\.tagId\)\{[\s\S]*?scheduleDraftPatch\(\);return;\}/)||[])[0]||'';
+assert.ok(block);
+assert.doesNotMatch(block,/wrap\.remove\(\)|renderUI\(\)/);
+assert.match(block,/querySelectorAll/);
+assert.match(authoring,/assign\(cfg\.heroine,'role',occB\)/);
+assert.match(authoring,/assign\(cfg\.partners\[0\],'role',occA\)/);
+assert.match(authoring,/kind === 'heroine' \? selectedText\('v4OccB'\) : selectedText\('v4OccA'\)/);
+assert.match(authoring,/여주 적극성은 위 SCENE AGENCY에서 설정/);
+assert.match(authoring,/이 상대의 적극성은 이 카드에서 개별 설정/);
+assert.match(loader,/ensemble-character-preferences\.js\?v=2/);
+assert.match(loader,/authoring-experience-v1\.js\?v=2/);
+assert.match(index,/vault-accept-hotfix\.js\?v=28/);
+assert.match(canonical,/vault-accept-hotfix\.js\?v=28/);
+console.log('PASS: character card interaction/mapping fix');

@@ -10,7 +10,7 @@
   'use strict';
   if (window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__) return;
 
-  const VERSION='1.0.1';
+  const VERSION='1.0.2';
   const GUARD='__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__';
   const KEY='VELOUR_ENSEMBLE_CHARACTER_PREFS_V1';
   const MAX_PARTNERS=5;
@@ -307,7 +307,7 @@ ${focus?preferenceLine(focus,CARESS_CATALOG,'caressModes','애정·애무'):''}
       const target=ev.target;if(target?.id==='vcpAddPartner'){const next=loadCfg();if(next.partners.length<MAX_PARTNERS)next.partners.push(baseCharacter('partner',next.partners.length));saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
       const card=target?.closest?.('[data-char-kind]');if(!card)return;const next=loadCfg(),kind=card.dataset.charKind,index=Number(card.dataset.charIndex||0),character=kind==='heroine'?next.heroine:next.partners[index];if(!character)return;
       if(target?.dataset?.removePartner==='1'&&kind==='partner'&&index>0){next.partners.splice(index,1);saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
-      if(target?.dataset?.tagId){const key=target.dataset.tagKind==='personality'?'personalities':'tendencies',id=target.dataset.tagId;character[key]=character[key].includes(id)?character[key].filter(x=>x!==id):[...character[key],id].slice(-5);saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
+      if(target?.dataset?.tagId){const key=target.dataset.tagKind==='personality'?'personalities':'tendencies',id=target.dataset.tagId,wasSelected=character[key].includes(id);character[key]=wasSelected?character[key].filter(x=>x!==id):[...character[key],id].slice(-5);saveCfg(next);const kindName=target.dataset.tagKind;card.querySelectorAll?.(`[data-tag-kind="${kindName}"][data-tag-id]`).forEach(btn=>{const on=character[key].includes(btn.dataset.tagId);btn.style.borderColor=on?'rgba(245,196,107,.60)':'rgba(245,196,107,.20)';btn.style.background=on?'rgba(245,196,107,.16)':'rgba(255,255,255,.03)';btn.style.color=on?'#ffebaa':'#cdbbc4';btn.setAttribute?.('aria-pressed',on?'true':'false');});scheduleDraftPatch();return;}
       if(target?.dataset?.prefId){const key=target.dataset.prefKind==='position'?'positionModes':'caressModes',id=target.dataset.prefId;character[key][id]=cycleMode(character[key][id]);saveCfg(next);paintMode(target,character[key][id]);scheduleDraftPatch();}
     });
   }
