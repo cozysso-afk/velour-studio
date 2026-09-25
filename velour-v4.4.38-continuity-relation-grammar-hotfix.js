@@ -108,10 +108,10 @@
 })();
 
 (() => {
-  if (window.__VELOUR_CONCEPT_GOVERNOR_LOADER__) return;
-  window.__VELOUR_CONCEPT_GOVERNOR_LOADER__ = true;
+  if (window.__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__) return;
+  window.__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__ = true;
   const script = document.createElement('script');
-  script.src = './velour-v4.4.38-concept-relationship-governor.js?v=1';
+  script.src = './velour-v4.4.38-concept-relationship-governor.js?v=2';
   script.async = false;
   document.head.appendChild(script);
 })();
