@@ -14,7 +14,7 @@
   const GUARD='__VELOUR_UI_HIERARCHY_V2__';
   if(window[GUARD])return;
   window[GUARD]=true;
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   let scheduled=false;
   let elementSeq=0;
   const elementIds=new WeakMap();
@@ -73,7 +73,11 @@
       #velourEnsemblePrefsV1 .velour-chip-picker{background:rgba(14,4,9,.55)!important;border-color:rgba(239,194,112,.14)!important}
       #velourEnsemblePrefsV1 .velour-chip-picker>summary{min-height:40px;padding:9px!important;font-size:11.5px!important;display:flex;align-items:center}
       #velourEnsemblePrefsV1 .vcp-tag{font-size:11px!important;min-height:36px!important;padding:7px 9px!important}
-      .velour-v2-pref-source{display:none!important}
+      .velour-v2-name-roster{display:grid;gap:7px;margin-bottom:9px}
+      .velour-v2-name-row{display:grid;grid-template-columns:74px minmax(0,1fr);gap:8px;align-items:center}
+      .velour-v2-name-row label{font-size:11px;color:#d5c2c8;font-weight:700}
+      .velour-v2-name-row input{min-width:0;min-height:42px;border-radius:9px;font-size:12.5px;padding:8px 10px;background:rgba(14,4,9,.96);color:#f7ece6;border:1px solid rgba(239,194,112,.20)}
+      .velour-v2-name-source,.velour-v2-pref-source{display:none!important}
 
       #velourIntimacyDepthV1{display:none!important}
       .velour-v2-intimacy-shelf{display:grid;gap:8px}
@@ -186,6 +190,32 @@
     return ensemble;
   }
 
+  function rebuildNameRoster(ctx,ensemble,force=false){
+    if(!ctx?.profileBody||!ensemble)return;
+    const cards=Array.from(ensemble.querySelectorAll('[data-char-kind]'));
+    const fingerprint=cards.map((card,i)=>`${card.dataset.charKind}:${card.dataset.charIndex||i}:${cleanName(card,i+1)}`).join('|');
+    let roster=document.getElementById('velourCharacterNameRoster');
+    if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;
+    roster?.remove?.();
+    roster=document.createElement('div');
+    roster.id='velourCharacterNameRoster';roster.className='velour-v2-group';roster.dataset.fingerprint=fingerprint;
+    const title=document.createElement('div');title.className='velour-v2-group-label';title.textContent='이름 · 인물 고정';
+    const note=document.createElement('div');note.className='velour-v2-hub-note';note.textContent='여기에 적은 이름이 캐릭터 이름의 단일 원본이야. 1:다에서는 상대별 이름을 모두 고정해 두면 생성 중 임의 개명이나 인물 혼동을 막을 수 있어.';
+    const list=document.createElement('div');list.className='velour-v2-name-roster';
+    cards.forEach((card,i)=>{
+      const original=card.querySelector('[data-field="name"]');if(!original)return;original.classList.add('velour-v2-name-source');
+      const row=document.createElement('div');row.className='velour-v2-name-row';
+      const label=document.createElement('label');label.textContent=card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`;
+      const input=document.createElement('input');input.type='text';input.value=original.value||'';input.placeholder=card.dataset.charKind==='heroine'?'여주 이름':'상대 이름을 고정';
+      const sync=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
+      input.addEventListener('input',()=>sync('input'));input.addEventListener('change',()=>{sync('change');schedule(true);});
+      row.append(label,input);list.appendChild(row);
+    });
+    roster.append(title,note,list);
+    const firstGroup=ctx.profileBody.querySelector('.velour-v2-group');
+    if(firstGroup)ctx.profileBody.insertBefore(roster,firstGroup);else ctx.profileBody.appendChild(roster);
+  }
+
   function cleanName(card,index){
     const name=String(card?.querySelector?.('[data-field="name"]')?.value||'').trim();
     if(name)return name;
@@ -250,7 +280,7 @@
       const summary=document.createElement('summary');summary.textContent=`${card.dataset.charKind==='heroine'?'여주':'상대'} · ${cleanName(card,i+1)}`;
       const body=document.createElement('div');body.className='velour-v2-intimacy-body';
       const position=proxySection(card,'position','친밀 구도');if(position)body.appendChild(position);
-      const caress=proxySection(card,'caress','애정 · 애무');if(caress)body.appendChild(caress);
+      const caress=depth?null:proxySection(card,'caress','애정 · 애무');if(caress)body.appendChild(caress);
       (depthRows[i]||[]).forEach(section=>body.appendChild(section));
       item.append(summary,body);shelf.appendChild(item);
     });
@@ -277,6 +307,7 @@
     const ctx=ensureHubs();if(!ctx)return false;
     const ensemble=moveProfileModules(ctx);
     if(!ensemble)return false;
+    rebuildNameRoster(ctx,ensemble,force);
     rebuildIntimacy(ctx,ensemble,force);
     normalizeLanguageSection();
     return true;
@@ -302,7 +333,7 @@
       const profile=document.getElementById('velourCharacterProfileHub');
       profile?.addEventListener?.('input',ev=>{if(ev.target?.matches?.('[data-field="name"]'))schedule(true);},true);
       window.__VELOUR_UI_HIERARCHY_V2_VERSION__=VERSION;
-      window.__VELOUR_UI_HIERARCHY_V2_QA__={VERSION,layout,rebuildIntimacy,normalizeLanguageSection};
+      window.__VELOUR_UI_HIERARCHY_V2_QA__={VERSION,layout,rebuildNameRoster,rebuildIntimacy,normalizeLanguageSection};
       console.info('✦ VELOUR UI Hierarchy V2 loaded');
     }
   },80);

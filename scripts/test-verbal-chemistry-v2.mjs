@@ -117,6 +117,6 @@ assert.equal(snap.verbalChemistry.specificity,92);
 assert.ok(document.getElementById('velourVerbalChemistryV2'));
 
 assert.match(loader,/velour-v4\.4\.38-verbal-chemistry-v2\.js\?v=2/);
-assert.match(canonical,/vault-accept-hotfix\.js\?v=30/);
+assert.match(canonical,/vault-accept-hotfix\.js\?v=31/);
 
 console.log('PASS: Verbal Chemistry V2.2 UI/state bridge, tactic memory, relationship guard, and loader wiring are connected');
