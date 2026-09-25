@@ -78,7 +78,7 @@ context.globalThis = context;
 
 vm.runInNewContext(source, context, {filename:'velour-v4.4.38-verbal-chemistry-v2.js'});
 
-assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_VERSION__, '2.0.0');
+assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_VERSION__, '2.2.0');
 const qa = window.__VELOUR_VERBAL_CHEMISTRY_QA__;
 assert.ok(qa);
 
@@ -90,7 +90,7 @@ const normalized = qa.normalizeCfg({
 assert.equal(normalized.directness,100);
 assert.equal(normalized.mischief,0);
 assert.equal(normalized.specificity,100);
-assert.deepEqual(Array.from(normalized.tactics),['callback','challenge']);
+assert.deepEqual(Array.from(normalized.tactics),['challenge','callback']);
 
 assert.equal(qa.classifyTactic('아까 그렇게 여유 있더니?'),'callback');
 assert.equal(qa.classifyTactic('말은 괜찮다더니 행동은 다르네.'),'contradiction');
@@ -104,11 +104,11 @@ assert.ok(memory.total >= 4);
 assert.ok(memory.signatureCounts);
 
 const prompt = window.buildPrompt(false);
-assert.match(prompt,/VERBAL CHEMISTRY ENGINE V2/);
+assert.match(prompt,/VERBAL CHEMISTRY ENGINE V2\.2/);
 assert.match(prompt,/relationshipPhase=setup/);
 assert.match(prompt,/Trigger → Intent → Tactic → Target → Attitude → Character Voice → Line/);
-assert.match(prompt,/대화주도는 .*소유권·관계 권한·동의 우위를 의미하지 않는다/);
-assert.match(prompt,/인물 이름만 바꿔 다른 커플에게 그대로 붙여도 자연스러운 문장은 폐기 후보/);
+assert.match(prompt,/대화주도는 .*소유권·관계 권한·동의 우위를 뜻하지 않는다/);
+assert.match(prompt,/인물 이름만 바꿔 다른 커플에게 붙여도 자연스러운 핵심 대사는 다시 쓴다/);
 assert.match(prompt,/현재 관계 단계가 허용하는가/);
 
 const snap = window.__VELOUR_V4_STATE_SNAPSHOT__();
@@ -116,7 +116,7 @@ assert.ok(snap.verbalChemistry);
 assert.equal(snap.verbalChemistry.specificity,92);
 assert.ok(document.getElementById('velourVerbalChemistryV2'));
 
-assert.match(loader,/velour-v4\.4\.38-verbal-chemistry-v2\.js\?v=1/);
-assert.match(canonical,/vault-accept-hotfix\.js\?v=19/);
+assert.match(loader,/velour-v4\.4\.38-verbal-chemistry-v2\.js\?v=2/);
+assert.match(canonical,/vault-accept-hotfix\.js\?v=26/);
 
-console.log('PASS: Verbal Chemistry V2 UI/state bridge, tactic memory, relationship guard, and loader wiring are connected');
+console.log('PASS: Verbal Chemistry V2.2 UI/state bridge, tactic memory, relationship guard, and loader wiring are connected');
