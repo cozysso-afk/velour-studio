@@ -34,4 +34,5 @@ __velourLoadHotfix('__VELOUR_PROSE_QA_LOADER__','./velour-v4.4.38-prose-qa-hotfi
 __velourLoadHotfix('__VELOUR_STYLE_DNA_LOADER__','./velour-v4.4.38-style-dna-hotfix.js?v=3');
 __velourLoadHotfix('__VELOUR_SCENE_VOICE_MEMORY_LOADER__','./velour-v4.4.38-scene-voice-memory-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_HARD_CANON_LOCK_LOADER__','./velour-v4.4.38-hard-canon-lock-hotfix.js?v=1');
-__velourLoadHotfix('__VELOUR_CONTEXTUAL_DIALOGUE_LOADER__','./velour-v4.4.38-contextual-dialogue-engine.js?v=2');
+__velourLoadHotfix('__VELOUR_CONTEXTUAL_DIALOGUE_LOADER__','./velour-v4.4.38-contextual-dialogue-engine.js?v=3');
+__velourLoadHotfix('__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__','./velour-v4.4.38-concept-relationship-governor.js?v=2');
