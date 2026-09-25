@@ -6,6 +6,7 @@ import vm from 'node:vm';
 
 const source = readFileSync('velour-v4.4.38-concept-relationship-governor.js', 'utf8');
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js', 'utf8');
+const relationGuardSource = readFileSync('velour-v4.4.38-continuity-relation-grammar-hotfix.js', 'utf8');
 
 function cls(active=false){
   const set = new Set(active ? ['active'] : []);
@@ -119,5 +120,8 @@ assert.equal(qa.explicitTransitionOverride(state, qa.collectConcepts(state)), tr
 
 assert.match(loader, /contextual-dialogue-engine\.js\?v=3/);
 assert.match(loader, /concept-relationship-governor\.js\?v=2/);
+assert.match(relationGuardSource, /__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__/);
+assert.match(relationGuardSource, /concept-relationship-governor\.js\?v=2/);
+assert.doesNotMatch(relationGuardSource, /__VELOUR_CONCEPT_GOVERNOR_LOADER__/);
 
-console.log('PASS: concept resolver, slow relationship guard, concept persistence bridge, and semantic cliche cooldown work together');
+console.log('PASS: concept resolver, slow relationship guard, concept persistence bridge, semantic cliche cooldown, and loader wiring work together');
