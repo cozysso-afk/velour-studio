@@ -13,7 +13,7 @@
   'use strict';
   if (window.__VELOUR_AUTHORING_EXPERIENCE_V1__) return;
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.1';
   const GUARD = '__VELOUR_AUTHORING_EXPERIENCE_V1__';
   const V33_KEY = 'VELOUR_STORY_ENGINE_V33';
   const UX_KEY = 'VELOUR_AUTHORING_EXPERIENCE_V1';
@@ -202,8 +202,8 @@
       if (!value || obj[key] === value) return;
       obj[key] = value; changed = true;
     };
-    assign(cfg.heroine,'role',occA);
-    assign(cfg.partners[0],'role',occB);
+    assign(cfg.heroine,'role',occB);
+    assign(cfg.partners[0],'role',occA);
     if (rel) {
       assign(cfg.heroine,'relationshipNote',`V4 현재 관계: ${rel}`);
       assign(cfg.partners[0],'relationshipNote',`V4 현재 관계: ${rel}`);
@@ -213,9 +213,10 @@
   }
 
   function sourceSummary(kind,index){
-    const role = kind === 'heroine' ? selectedText('v4OccA') : selectedText('v4OccB');
+    const role = kind === 'heroine' ? selectedText('v4OccB') : selectedText('v4OccA');
     const rel = selectedText('v4Relationship');
-    return `직업 ${role || '기존 V4 설정'} · 현재 관계 ${rel || '기존 V4 설정'} — 여기서 다시 입력하지 않아도 돼.`;
+    const agencyNote = kind === 'heroine' ? '여주 적극성은 위 SCENE AGENCY에서 설정' : '이 상대의 적극성은 이 카드에서 개별 설정';
+    return `직업 ${role || '기존 V4 설정'} · 현재 관계 ${rel || '기존 V4 설정'} · ${agencyNote} — 직업/관계는 여기서 다시 입력하지 않아도 돼.`;
   }
 
   function compactTagPicker(card, kind, title){

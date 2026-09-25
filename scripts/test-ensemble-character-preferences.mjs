@@ -45,7 +45,7 @@ const context={window,document,localStorage,console,setInterval(fn){fn();return 
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'velour-v4.4.38-ensemble-character-preferences.js'});
 
-assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.0.1');
+assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.0.2');
 const qa=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__;
 assert.ok(qa);
 assert.equal(qa.POSITION_CATALOG.length,40,'core mirror should keep all 40 current position entries');
@@ -110,6 +110,6 @@ assert.equal(qa.loadCfg().mode,'one_to_one');
 const ensembleIndex=loader.indexOf('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__');
 const liveCanonIndex=loader.indexOf('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__');
 assert.ok(ensembleIndex>0&&liveCanonIndex>ensembleIndex,'ensemble planner must load before the final live HARD CANON governor');
-assert.match(loader,/ensemble-character-preferences\.js\?v=1/);
+assert.match(loader,/ensemble-character-preferences\.js\?v=2/);
 
 console.log('PASS: ensemble character preferences keep 1:1 compatibility, isolate multi-partner edges, reuse the single heroine agency authority, persist profiles, and enforce mutual tri-state preferences');
