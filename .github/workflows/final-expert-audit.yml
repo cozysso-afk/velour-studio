@@ -37,6 +37,7 @@ jobs:
           s = p.read_text()
           s = s.replace("assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_VERSION__, '2.0.0');", "assert.equal(window.__VELOUR_VERBAL_CHEMISTRY_VERSION__, '2.2.0');")
           s = s.replace("assert.deepEqual(Array.from(normalized.tactics),['callback','challenge']);", "assert.deepEqual(Array.from(normalized.tactics),['challenge','callback']);")
+          s = s.replace("assert.match(prompt,/대화주도는 .*소유권·관계 권한·동의 우위를 의미하지 않는다/);", "assert.match(prompt,/대화주도는 .*소유권·관계 권한·동의 우위를 뜻하지 않는다/);")
           s = s.replace("assert.match(prompt,/인물 이름만 바꿔 다른 커플에게 그대로 붙여도 자연스러운 문장은 폐기 후보/);", "assert.match(prompt,/인물 이름만 바꿔 다른 커플에게 붙여도 자연스러운 핵심 대사는 다시 쓴다/);")
           s = s.replace(r"assert.match(loader,/velour-v4\\.4\\.38-verbal-chemistry-v2\\.js\\?v=1/);", r"assert.match(loader,/velour-v4\\.4\\.38-verbal-chemistry-v2\\.js\\?v=2/);")
           s = s.replace(r"assert.match(canonical,/vault-accept-hotfix\\.js\\?v=19/);", r"assert.match(canonical,/vault-accept-hotfix\\.js\\?v=26/);")
