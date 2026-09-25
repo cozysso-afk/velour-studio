@@ -49,7 +49,7 @@ const runtimeScripts = `
 <script src="./velour-v4.4.38-visual-theme-hotfix.js?v=4"></script>
 <script src="./velour-v4.4.38-ui-consolidation-hotfix.js?v=1"></script>
 <script src="./velour-v4.4.38-continuity-voice-guard.js?v=5"></script>
-<script src="./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=2"></script>
+<script src="./velour-v4.4.38-continuity-relation-grammar-hotfix.js?v=3"></script>
 `;
 
 if (!app.includes('src="cover.PNG"')) {
