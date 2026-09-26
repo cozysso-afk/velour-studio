@@ -38,7 +38,10 @@ jobs:
               p=Path(name)
               p.write_text(p.read_text().replace('velour-v4.4.38.js?v=443707','velour-v4.4.38.js?v=443708'))
           p=Path('scripts/test-dirty-talk-frequency.mjs')
-          p.write_text(p.read_text().replace('velour-v4\\.4\\.38\\.js\\?v=443707','velour-v4\\.4\\.38\\.js\\?v=443708'))
+          t=p.read_text()
+          t=t.replace('velour-v4\\.4\\.38\\.js\\?v=443707','velour-v4\\.4\\.38\\.js\\?v=443708')
+          t=t.replace('vault-accept-hotfix\\.js\\?v=17','vault-accept-hotfix\\.js\\?v=31')
+          p.write_text(t)
           PY
       - name: Add regression test
         run: |
