@@ -416,6 +416,15 @@
     return cfg;
   }
   function save(cfg){ try { localStorage.setItem(CFG_KEY,JSON.stringify(cfg)); } catch(e){} }
+  let longTextSaveTimer=0;
+  function scheduleLongTextSave(){
+    clearTimeout(longTextSaveTimer);
+    longTextSaveTimer=setTimeout(()=>{ longTextSaveTimer=0; save(state); },450);
+  }
+  function flushLongTextSave(){
+    if(longTextSaveTimer){ clearTimeout(longTextSaveTimer); longTextSaveTimer=0; }
+    save(state);
+  }
 
   function readV33Cfg(){
     try { return JSON.parse(localStorage.getItem(V33_KEY)||'null'); } catch(e){ return null; }
@@ -763,7 +772,13 @@
     Object.entries(map).forEach(([id,key])=>{
       const el=p.querySelector('#'+id); if(!el)return;
       const ev=(el.tagName==='TEXTAREA'||el.type==='range'||el.type==='number'||el.tagName==='INPUT')?'input':'change';
-      el.addEventListener(ev,()=>{ state[key]=(el.type==='number'||el.type==='range')?Number(el.value):el.value; save(state); syncUI(false); });
+      if(el.tagName==='TEXTAREA'){
+        // Long-form fields stay cheap while editing, including mid-text IME/cursor edits.
+        el.addEventListener('input',()=>{ state[key]=el.value; scheduleLongTextSave(); });
+        el.addEventListener('change',()=>{ state[key]=el.value; flushLongTextSave(); syncUI(false); });
+      }else{
+        el.addEventListener(ev,()=>{ state[key]=(el.type==='number'||el.type==='range')?Number(el.value):el.value; save(state); syncUI(false); });
+      }
     });
     p.querySelector('#v4OccCatA')?.addEventListener('change',e=>{state.occCategoryA=e.target.value; state.occupationA=(OCCUPATIONS[state.occCategoryA]||[])[0]||''; save(state); rebuildOccupation('A'); syncUI(false);});
     p.querySelector('#v4OccCatB')?.addEventListener('change',e=>{state.occCategoryB=e.target.value; state.occupationB=(OCCUPATIONS[state.occCategoryB]||[])[0]||''; save(state); rebuildOccupation('B'); syncUI(false);});
