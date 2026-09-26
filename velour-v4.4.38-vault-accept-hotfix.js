@@ -43,4 +43,4 @@ __velourLoadHotfix('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__','./velour-
 __velourLoadHotfix('__VELOUR_INTIMACY_PREFERENCE_DEPTH_LOADER__','./velour-v4.4.38-intimacy-preference-depth.js?v=2');
 __velourLoadHotfix('__VELOUR_AUTHORING_EXPERIENCE_V1_LOADER__','./velour-v4.4.38-authoring-experience-v1.js?v=3');
 __velourLoadHotfix('__VELOUR_NARRATIVE_VARIATION_V2_LOADER__','./velour-v4.4.38-narrative-variation-v2.js?v=1');
-__velourLoadHotfix('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__','./velour-v4.4.38-live-canon-scene-governor.js?v=1');
+__velourLoadHotfix('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__','./velour-v4.4.38-live-canon-scene-governor.js?v=2');

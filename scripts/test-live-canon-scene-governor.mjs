@@ -50,7 +50,7 @@ const context={window,document,localStorage,console,
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'velour-v4.4.38-live-canon-scene-governor.js'});
 
-assert.equal(window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_VERSION__,'1.0.0');
+assert.equal(window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_VERSION__,'1.1.0');
 const qa=window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__;
 assert.ok(qa);
 
@@ -62,7 +62,10 @@ assert.deepEqual(Array.from(qa.wardrobeFacts(snap.hardCanon)),['여주는 흰 �
 let prompt=window.buildPrompt();
 assert.match(prompt,/최신 HARD CANON/);
 assert.match(prompt,/여주는 흰 나시와 반바지를 입고 있다/);
-assert.match(prompt,/새 의복\/소품을 편의상 생성하거나 기존 것을 다른 것으로 바꾸지 않는다/);
+assert.match(prompt,/인물별 착장 ledger를 유지한다/);
+assert.match(prompt,/나시→반팔/);
+assert.match(prompt,/명확한 다음날\/긴 시간 점프/);
+assert.match(prompt,/출력 직전 내부적으로 인물별 착장 ledger와 본문을 대조한다/);
 assert.match(prompt,/장소·상황 자연 회전/);
 assert.match(prompt,/상황·갈등 후보축/);
 assert.match(prompt,/주인공\(여주\) 적극성/);
@@ -104,6 +107,6 @@ const refinementPos=loader.indexOf('VERBAL_CHEMISTRY_REFINEMENT_LOADER');
 const livePos=loader.indexOf('LIVE_CANON_SCENE_GOVERNOR_LOADER');
 assert.ok(refinementPos>=0&&livePos>refinementPos);
 assert.match(loader,/verbal-chemistry-refinement\.js\?v=4/);
-assert.match(loader,/live-canon-scene-governor\.js\?v=1/);
+assert.match(loader,/live-canon-scene-governor\.js\?v=2/);
 
 console.log('PASS: live HARD CANON overrides stale snapshots, wardrobe continuity is locked, scene variety and agency controls are active');
