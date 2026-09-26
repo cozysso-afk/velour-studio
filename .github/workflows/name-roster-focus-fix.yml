@@ -27,37 +27,18 @@ jobs:
           p=Path('velour-v4.4.38-ui-hierarchy-v2.js')
           s=p.read_text()
           s=s.replace("const VERSION='1.1.0';", "const VERSION='1.1.1';")
-          old="""    let roster=document.getElementById('velourCharacterNameRoster');
-    if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;
-    roster?.remove?.();
-"""
-          new="""    let roster=document.getElementById('velourCharacterNameRoster');
-    // Never replace the active name editor while the user is typing. A card-summary
-    // mutation can wake the layout observer, and replacing this node would drop focus
-    // after the first IME jamo/keystroke on mobile.
-    if(roster&&roster.contains(document.activeElement))return;
-    if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;
-    roster?.remove?.();
-"""
+          old="    let roster=document.getElementById('velourCharacterNameRoster');\n    if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;\n    roster?.remove?.();\n"
+          new="    let roster=document.getElementById('velourCharacterNameRoster');\n    // Never replace the active name editor while the user is typing.\n    if(roster&&roster.contains(document.activeElement))return;\n    if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;\n    roster?.remove?.();\n"
           if old not in s: raise SystemExit('roster guard marker missing')
           s=s.replace(old,new,1)
-          old="""      const sync=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
-      input.addEventListener('input',()=>sync('input'));input.addEventListener('change',()=>{sync('change');schedule(true);});
-"""
-          new="""      const syncValue=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));};
-      const syncSummary=()=>{const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
-      // input: persist only. Do not mutate card DOM while an IME is composing text.
-      input.addEventListener('input',()=>syncValue('input'));
-      // change/blur boundary: refresh summary/layout after editing has finished.
-      input.addEventListener('change',()=>{syncValue('change');syncSummary();schedule(true);});
-"""
+          old="      const sync=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};\n      input.addEventListener('input',()=>sync('input'));input.addEventListener('change',()=>{sync('change');schedule(true);});\n"
+          new="      const syncValue=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));};\n      const syncSummary=()=>{const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};\n      input.addEventListener('input',()=>syncValue('input'));\n      input.addEventListener('change',()=>{syncValue('change');syncSummary();schedule(true);});\n"
           if old not in s: raise SystemExit('name input listener marker missing')
           s=s.replace(old,new,1)
           p.write_text(s)
-
           for name in ['index.html','scripts/build-github-pages-canonical.mjs']:
-              p=Path(name);t=p.read_text().replace('velour-v4.4.38-ui-hierarchy-v2.js?v=2','velour-v4.4.38-ui-hierarchy-v2.js?v=3');p.write_text(t)
-
+              p=Path(name)
+              p.write_text(p.read_text().replace('velour-v4.4.38-ui-hierarchy-v2.js?v=2','velour-v4.4.38-ui-hierarchy-v2.js?v=3'))
           p=Path('scripts/test-ui-hierarchy-v2.mjs')
           t=p.read_text().replace("const VERSION='1\\.1\\.0'","const VERSION='1\\.1\\.1'").replace('ui-hierarchy-v2\\.js\\?v=2','ui-hierarchy-v2\\.js\\?v=3')
           p.write_text(t)
@@ -74,15 +55,13 @@ jobs:
           const canonical=readFileSync('scripts/build-github-pages-canonical.mjs','utf8');
           assert.match(ui,/const VERSION='1\.1\.1'/);
           assert.match(ui,/roster&&roster\.contains\(document\.activeElement\)/);
-          assert.match(ui,/input\.addEventListener\('input',\(\)=>syncValue\('input'\)\)/);
-          assert.match(ui,/input\.addEventListener\('change',[\s\S]*syncSummary\(\)[\s\S]*schedule\(true\)/);
-          const inputBlock=(ui.match(/const syncValue=[\s\S]*?input\.addEventListener\('change',[\s\S]*?\);/)||[])[0]||'';
           const rawInputLine=(ui.match(/input\.addEventListener\('input'[^\n]*/)||[])[0]||'';
-          assert.ok(inputBlock,'name sync block should exist');
-          assert.doesNotMatch(rawInputLine,/syncSummary|schedule\(true\)/,'typing must not rebuild or mutate summary');
+          assert.match(rawInputLine,/syncValue\('input'\)/);
+          assert.doesNotMatch(rawInputLine,/syncSummary|schedule\(true\)/);
+          assert.match(ui,/input\.addEventListener\('change',[^\n]*syncSummary\(\)[^\n]*schedule\(true\)/);
           assert.match(index,/ui-hierarchy-v2\.js\?v=3/);
           assert.match(canonical,/ui-hierarchy-v2\.js\?v=3/);
-          console.log('PASS: name roster preserves focus during mobile/IME typing');
+          console.log('PASS: name roster preserves focus while typing');
           EOF
 
       - name: Run regression
