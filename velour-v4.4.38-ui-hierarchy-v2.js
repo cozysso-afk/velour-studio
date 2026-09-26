@@ -14,7 +14,7 @@
   const GUARD='__VELOUR_UI_HIERARCHY_V2__';
   if(window[GUARD])return;
   window[GUARD]=true;
-  const VERSION='1.1.0';
+  const VERSION='1.1.1';
   let scheduled=false;
   let elementSeq=0;
   const elementIds=new WeakMap();
@@ -195,6 +195,8 @@
     const cards=Array.from(ensemble.querySelectorAll('[data-char-kind]'));
     const fingerprint=cards.map((card,i)=>`${card.dataset.charKind}:${card.dataset.charIndex||i}:${cleanName(card,i+1)}`).join('|');
     let roster=document.getElementById('velourCharacterNameRoster');
+    // Never replace the active name editor while the user is typing.
+    if(roster&&roster.contains(document.activeElement))return;
     if(roster&&!force&&roster.dataset.fingerprint===fingerprint)return;
     roster?.remove?.();
     roster=document.createElement('div');
@@ -207,8 +209,10 @@
       const row=document.createElement('div');row.className='velour-v2-name-row';
       const label=document.createElement('label');label.textContent=card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`;
       const input=document.createElement('input');input.type='text';input.value=original.value||'';input.placeholder=card.dataset.charKind==='heroine'?'여주 이름':'상대 이름을 고정';
-      const sync=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
-      input.addEventListener('input',()=>sync('input'));input.addEventListener('change',()=>{sync('change');schedule(true);});
+      const syncValue=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));};
+      const syncSummary=()=>{const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
+      input.addEventListener('input',()=>syncValue('input'));
+      input.addEventListener('change',()=>{syncValue('change');syncSummary();schedule(true);});
       row.append(label,input);list.appendChild(row);
     });
     roster.append(title,note,list);
