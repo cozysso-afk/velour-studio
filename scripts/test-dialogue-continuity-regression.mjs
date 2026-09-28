@@ -22,5 +22,5 @@ assert.match(loader,/continuity-hotfix\.js\?v=3/);
 assert.match(loader,/continuity-vault-hotfix\.js\?v=6/);
 const html = readFileSync('index.html','utf8');
 assert.match(html,/vault-accept-hotfix\.js\?v=31/);
-assert.match(html,/continuity-voice-guard\.js\?v=5/);
+assert.match(html,/continuity-voice-guard\.js\?v=6/);
 console.log('PASS: dialogue function rotation + recent-state authority over archived arcs');
