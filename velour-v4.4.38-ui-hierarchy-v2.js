@@ -14,7 +14,7 @@
   const GUARD='__VELOUR_UI_HIERARCHY_V2__';
   if(window[GUARD])return;
   window[GUARD]=true;
-  const VERSION='1.1.1';
+  const VERSION='1.1.2';
   let scheduled=false;
   let elementSeq=0;
   const elementIds=new WeakMap();
@@ -255,17 +255,44 @@
     return details;
   }
 
-  function depthSectionsByIndex(depth){
-    if(!depth)return [];
-    return Array.from(depth.querySelectorAll('[data-depth-char]')).map(card=>{
-      const sections=Array.from(card.querySelectorAll(':scope>details'));
-      sections.forEach((section,i)=>{
-        section.classList.add('velour-v2-depth-section');
-        const summary=section.querySelector(':scope>summary');
-        if(summary)summary.textContent=i===0?'성적 스타일':'자극 · 플레이';
+  function depthCardForCharacter(depth,card,fallbackIndex){
+    if(!depth||!card)return null;
+    const rows=Array.from(depth.querySelectorAll('[data-depth-char]'));
+    const qa=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__;
+    let cfg=null;
+    try{cfg=qa?.loadCfg?.()||null;}catch(_){}
+    const index=Number(card.dataset.charIndex||0);
+    const character=card.dataset.charKind==='heroine'?cfg?.heroine:cfg?.partners?.[index];
+    const id=String(character?.id||'').trim();
+    return (id?rows.find(row=>String(row.dataset.depthChar||'')===id):null)||rows[fallbackIndex]||null;
+  }
+
+  function syncDepthProxy(proxy,original){
+    if(!proxy||!original)return;
+    const mode=String(original.dataset.mode||'allowed');
+    proxy.dataset.mode=mode;
+    proxy.textContent=String(original.textContent||'').trim();
+    proxy.setAttribute('aria-pressed',mode==='priority'?'true':'false');
+  }
+
+  function proxyDepthSection(depthCard,kind,label){
+    if(!depthCard)return null;
+    const originals=Array.from(depthCard.querySelectorAll(`[data-depth-kind="${kind}"]`));
+    if(!originals.length)return null;
+    const details=document.createElement('details');details.className='velour-v2-depth-section';
+    const summary=document.createElement('summary');summary.textContent=label;
+    const grid=document.createElement('div');
+    originals.forEach(original=>{
+      const proxy=document.createElement('button');proxy.type='button';proxy.dataset.depthKind=kind;proxy.className='velour-v2-mode-btn';
+      syncDepthProxy(proxy,original);
+      proxy.addEventListener('click',()=>{
+        original.click();
+        Promise.resolve().then(()=>syncDepthProxy(proxy,original));
       });
-      return sections;
+      grid.appendChild(proxy);
     });
+    details.append(summary,grid);
+    return details;
   }
 
   function rebuildIntimacy(ctx,ensemble,force=false){
@@ -278,14 +305,15 @@
     if(shelf&&!force&&shelf.dataset.fingerprint===fingerprint)return;
     if(shelf)shelf.remove();
     shelf=document.createElement('div');shelf.id='velourIntimacyPreferenceShelf';shelf.className='velour-v2-intimacy-shelf';shelf.dataset.fingerprint=fingerprint;
-    const depthRows=depthSectionsByIndex(depth);
     cards.forEach((card,i)=>{
       const item=document.createElement('details');item.className='velour-v2-intimacy-card';
       const summary=document.createElement('summary');summary.textContent=`${card.dataset.charKind==='heroine'?'여주':'상대'} · ${cleanName(card,i+1)}`;
       const body=document.createElement('div');body.className='velour-v2-intimacy-body';
       const position=proxySection(card,'position','친밀 구도');if(position)body.appendChild(position);
       const caress=depth?null:proxySection(card,'caress','애정 · 애무');if(caress)body.appendChild(caress);
-      (depthRows[i]||[]).forEach(section=>body.appendChild(section));
+      const depthCard=depthCardForCharacter(depth,card,i);
+      const style=proxyDepthSection(depthCard,'style','성적 스타일');if(style)body.appendChild(style);
+      const stim=proxyDepthSection(depthCard,'stim','자극 · 플레이');if(stim)body.appendChild(stim);
       item.append(summary,body);shelf.appendChild(item);
     });
     const note=ctx.intimacyBody.querySelector('.velour-v2-hub-note');
@@ -335,7 +363,8 @@
         window.__VELOUR_UI_HIERARCHY_V2_OBSERVER__=observer;
       }
       const profile=document.getElementById('velourCharacterProfileHub');
-      profile?.addEventListener?.('input',ev=>{if(ev.target?.matches?.('[data-field="name"]'))schedule(true);},true);
+      // Name typing already updates the ensemble source. Rebuilding the entire intimacy shelf per keystroke caused mobile lag and detached depth controls.
+      profile?.addEventListener?.('change',ev=>{if(ev.target?.matches?.('[data-field="name"]'))schedule(true);},true);
       window.__VELOUR_UI_HIERARCHY_V2_VERSION__=VERSION;
       window.__VELOUR_UI_HIERARCHY_V2_QA__={VERSION,layout,rebuildNameRoster,rebuildIntimacy,normalizeLanguageSection};
       console.info('✦ VELOUR UI Hierarchy V2 loaded');
