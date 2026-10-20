@@ -20,9 +20,11 @@ const hardCanonEl={
   addEventListener(type,fn){listeners[type]=fn;}
 };
 const charsEl={value:'남주: 교수. 여주: 조교. 둘 다 성인.'};
+const agencyTitle={textContent:'SCENE AGENCY · 여주 적극성'};
 const elements=new Map([['v4HardCanon',hardCanonEl],['inputChars',charsEl]]);
 const document={
   getElementById:id=>elements.get(id)||null,
+  querySelector:selector=>selector==='[data-scene-agency-title]'?agencyTitle:null,
   createElement(){return {id:'',style:{},dataset:{},innerHTML:'',addEventListener(){},querySelector(){return null;}};}
 };
 
@@ -50,7 +52,7 @@ const context={window,document,localStorage,console,
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'velour-v4.4.38-live-canon-scene-governor.js'});
 
-assert.equal(window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_VERSION__,'1.1.0');
+assert.equal(window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_VERSION__,'1.1.1');
 const qa=window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__;
 assert.ok(qa);
 
@@ -70,6 +72,9 @@ assert.match(prompt,/장소·상황 자연 회전/);
 assert.match(prompt,/상황·갈등 후보축/);
 assert.match(prompt,/주인공\(여주\) 적극성/);
 assert.ok(prompt.lastIndexOf('VELOUR LIVE CANON · SCENE GOVERNOR V1')>prompt.indexOf('VERBAL CHEMISTRY ENGINE V2.2'));
+window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__={loadCfg:()=>({protagonistGender:'male'})};
+qa.refreshProtagonistLabel();
+assert.equal(agencyTitle.textContent,'SCENE AGENCY · 남주 적극성');
 
 const candidates=qa.sceneCandidates(snap);
 assert.equal(candidates.locations.length,3);
@@ -107,6 +112,6 @@ const refinementPos=loader.indexOf('VERBAL_CHEMISTRY_REFINEMENT_LOADER');
 const livePos=loader.indexOf('LIVE_CANON_SCENE_GOVERNOR_LOADER');
 assert.ok(refinementPos>=0&&livePos>refinementPos);
 assert.match(loader,/verbal-chemistry-refinement\.js\?v=4/);
-assert.match(loader,/live-canon-scene-governor\.js\?v=3/);
+assert.match(loader,/live-canon-scene-governor\.js\?v=4/);
 
 console.log('PASS: live HARD CANON overrides stale snapshots, wardrobe continuity is locked, scene variety and agency controls are active');

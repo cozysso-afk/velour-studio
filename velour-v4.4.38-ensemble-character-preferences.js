@@ -287,7 +287,7 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
 
   let persistTimer=0;
   function scheduleDraftPatch(){clearTimeout(persistTimer);persistTimer=setTimeout(async()=>{try{await window.__VELOUR_IDB_PATCH_DRAFT_V4__?.(window.__VELOUR_V4_STATE_SNAPSHOT__?.());}catch(_){}},180);}
-  function refreshDependentUI(){setTimeout(()=>{try{window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.syncBaseCharacterSources?.();window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.compactBaseCards?.();window.__VELOUR_UI_HIERARCHY_V2_QA__?.layout?.(true);}catch(_){}},0);}
+  function refreshDependentUI(){setTimeout(()=>{try{window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.syncBaseCharacterSources?.();window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.compactBaseCards?.();window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__?.refreshProtagonistLabel?.();window.__VELOUR_UI_HIERARCHY_V2_QA__?.layout?.(true);}catch(_){}},0);}
   function cycleMode(mode){return MODE_ORDER[(MODE_ORDER.indexOf(normalizeMode(mode))+1)%MODE_ORDER.length];}
   function paintMode(btn,mode){
     if(!btn)return;const m=normalizeMode(mode);btn.dataset.mode=m;

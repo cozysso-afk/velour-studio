@@ -8,7 +8,7 @@
   'use strict';
   if (window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR__) return;
 
-  const VERSION='1.1.0';
+  const VERSION='1.1.1';
   const GUARD='__VELOUR_LIVE_CANON_SCENE_GOVERNOR__';
   const KEY='VELOUR_SCENE_GOVERNOR_V1';
   const DEFAULT={agencyIntensity:72,agencyFrequency:'balanced'};
@@ -142,6 +142,10 @@
     try{return window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__?.loadCfg?.()?.protagonistGender==='male'?'남주':'여주';}
     catch(_){return '여주';}
   }
+  function refreshProtagonistLabel(){
+    const title=document.querySelector?.('[data-scene-agency-title]');
+    if(title)title.textContent=`SCENE AGENCY · ${protagonistLabel()} 적극성`;
+  }
   function directive(state){
     const hard=String(state?.hardCanon||'').trim();
     const clothes=wardrobeFacts(hard);
@@ -230,7 +234,7 @@ ${canonText}
     wrap.id='velourSceneGovernorV1';
     wrap.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(180,190,210,.18);border-radius:10px;background:rgba(255,255,255,.025)';
     const leadLabel=protagonistLabel();
-    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:8px">SCENE AGENCY · ${leadLabel} 적극성</div>
+    wrap.innerHTML=`<div data-scene-agency-title style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:8px">SCENE AGENCY · ${leadLabel} 적극성</div>
       <label style="display:block;font-size:10px;margin-bottom:4px">적극성 강도 <b id="vsgAgencyIntensityValue">${cfg.agencyIntensity}</b></label>
       <input id="vsgAgencyIntensity" type="range" min="0" max="100" step="5" value="${cfg.agencyIntensity}" style="width:100%">
       <label style="display:block;font-size:10px;margin:8px 0 4px">적극성 빈도</label>
@@ -259,7 +263,7 @@ ${canonText}
     };
     window[GUARD]=true;
     window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_VERSION__=VERSION;
-    window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__={loadCfg,saveCfg,liveHardCanon,wardrobeFacts,sceneCandidates,sceneMemory,directive,agencyBudget};
+    window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__={loadCfg,saveCfg,liveHardCanon,wardrobeFacts,sceneCandidates,sceneMemory,directive,agencyBudget,refreshProtagonistLabel};
     renderUI();
     console.info('✦ VELOUR Live Canon + Scene Variety Governor V1 loaded');
     return true;

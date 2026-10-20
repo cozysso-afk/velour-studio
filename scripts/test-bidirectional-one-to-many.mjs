@@ -89,5 +89,6 @@ assert.match(coreSource,/ensemble\.protagonistGender==='male'/);
 assert.match(coreSource,/하렘: 한 성인 남성 주인공과 복수의 성인 여성 후보 관계/);
 assert.match(sceneAgencySource,/const cfg=window\.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__/);
 assert.match(liveCanonSource,/protagonistGender==='male'\?'남주':'여주'/);
+assert.match(ensembleSource,/refreshProtagonistLabel/,'gender changes must refresh the scene-agency title');
 
 console.log('PASS: legacy reverse-harem data remains compatible and male-protagonist harem mode preserves independent female partner profiles, labels, and prompt roles');
