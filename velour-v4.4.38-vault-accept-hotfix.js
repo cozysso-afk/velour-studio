@@ -24,11 +24,11 @@
 const __velourLoadHotfix=(guard,src)=>{if(window[guard])return;window[guard]=true;const script=document.createElement('script');script.src=src;script.async=false;document.head.appendChild(script);};
 __velourLoadHotfix('__VELOUR_AUTH_GATE_LOADER__','./velour-v4.4.38-auth-gate.js?v=4');
 __velourLoadHotfix('__VELOUR_QUALITY_RESTORE_LOADER__','./velour-v4.4.38-quality-restore.js?v=6');
-__velourLoadHotfix('__VELOUR_SCENE_AGENCY_LOADER__','./velour-v4.4.38-scene-agency-hotfix.js?v=1');
+__velourLoadHotfix('__VELOUR_SCENE_AGENCY_LOADER__','./velour-v4.4.38-scene-agency-hotfix.js?v=2');
 __velourLoadHotfix('__VELOUR_EPISODE_BRANCH_LOADER__','./velour-v4.4.38-episode-branch-hotfix.js?v=3');
 __velourLoadHotfix('__VELOUR_USAGE_DASHBOARD_LOADER__','./velour-v4.4.38-usage-dashboard-hotfix.js?v=2');
 __velourLoadHotfix('__VELOUR_CONTINUITY_COST_LOADER__','./velour-v4.4.38-continuity-hotfix.js?v=3');
-__velourLoadHotfix('__VELOUR_CONTINUITY_VAULT_EDGE_LOADER__','./velour-v4.4.38-continuity-vault-hotfix.js?v=6');
+__velourLoadHotfix('__VELOUR_CONTINUITY_VAULT_EDGE_LOADER__','./velour-v4.4.38-continuity-vault-hotfix.js?v=7');
 __velourLoadHotfix('__VELOUR_INTERNAL_LABEL_FIREWALL_LOADER__','./velour-v4.4.38-internal-label-firewall.js?v=1');
 __velourLoadHotfix('__VELOUR_PROSE_QA_LOADER__','./velour-v4.4.38-prose-qa-hotfix.js?v=1');
 __velourLoadHotfix('__VELOUR_STYLE_DNA_LOADER__','./velour-v4.4.38-style-dna-hotfix.js?v=3');
@@ -39,8 +39,8 @@ __velourLoadHotfix('__VELOUR_CONCEPT_RELATIONSHIP_GOVERNOR_LOADER__','./velour-v
 __velourLoadHotfix('__VELOUR_VERBAL_CHEMISTRY_V2_LOADER__','./velour-v4.4.38-verbal-chemistry-v2.js?v=2');
 __velourLoadHotfix('__VELOUR_VERBAL_CHEMISTRY_REFINEMENT_LOADER__','./velour-v4.4.38-verbal-chemistry-refinement.js?v=4');
 __velourLoadHotfix('__VELOUR_VAULT_LANGUAGE_FIREWALL_LOADER__','./velour-v4.4.38-vault-language-firewall.js?v=1');
-__velourLoadHotfix('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__','./velour-v4.4.38-ensemble-character-preferences.js?v=2');
+__velourLoadHotfix('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__','./velour-v4.4.38-ensemble-character-preferences.js?v=3');
 __velourLoadHotfix('__VELOUR_INTIMACY_PREFERENCE_DEPTH_LOADER__','./velour-v4.4.38-intimacy-preference-depth.js?v=2');
-__velourLoadHotfix('__VELOUR_AUTHORING_EXPERIENCE_V1_LOADER__','./velour-v4.4.38-authoring-experience-v1.js?v=3');
+__velourLoadHotfix('__VELOUR_AUTHORING_EXPERIENCE_V1_LOADER__','./velour-v4.4.38-authoring-experience-v1.js?v=4');
 __velourLoadHotfix('__VELOUR_NARRATIVE_VARIATION_V2_LOADER__','./velour-v4.4.38-narrative-variation-v2.js?v=1');
-__velourLoadHotfix('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__','./velour-v4.4.38-live-canon-scene-governor.js?v=2');
+__velourLoadHotfix('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__','./velour-v4.4.38-live-canon-scene-governor.js?v=3');

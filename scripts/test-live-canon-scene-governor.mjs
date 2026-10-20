@@ -107,6 +107,6 @@ const refinementPos=loader.indexOf('VERBAL_CHEMISTRY_REFINEMENT_LOADER');
 const livePos=loader.indexOf('LIVE_CANON_SCENE_GOVERNOR_LOADER');
 assert.ok(refinementPos>=0&&livePos>refinementPos);
 assert.match(loader,/verbal-chemistry-refinement\.js\?v=4/);
-assert.match(loader,/live-canon-scene-governor\.js\?v=2/);
+assert.match(loader,/live-canon-scene-governor\.js\?v=3/);
 
 console.log('PASS: live HARD CANON overrides stale snapshots, wardrobe continuity is locked, scene variety and agency controls are active');

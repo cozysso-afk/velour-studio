@@ -16,8 +16,8 @@ assert.match(source,/document\.querySelector\('#velourV33Panel \.v33-profile'\)/
 assert.match(source,/selectedText\('v4OccA'\)/);
 assert.match(source,/selectedText\('v4OccB'\)/);
 assert.match(source,/selectedText\('v4Relationship'\)/);
-assert.match(source,/assign\(cfg\.heroine,'role',occB\)/);
-assert.match(source,/assign\(cfg\.partners\[0\],'role',occA\)/);
+assert.match(source,/assign\(cfg\.heroine,'role',maleLead \? occA : occB\)/);
+assert.match(source,/assign\(cfg\.partners\[0\],'role',maleLead \? occB : occA\)/);
 assert.match(source,/role\.style\.display = 'none'/);
 assert.match(source,/rel\.style\.display = 'none'/);
 
@@ -44,9 +44,9 @@ const intimacyPos = loader.indexOf('__VELOUR_INTIMACY_PREFERENCE_DEPTH_LOADER__'
 const authoringPos = loader.indexOf('__VELOUR_AUTHORING_EXPERIENCE_V1_LOADER__');
 const canonPos = loader.indexOf('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__');
 assert.ok(intimacyPos>=0 && authoringPos>intimacyPos && canonPos>authoringPos,'authoring layer must load after preference panels and before final live canon');
-assert.match(loader,/velour-v4\.4\.38-authoring-experience-v1\.js\?v=3/);
+assert.match(loader,/velour-v4\.4\.38-authoring-experience-v1\.js\?v=4/);
 
-assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=31/);
-assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=31/);
+assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
+assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
 
 console.log('PASS: authoring UI consolidation removes duplicate sources, groups crossovers by narrative axis, excludes legacy overlaps from auto-mix, and preserves final canon order');

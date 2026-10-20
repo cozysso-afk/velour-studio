@@ -5,7 +5,7 @@
    Goals:
    - keep character profile controls out of the writing-style section
    - keep intimacy preferences in their own top-level accordion
-   - move heroine scene agency beside character controls
+   - move protagonist scene agency beside character controls
    - preserve all original controls/listeners/state by moving nodes or proxying clicks
    - reduce nested borders, tiny type, and vertical sprawl on mobile
 */
@@ -14,7 +14,7 @@
   const GUARD='__VELOUR_UI_HIERARCHY_V2__';
   if(window[GUARD])return;
   window[GUARD]=true;
-  const VERSION='1.1.2';
+  const VERSION='1.2.0';
   let scheduled=false;
   let elementSeq=0;
   const elementIds=new WeakMap();
@@ -23,6 +23,10 @@
     if(!el)return 'none';
     if(!elementIds.has(el))elementIds.set(el,`e${++elementSeq}`);
     return elementIds.get(el);
+  };
+  const cardRoleLabel=(card,index=0)=>{
+    if(!card)return '주인공';
+    return String(card.dataset?.charLabel||'').trim()||(card.dataset?.charKind==='heroine'?(card.dataset?.charGender==='male'?'남주':'여주'):`${card.dataset?.charGender==='female'?'여주':'남주'} ${index+1}`);
   };
 
   function installCss(){
@@ -174,7 +178,10 @@
     const oldHub=document.getElementById('velourCharacterPreferenceHub');
     const agency=document.getElementById('velourSceneGovernorV1');
     const ensemble=document.getElementById('velourEnsemblePrefsV1');
-    const agencyBox=ensureGroup(ctx.profileBody,'velourCharacterAgencyGroup','여주 적극성 · SCENE AGENCY');
+    const leadCard=ensemble?.querySelector?.('[data-char-kind="heroine"]');
+    const agencyLabel=`${cardRoleLabel(leadCard)} 적극성 · SCENE AGENCY`;
+    const agencyBox=ensureGroup(ctx.profileBody,'velourCharacterAgencyGroup',agencyLabel);
+    const agencyTitle=agencyBox.querySelector?.('.velour-v2-group-label');if(agencyTitle)agencyTitle.textContent=agencyLabel;
     const profileBox=ensureGroup(ctx.profileBody,'velourCharacterProfilesGroup','인물 프로필 · 말투/성격/행동');
     if(agency&&agency.parentNode!==agencyBox)agencyBox.appendChild(agency);
     if(ensemble&&ensemble.parentNode!==profileBox)profileBox.appendChild(ensemble);
@@ -207,10 +214,11 @@
     cards.forEach((card,i)=>{
       const original=card.querySelector('[data-field="name"]');if(!original)return;original.classList.add('velour-v2-name-source');
       const row=document.createElement('div');row.className='velour-v2-name-row';
-      const label=document.createElement('label');label.textContent=card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`;
-      const input=document.createElement('input');input.type='text';input.value=original.value||'';input.placeholder=card.dataset.charKind==='heroine'?'여주 이름':'상대 이름을 고정';
+      const roleLabel=cardRoleLabel(card,Number(card.dataset.charIndex||i));
+      const label=document.createElement('label');label.textContent=roleLabel;
+      const input=document.createElement('input');input.type='text';input.value=original.value||'';input.placeholder=`${roleLabel} 이름`;
       const syncValue=(kind)=>{original.value=input.value;original.dispatchEvent(new Event(kind,{bubbles:true}));};
-      const syncSummary=()=>{const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${card.dataset.charKind==='heroine'?'여주':`상대 ${Number(card.dataset.charIndex||i)+1}`} · ${String(input.value||'').trim()||'이름 미설정'}`;};
+      const syncSummary=()=>{const summary=card.querySelector(':scope>summary');if(summary)summary.textContent=`${roleLabel} · ${String(input.value||'').trim()||'이름 미설정'}`;};
       input.addEventListener('input',()=>syncValue('input'));
       input.addEventListener('change',()=>{syncValue('change');syncSummary();schedule(true);});
       row.append(label,input);list.appendChild(row);
@@ -223,7 +231,7 @@
   function cleanName(card,index){
     const name=String(card?.querySelector?.('[data-field="name"]')?.value||'').trim();
     if(name)return name;
-    return card?.dataset?.charKind==='heroine'?'여주':`상대 ${index}`;
+    return cardRoleLabel(card,Math.max(0,index-1));
   }
 
   function syncProxy(proxy,original){
@@ -307,7 +315,7 @@
     shelf=document.createElement('div');shelf.id='velourIntimacyPreferenceShelf';shelf.className='velour-v2-intimacy-shelf';shelf.dataset.fingerprint=fingerprint;
     cards.forEach((card,i)=>{
       const item=document.createElement('details');item.className='velour-v2-intimacy-card';
-      const summary=document.createElement('summary');summary.textContent=`${card.dataset.charKind==='heroine'?'여주':'상대'} · ${cleanName(card,i+1)}`;
+      const summary=document.createElement('summary');summary.textContent=`${cardRoleLabel(card,Number(card.dataset.charIndex||i))} · ${cleanName(card,i+1)}`;
       const body=document.createElement('div');body.className='velour-v2-intimacy-body';
       const position=proxySection(card,'position','친밀 구도');if(position)body.appendChild(position);
       const caress=depth?null:proxySection(card,'caress','애정 · 애무');if(caress)body.appendChild(caress);

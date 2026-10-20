@@ -6,7 +6,7 @@ const ui=readFileSync('velour-v4.4.38-ui-hierarchy-v2.js','utf8');
 const index=readFileSync('index.html','utf8');
 const canonical=readFileSync('scripts/build-github-pages-canonical.mjs','utf8');
 
-assert.match(ui,/const VERSION='1\.1\.2'/);
+assert.match(ui,/const VERSION='1\.2\.0'/);
 assert.match(ui,/velourCharacterProfileHub/);
 assert.match(ui,/velourCharacterNameRoster/);
 assert.match(ui,/이름 · 인물 고정/);
@@ -27,9 +27,9 @@ assert.match(ui,/#velourIntimacyDepthV1\{display:none!important\}/);
 assert.doesNotMatch(ui,/window\.buildPrompt\s*=/,'UI hierarchy layer must not wrap prompt generation');
 assert.doesNotMatch(ui,/buildPrompt=function/,'UI hierarchy layer must remain presentation-only');
 
-assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=31/);
-assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=31/);
-assert.match(index,/velour-v4\.4\.38-ui-hierarchy-v2\.js\?v=4/);
-assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=31/);
-assert.match(canonical,/velour-v4\.4\.38-ui-hierarchy-v2\.js\?v=4/);
+assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
+assert.match(canonical,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
+assert.match(index,/velour-v4\.4\.38-ui-hierarchy-v2\.js\?v=5/);
+assert.match(index,/velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
+assert.match(canonical,/velour-v4\.4\.38-ui-hierarchy-v2\.js\?v=5/);
 console.log('PASS: UI hierarchy separates character, intimacy, and writing-style controls without changing prompt/state logic');

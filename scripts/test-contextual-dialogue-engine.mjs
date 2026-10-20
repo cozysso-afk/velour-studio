@@ -13,9 +13,9 @@ assert.match(source, /stripLegacyDialogueDirectives/);
 assert.match(source, /dialogueMemory/);
 assert.match(source, /preferredFunctions/);
 assert.match(source, /상대가 방금 한 말·표정·행동/);
-assert.match(loader, /velour-v4\.4\.38-contextual-dialogue-engine\.js\?v=2/);
+assert.match(loader, /velour-v4\.4\.38-contextual-dialogue-engine\.js\?v=3/);
 assert.doesNotMatch(loader, /velour-v4\.4\.38-dialogue-context-hotfix/);
-assert.match(canonicalBuild, /velour-v4\.4\.38-vault-accept-hotfix\.js\?v=18/);
+assert.match(canonicalBuild, /velour-v4\.4\.38-vault-accept-hotfix\.js\?v=32/);
 
 const legacyPrompt = `BASE
 [BODY PRAISE TALK — legacy]

@@ -138,6 +138,10 @@
   function stripPriorLiveBlock(prompt){
     return String(prompt||'').replace(/\n?===== VELOUR LIVE CANON · SCENE GOVERNOR V1 =====[\s\S]*?===== \/VELOUR LIVE CANON · SCENE GOVERNOR V1 =====\s*/g,'\n').trim();
   }
+  function protagonistLabel(){
+    try{return window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__?.loadCfg?.()?.protagonistGender==='male'?'남주':'여주';}
+    catch(_){return '여주';}
+  }
   function directive(state){
     const hard=String(state?.hardCanon||'').trim();
     const clothes=wardrobeFacts(hard);
@@ -145,7 +149,7 @@
     const memory=sceneMemory(state);
     const cfg=loadCfg();
     const budget=agencyBudget(cfg);
-    const canonText=hard||'(없음)';
+    const canonText=hard||'(없음)',leadLabel=protagonistLabel();
     return `===== VELOUR LIVE CANON · SCENE GOVERNOR V1 =====
 [최신 HARD CANON — 생성 순간의 현재 입력값이 최종 권위]
 - 아래 원문은 지금 화면의 ‘절대 바뀌면 안 되는 설정’ 최신값이다. 앞쪽 프롬프트·저장 스냅샷·이전 화 메모에 다른 버전이 있으면 전부 무시하고 아래 최신값을 따른다.
@@ -168,7 +172,7 @@ ${canonText}
 - 후보는 강제 랜덤 이벤트가 아니다. 현재 직업·일정·관계 단계·직전 선택에서 인과가 자연스러운 1개만 골라 구체화한다. 새 악역·사고·우연한 위기를 다양화 목적으로 억지 투입하지 않는다.
 - 공용/공개 공간은 대화·이동·긴장·사건 전개에 활용하고, 높은 사생활이 필요한 장면은 인과적으로 적절한 사적 공간으로 이동시킨다.
 
-[주인공(여주) 적극성]
+[주인공(${leadLabel}) 적극성]
 - 강도 ${cfg.agencyIntensity}/100 — ${agencyTone(cfg)}.
 - 빈도 ${cfg.agencyFrequency}; 한 화에 장면 방향을 실제로 바꾸는 능동 선택 목표 ${budget}회 안팎. 숫자 채우기식 반복은 금지한다.
 - 능동성은 먼저 말하기만 뜻하지 않는다. 제안·질문·접근·거절·조건 제시·이동 제안·일정 변경·속도/거리/배치 전환 등 현재 장면에 맞는 서로 다른 방식으로 나타낸다.
@@ -225,7 +229,8 @@ ${canonText}
     const wrap=document.createElement('div');
     wrap.id='velourSceneGovernorV1';
     wrap.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(180,190,210,.18);border-radius:10px;background:rgba(255,255,255,.025)';
-    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:8px">SCENE AGENCY · 여주 적극성</div>
+    const leadLabel=protagonistLabel();
+    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:8px">SCENE AGENCY · ${leadLabel} 적극성</div>
       <label style="display:block;font-size:10px;margin-bottom:4px">적극성 강도 <b id="vsgAgencyIntensityValue">${cfg.agencyIntensity}</b></label>
       <input id="vsgAgencyIntensity" type="range" min="0" max="100" step="5" value="${cfg.agencyIntensity}" style="width:100%">
       <label style="display:block;font-size:10px;margin:8px 0 4px">적극성 빈도</label>

@@ -101,7 +101,14 @@
     return 'tension';
   }
 
-  function eroticDirective(mode){
+  function protagonistRoles(){
+    try{
+      const cfg=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__?.loadCfg?.();
+      return cfg?.protagonistGender==='male'?{lead:'남주',partner:'여주'}:{lead:'여주',partner:'남주'};
+    }catch(_){return {lead:'여주',partner:'남주'};}
+  }
+
+  function eroticDirective(mode,leadLabel='여주'){
     if (mode === 'direct') return `
 [R-19 DIRECT 장면 밀도 — 해금된 성인 장면에만]
 - 장면을 선택했다면 페이드아웃·몇 문장 요약·완곡어만 이어지는 회피로 끝내지 않는다. 허용된 직접 어휘 범위 안에서 행동→상대 반응→다음 선택이 보이는 명료하고 감각적인 문장으로 쓴다.
@@ -113,11 +120,11 @@
 - 문학적이라는 이유로 수식어를 겹겹이 쌓거나 같은 떨림·열기·숨 표현을 반복하지 않는다. 행동과 선택이 선명한 고밀도 감각 문체를 유지한다.`;
     return `
 [R-15 긴장 밀도]
-- 직접 묘사 상한은 지키되, 끌림과 주도권을 흐릿하게 만들지 않는다. 시선·거리·선택·멈춤·접촉 전후의 반응으로 성적 긴장과 여주의 능동성을 분명히 보여준다.`;
+- 직접 묘사 상한은 지키되, 끌림과 주도권을 흐릿하게 만들지 않는다. 시선·거리·선택·멈춤·접촉 전후의 반응으로 성적 긴장과 ${leadLabel}의 능동성을 분명히 보여준다.`;
   }
 
   function sceneFreedomDirective(prompt, state, isContinue){
-    const recent = scenes(state, 6);
+    const recent = scenes(state, 6),roles=protagonistRoles(),leadLabel=roles.lead,partnerLabel=roles.partner;
     const recentLocations = unique(recent.map(scene => scene?.location)).slice(-5);
     const recentAgency = unique(recent.map(scene => [scene?.initiation, scene?.control].filter(Boolean).join(' / '))).slice(-4);
     const candidates = positionCandidates(prompt);
@@ -148,8 +155,8 @@
 - 이번 화에 검토할 공간 축: ${seeds.join(' / ')}. 세계관·직업·현재 인과에 맞는 하나를 구체적인 장소로 바꾸되, 무관한 사고나 새 악역을 억지로 투입하지 않는다.
 - 고정 장소가 캐논이어도 그 안의 다른 구역·시간대·방문 목적·사람의 흐름을 바꾼다. 장소 변화가 장식이 아니라 행동 선택과 대화 방식에 실제 영향을 줘야 한다.
 
-[여주 능동성 — 별도 지시가 없어도 기본 적용]
-- 여주는 남주가 시키기 전까지 가만히 받기만 하는 인물이 아니다. 매 화 최소 한 번은 여주가 먼저 선택·제안·질문·접근·거절·조건 제시·행동 전환 중 하나로 장면의 방향을 실제로 바꾼다.
+[${leadLabel} 능동성 — 별도 지시가 없어도 기본 적용]
+- ${leadLabel}는 ${partnerLabel}가 시키기 전까지 가만히 받기만 하는 인물이 아니다. 매 화 최소 한 번은 ${leadLabel}가 먼저 선택·제안·질문·접근·거절·조건 제시·행동 전환 중 하나로 장면의 방향을 실제로 바꾼다.
 - 친밀 장면에서는 도입과 중간 전환에 걸쳐 최소 2회의 서로 다른 능동 행동을 둔다. 먼저 거리를 좁히거나 접촉하기, 원하는 것을 말하거나 손으로 이끌기, 속도·방향·배치를 바꾸기, 멈춤·경계·계속의 의사를 분명히 하기 중 캐릭터에게 맞는 행동을 고른다.
 - 수줍거나 조용한 성격도 수동성과 같지 않다. 작은 손짓·몸의 이동·짧은 요구·상대 행동을 되돌려 주는 방식으로 선택권을 보여준다. 갑자기 성격을 뒤집어 과장된 지배자로 만들지는 않는다.
 - 최근 주도 패턴: ${recentAgency.length ? recentAgency.join(' / ') : '기록 없음'}. 같은 사람이 같은 방식으로 시작하고 끝내는 구조를 반복하지 말고, 장면 안에서 주도권이 최소 한 번 자연스럽게 교대되게 한다.
@@ -157,12 +164,12 @@
 [체위·블로킹 실행 — 권고가 아니라 실제 장면 설계]
 - 성인 장면이 실제로 발생하고 사용자가 짧게 써 달라고 하지 않았다면 ${phaseRule}를 구현한다. 손 위치나 각도만 조금 바꾼 것은 새 단계로 세지 않는다.
 - ${candidatePlan}
-- 각 단계는 충분히 살아난 뒤 여주의 선택, 상대 반응, 공간 활용, 대사 또는 감정 변화 때문에 다음 단계로 넘어간다. 체위 이름과 계획표는 본문에 쓰지 않는다.
-- 기본 장면 호흡은 빌드업 → 첫 구도 → 여주의 능동적 전환/주도권 교대 → 두 번째·세 번째 구도 → 감정적 여운이다. 모든 장면을 똑같은 순서로 복사하지는 않는다.
+- 각 단계는 충분히 살아난 뒤 ${leadLabel}의 선택, 상대 반응, 공간 활용, 대사 또는 감정 변화 때문에 다음 단계로 넘어간다. 체위 이름과 계획표는 본문에 쓰지 않는다.
+- 기본 장면 호흡은 빌드업 → 첫 구도 → ${leadLabel}의 능동적 전환/주도권 교대 → 두 번째·세 번째 구도 → 감정적 여운이다. 모든 장면을 똑같은 순서로 복사하지는 않는다.
 
 [머신 메타 정확도]
-- location에는 실제 중심 장소를 구체적으로, initiation에는 누가 무엇으로 시작했는지, control에는 주도권이 어떻게 교대됐는지 기록한다. 여주가 능동 행동을 하지 않았다면 한 것처럼 꾸미지 말고 repeatRisk를 high로 자기검수한다.
-${eroticDirective(intensityMode())}
+- location에는 실제 중심 장소를 구체적으로, initiation에는 누가 무엇으로 시작했는지, control에는 주도권이 어떻게 교대됐는지 기록한다. ${leadLabel}가 능동 행동을 하지 않았다면 한 것처럼 꾸미지 말고 repeatRisk를 high로 자기검수한다.
+${eroticDirective(intensityMode(),leadLabel)}
 ===== END VELOUR SCENE FREEDOM · AGENCY OVERRIDE V1 =====`;
   }
 
