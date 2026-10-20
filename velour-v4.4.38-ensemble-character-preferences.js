@@ -10,7 +10,7 @@
   'use strict';
   if (window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__) return;
 
-  const VERSION='1.0.3';
+  const VERSION='1.1.0';
   const GUARD='__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES__';
   const KEY='VELOUR_ENSEMBLE_CHARACTER_PREFS_V1';
   const MAX_PARTNERS=5;
@@ -106,10 +106,18 @@
   const clamp100=v=>Math.max(0,Math.min(100,Number(v||0)));
   const normalizeFreq=v=>['low','balanced','high','very_high'].includes(String(v))?String(v):'balanced';
 
-  function baseCharacter(kind,index=0){
+  const normalizeGender=value=>String(value)==='male'?'male':'female';
+  const oppositeGender=gender=>normalizeGender(gender)==='male'?'female':'male';
+  const genderLabel=gender=>normalizeGender(gender)==='male'?'남성':'여성';
+  const pronounLabel=gender=>normalizeGender(gender)==='male'?'그':'그녀';
+  const roleLabel=(gender,isProtagonist,index=0)=>isProtagonist?(normalizeGender(gender)==='male'?'남주':'여주'):`${normalizeGender(gender)==='male'?'남주':'여주'} ${index+1}`;
+
+  function baseCharacter(kind,index=0,protagonistGender='female'){
+    const gender=kind==='heroine'?normalizeGender(protagonistGender):oppositeGender(protagonistGender);
     return {
       id:kind==='heroine'?'heroine':`partner_${index+1}`,
-      name:kind==='heroine'?'여주':`남주 ${index+1}`,
+      name:roleLabel(gender,kind==='heroine',index),
+      gender,
       role:'', relationshipNote:'', customNote:'',
       speechPreset:'auto', personalities:[], tendencies:[],
       initiativeIntensity:kind==='heroine'?72:60,
@@ -118,13 +126,14 @@
       caressModes:DEFAULT_CARESS_MODES()
     };
   }
-  const DEFAULT={mode:'one_to_one',heroine:baseCharacter('heroine'),partners:[baseCharacter('partner',0)]};
+  const DEFAULT={mode:'one_to_one',protagonistGender:'female',heroine:baseCharacter('heroine'),partners:[baseCharacter('partner',0)]};
 
-  function normalizeCharacter(raw,kind,index){
-    const base=baseCharacter(kind,index);
+  function normalizeCharacter(raw,kind,index,protagonistGender='female'){
+    const base=baseCharacter(kind,index,protagonistGender);
     const c=Object.assign(base,raw||{});
     c.id=clean(c.id,48)||base.id;
     c.name=clean(c.name,60)||base.name;
+    c.gender=base.gender;
     c.role=clean(c.role,120);
     c.relationshipNote=clean(c.relationshipNote,180);
     c.customNote=clean(c.customNote,220);
@@ -139,13 +148,29 @@
   }
   function normalizeCfg(raw){
     const src=raw&&typeof raw==='object'?raw:{};
-    const partners=(Array.isArray(src.partners)?src.partners:DEFAULT.partners).slice(0,MAX_PARTNERS).map((p,i)=>normalizeCharacter(p,'partner',i));
-    if(!partners.length)partners.push(baseCharacter('partner',0));
-    return {mode:src.mode==='one_to_many'?'one_to_many':'one_to_one',heroine:normalizeCharacter(src.heroine,'heroine',0),partners};
+    // Backward compatibility: every V1 snapshot omitted protagonistGender and
+    // represented a female protagonist plus male partners.
+    const protagonistGender=normalizeGender(src.protagonistGender);
+    const partners=(Array.isArray(src.partners)?src.partners:DEFAULT.partners).slice(0,MAX_PARTNERS).map((p,i)=>normalizeCharacter(p,'partner',i,protagonistGender));
+    if(!partners.length)partners.push(baseCharacter('partner',0,protagonistGender));
+    return {mode:src.mode==='one_to_many'?'one_to_many':'one_to_one',protagonistGender,heroine:normalizeCharacter(src.heroine,'heroine',0,protagonistGender),partners};
   }
   function loadCfg(){try{return normalizeCfg(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){return normalizeCfg(DEFAULT);}}
   function saveCfg(next){const cfg=normalizeCfg(next);try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(_){}return cfg;}
   function activePartners(cfg=loadCfg()){return cfg.mode==='one_to_many'?cfg.partners:cfg.partners.slice(0,1);}
+  function applyGenderDefaults(raw,gender){
+    const cfg=normalizeCfg(raw),nextGender=normalizeGender(gender),previousGender=cfg.protagonistGender;
+    const previousLeadDefault=roleLabel(previousGender,true,0),nextLeadDefault=roleLabel(nextGender,true,0);
+    if(!cfg.heroine.name||cfg.heroine.name===previousLeadDefault||/^(?:여주|남주)$/.test(cfg.heroine.name))cfg.heroine.name=nextLeadDefault;
+    cfg.partners.forEach((partner,index)=>{
+      const previousDefault=roleLabel(oppositeGender(previousGender),false,index),nextDefault=roleLabel(oppositeGender(nextGender),false,index);
+      if(!partner.name||partner.name===previousDefault||/^(?:여주|남주)\s+\d+$/.test(partner.name))partner.name=nextDefault;
+    });
+    cfg.protagonistGender=nextGender;
+    cfg.heroine.gender=nextGender;
+    cfg.partners.forEach(partner=>{partner.gender=oppositeGender(nextGender);});
+    return cfg;
+  }
 
   const labelOf=(list,id)=>list.find(x=>x[0]===id)?.[1]||id;
   const itemLabel=(catalog,id)=>catalog.find(x=>x.id===id)?.label||id;
@@ -198,7 +223,8 @@
     const personality=c.personalities.map(id=>labelOf(PERSONALITY_PRESETS,id)).join(', ')||'자동';
     const tendency=c.tendencies.map(id=>labelOf(TENDENCY_PRESETS,id)).join(', ')||'자동';
     const agency=isHeroine?heroineAgencySummary(state):`${c.initiativeIntensity}/100(${initiativeTone(c)}, 빈도 ${c.initiativeFrequency}, 장면방향 전환 ${initiativeBudget(c)}회 안팎)`;
-    return `- ${isHeroine?'여주':'상대'} ${c.name}: 역할=${c.role||'미지정'} / 관계메모=${c.relationshipNote||'없음'} / 말투=${speech} / 성격=${personality} / 성향=${tendency} / 적극성=${agency}${c.customNote?` / 추가=${c.customNote}`:''}`;
+    const role=isHeroine?roleLabel(c.gender,true,0):`${normalizeGender(c.gender)==='male'?'남주':'여주'} 상대`;
+    return `- ${role} ${c.name}: 성별=${genderLabel(c.gender)} / 대명사=${pronounLabel(c.gender)} / 역할=${c.role||'미지정'} / 관계메모=${c.relationshipNote||'없음'} / 말투=${speech} / 성격=${personality} / 성향=${tendency} / 적극성=${agency}${c.customNote?` / 추가=${c.customNote}`:''}`;
   }
   function preferenceLine(c,catalog,key,label){
     const b=modeBuckets(c,catalog,key),names=ids=>ids.map(id=>itemLabel(catalog,id));
@@ -211,18 +237,21 @@
     const positionCandidates=focus?mutualPositionCandidates(cfg.heroine,focus,state):[];
     const depthActive=!!window.__VELOUR_INTIMACY_PREFERENCE_DEPTH_QA__;
     const caressCandidates=!depthActive&&focus?mutualCaressCandidates(cfg.heroine,focus):[];
-    const modeLabel=cfg.mode==='one_to_many'?'1:다 · 여주 1명과 여러 상대 캐릭터':'1:1';
+    const leadRole=roleLabel(cfg.protagonistGender,true,0),partnerGender=oppositeGender(cfg.protagonistGender);
+    const partnerRole=roleLabel(partnerGender,false,0).replace(/\s+1$/,'');
+    const modeLabel=cfg.mode==='one_to_many'?`1:다 · ${leadRole} 1명과 여러 ${genderLabel(partnerGender)} 상대 캐릭터`:`1:1 · ${leadRole} 주인공과 ${partnerRole} 상대`;
     return `===== VELOUR ENSEMBLE CHARACTER · PREFERENCE ENGINE V1 =====
 [캐릭터 구조]
 - 모드: ${modeLabel}.
 - 이 프리셋은 빠른 기본값이다. 사용자 인물 설정 원문과 최신 HARD CANON이 더 구체적이거나 충돌하면 그쪽이 우선한다.
 - 모든 말투·성격·성향은 캐릭터별로 독립 유지한다. 다른 인물의 말버릇·지식·감정·관계 권리를 복사하지 않는다.
 - 아래 캐릭터 프로필의 이름은 고정 식별자다. 사용자 이번 화 지시나 HARD CANON이 명시적으로 개명하지 않는 한 새 본명·별명을 임의 생성하거나 서로의 이름을 바꾸지 않는다.
+- 프로필에 지정된 성별과 역할(${leadRole}=주인공, ${partnerRole}=상대)을 따른다. 성별에 맞는 호칭·대명사를 사용하되, 사용자 원문이나 HARD CANON에 별도 호칭이 있으면 그것을 우선한다.
 - 1:다에서는 각 상대의 이름·말투·관계메모·지식·감정 상태를 해당 edge에 묶고 다른 상대에게 전이하지 않는다.
 - 1:다 모드는 여러 개의 독립적인 1:1 관계 edge를 뜻한다. 자동으로 모두가 같은 관계가 되거나, 동시에 같은 장면의 친밀 관계가 되었다고 가정하지 않는다.
 - 특별한 인과나 사용자 지시가 없으면 한 장면의 중심 상대는 1명으로 유지해 캐릭터 목소리와 관계 진전을 섞지 않는다.
 - 친밀 설정은 성인 캐릭터 사이에서 기존 동의·관계 단계·페이싱 게이트가 이미 허용한 장면에만 적용한다. 이 엔진 자체가 장면을 조기 해금하지 않는다.
-- 여주 적극성 강도/빈도는 기존 SCENE AGENCY 설정만 사용한다. 이 엔진에서 별도 여주 적극성 값을 만들어 충돌시키지 않는다.
+- ${leadRole} 적극성 강도/빈도는 기존 SCENE AGENCY 설정만 사용한다. 이 엔진에서 별도 주인공 적극성 값을 만들어 충돌시키지 않는다.
 
 [캐릭터 프로필]
 ${characterLine(cfg.heroine,true,state)}
@@ -258,6 +287,7 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
 
   let persistTimer=0;
   function scheduleDraftPatch(){clearTimeout(persistTimer);persistTimer=setTimeout(async()=>{try{await window.__VELOUR_IDB_PATCH_DRAFT_V4__?.(window.__VELOUR_V4_STATE_SNAPSHOT__?.());}catch(_){}},180);}
+  function refreshDependentUI(){setTimeout(()=>{try{window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.syncBaseCharacterSources?.();window.__VELOUR_AUTHORING_EXPERIENCE_QA__?.compactBaseCards?.();window.__VELOUR_LIVE_CANON_SCENE_GOVERNOR_QA__?.refreshProtagonistLabel?.();window.__VELOUR_UI_HIERARCHY_V2_QA__?.layout?.(true);}catch(_){}},0);}
   function cycleMode(mode){return MODE_ORDER[(MODE_ORDER.indexOf(normalizeMode(mode))+1)%MODE_ORDER.length];}
   function paintMode(btn,mode){
     if(!btn)return;const m=normalizeMode(mode);btn.dataset.mode=m;
@@ -271,15 +301,16 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
   function characterCard(character,kind,index,removable){
     const personalities=PERSONALITY_PRESETS.map(([id,label])=>tagButton(id,label,character.personalities.includes(id),'personality')).join('');
     const tendencies=TENDENCY_PRESETS.map(([id,label])=>tagButton(id,label,character.tendencies.includes(id),'tendency')).join('');
+    const label=roleLabel(character.gender,kind==='heroine',index);
     const agency=kind==='heroine'
-      ? '<div style="font-size:9px;opacity:.68;line-height:1.45;padding:6px;border:1px dashed rgba(245,196,107,.18);border-radius:7px">여주 적극성 강도/빈도는 중복 저장하지 않고 기존 SCENE AGENCY 설정을 사용합니다.</div>'
+      ? `<div style="font-size:9px;opacity:.68;line-height:1.45;padding:6px;border:1px dashed rgba(245,196,107,.18);border-radius:7px">${label} 적극성 강도/빈도는 중복 저장하지 않고 기존 SCENE AGENCY 설정을 사용합니다.</div>`
       : `<label style="font-size:9px">적극성 강도 <b data-intensity-value>${character.initiativeIntensity}</b><input data-field="initiativeIntensity" type="range" min="0" max="100" step="5" value="${character.initiativeIntensity}" style="width:100%"></label><label style="font-size:9px">적극성 빈도<select data-field="initiativeFrequency" style="font-size:10px;padding:6px 8px;margin-top:3px"><option value="low"${character.initiativeFrequency==='low'?' selected':''}>낮음</option><option value="balanced"${character.initiativeFrequency==='balanced'?' selected':''}>균형</option><option value="high"${character.initiativeFrequency==='high'?' selected':''}>높음</option><option value="very_high"${character.initiativeFrequency==='very_high'?' selected':''}>매우 높음</option></select></label>`;
-    return `<details data-char-kind="${kind}" data-char-index="${index}" style="margin-top:8px;border:1px solid rgba(245,196,107,.16);border-radius:10px;padding:8px;background:rgba(255,255,255,.02)">
-      <summary style="cursor:pointer;font-size:10px;font-weight:800;color:#f4dfb1">${kind==='heroine'?'여주':`상대 ${index+1}`} · ${esc(character.name)}${removable?' <span style="opacity:.55">(삭제 가능)</span>':''}</summary>
+    return `<details data-char-kind="${kind}" data-char-index="${index}" data-char-gender="${character.gender}" data-char-label="${esc(label)}" style="margin-top:8px;border:1px solid rgba(245,196,107,.16);border-radius:10px;padding:8px;background:rgba(255,255,255,.02)">
+      <summary style="cursor:pointer;font-size:10px;font-weight:800;color:#f4dfb1">${esc(label)} · ${esc(character.name)}${removable?' <span style="opacity:.55">(삭제 가능)</span>':''}</summary>
       <div style="margin-top:8px;display:grid;gap:7px">
         <input data-field="name" value="${esc(character.name)}" placeholder="이름" style="font-size:10px;padding:7px 8px">
         <input data-field="role" value="${esc(character.role)}" placeholder="직업/역할" style="font-size:10px;padding:7px 8px">
-        <input data-field="relationshipNote" value="${esc(character.relationshipNote)}" placeholder="여주와의 관계 메모" style="font-size:10px;padding:7px 8px">
+        <input data-field="relationshipNote" value="${esc(character.relationshipNote)}" placeholder="${kind==='heroine'?'상대들과의 관계 메모':`${roleLabel(oppositeGender(character.gender),true,0)}와의 관계 메모`}" style="font-size:10px;padding:7px 8px">
         <select data-field="speechPreset" style="font-size:10px;padding:7px 8px">${SPEECH_PRESETS.map(([id,label])=>`<option value="${id}"${character.speechPreset===id?' selected':''}>${esc(label)}</option>`).join('')}</select>
         <div><div style="font-size:9px;margin-bottom:4px;opacity:.72">성격 기본값</div><div data-tags="personality" style="display:flex;flex-wrap:wrap;gap:4px">${personalities}</div></div>
         <div><div style="font-size:9px;margin-bottom:4px;opacity:.72">행동 성향</div><div data-tags="tendency" style="display:flex;flex-wrap:wrap;gap:4px">${tendencies}</div></div>
@@ -295,10 +326,11 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
     if(document.getElementById('velourEnsemblePrefsV1'))return;
     const anchor=document.getElementById('velourVerbalChemistryV2')||document.getElementById('velourV40Panel');if(!anchor||!anchor.parentNode)return;
     const cfg=loadCfg(),wrap=document.createElement('div');wrap.id='velourEnsemblePrefsV1';wrap.style.cssText='margin-top:10px;padding:10px;border:1px solid rgba(245,196,107,.20);border-radius:10px;background:rgba(255,255,255,.025)';
-    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:7px">CHARACTERS · 관계/말투/취향</div><label style="display:block;font-size:9.5px;margin-bottom:4px">관계 구조</label><select id="vcpMode" style="font-size:10px;padding:7px 8px"><option value="one_to_one"${cfg.mode==='one_to_one'?' selected':''}>1:1</option><option value="one_to_many"${cfg.mode==='one_to_many'?' selected':''}>1:다 · 여주 1명 + 여러 상대</option></select><div style="font-size:9px;opacity:.62;line-height:1.45;margin-top:5px">1:다는 각 상대와의 관계를 독립적으로 유지합니다. 자동 다인 친밀 장면 모드가 아닙니다.</div><div id="vcpCards">${characterCard(cfg.heroine,'heroine',0,false)}${activePartners(cfg).map((p,i)=>characterCard(p,'partner',i,cfg.mode==='one_to_many'&&i>0)).join('')}</div>${cfg.mode==='one_to_many'&&cfg.partners.length<MAX_PARTNERS?'<button type="button" id="vcpAddPartner" style="margin-top:8px;width:100%;border:1px solid rgba(245,196,107,.26);background:rgba(245,196,107,.07);color:#ffebaa;border-radius:8px;padding:7px;font-size:9.5px">+ 상대 캐릭터 추가</button>':''}`;
+    wrap.innerHTML=`<div style="font-size:10px;font-weight:800;letter-spacing:.08em;margin-bottom:7px">CHARACTERS · 관계/말투/취향</div><label style="display:block;font-size:9.5px;margin-bottom:4px">관계 구조</label><select id="vcpMode" style="font-size:10px;padding:7px 8px"><option value="one_to_one"${cfg.mode==='one_to_one'?' selected':''}>1:1</option><option value="one_to_many"${cfg.mode==='one_to_many'?' selected':''}>1:다 · 주인공 1명 + 여러 상대</option></select><label style="display:block;font-size:9.5px;margin:7px 0 4px">주인공 성별</label><select id="vcpProtagonistGender" style="font-size:10px;padding:7px 8px"><option value="female"${cfg.protagonistGender==='female'?' selected':''}>여주 · 상대는 남성</option><option value="male"${cfg.protagonistGender==='male'?' selected':''}>남주 · 상대는 여성</option></select><div style="font-size:9px;opacity:.62;line-height:1.45;margin-top:5px">1:다는 각 상대와의 관계를 독립적으로 유지합니다. 자동 다인 친밀 장면 모드가 아닙니다.</div><div id="vcpCards">${characterCard(cfg.heroine,'heroine',0,false)}${activePartners(cfg).map((p,i)=>characterCard(p,'partner',i,cfg.mode==='one_to_many'&&i>0)).join('')}</div>${cfg.mode==='one_to_many'&&cfg.partners.length<MAX_PARTNERS?'<button type="button" id="vcpAddPartner" style="margin-top:8px;width:100%;border:1px solid rgba(245,196,107,.26);background:rgba(245,196,107,.07);color:#ffebaa;border-radius:8px;padding:7px;font-size:9.5px">+ 상대 캐릭터 추가</button>':''}`;
     anchor.insertAdjacentElement?.('afterend',wrap) || anchor.parentNode.appendChild(wrap);wrap.querySelectorAll?.('[data-pref-kind]').forEach(btn=>paintMode(btn,btn.dataset.mode));
     wrap.addEventListener('change',ev=>{
-      const target=ev.target;if(target?.id==='vcpMode'){const next=loadCfg();next.mode=target.value==='one_to_many'?'one_to_many':'one_to_one';saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
+      const target=ev.target;if(target?.id==='vcpMode'){const next=loadCfg();next.mode=target.value==='one_to_many'?'one_to_many':'one_to_one';saveCfg(next);wrap.remove();renderUI();refreshDependentUI();scheduleDraftPatch();return;}
+      if(target?.id==='vcpProtagonistGender'){saveCfg(applyGenderDefaults(loadCfg(),target.value));wrap.remove();renderUI();refreshDependentUI();scheduleDraftPatch();return;}
       const card=target?.closest?.('[data-char-kind]');if(!card||!target?.dataset?.field)return;const next=loadCfg(),kind=card.dataset.charKind,index=Number(card.dataset.charIndex||0),character=kind==='heroine'?next.heroine:next.partners[index];if(!character)return;
       const field=target.dataset.field;if(field==='initiativeIntensity')character[field]=Number(target.value);else character[field]=target.value;saveCfg(next);scheduleDraftPatch();
     });
@@ -307,9 +339,9 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
       const field=target.dataset.field;if(field==='initiativeIntensity'){character[field]=Number(target.value);const v=card.querySelector?.('[data-intensity-value]');if(v)v.textContent=String(target.value);}else character[field]=target.value;saveCfg(next);scheduleDraftPatch();
     });
     wrap.addEventListener('click',ev=>{
-      const target=ev.target;if(target?.id==='vcpAddPartner'){const next=loadCfg();if(next.partners.length<MAX_PARTNERS)next.partners.push(baseCharacter('partner',next.partners.length));saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
+      const target=ev.target;if(target?.id==='vcpAddPartner'){const next=loadCfg();if(next.partners.length<MAX_PARTNERS)next.partners.push(baseCharacter('partner',next.partners.length,next.protagonistGender));saveCfg(next);wrap.remove();renderUI();refreshDependentUI();scheduleDraftPatch();return;}
       const card=target?.closest?.('[data-char-kind]');if(!card)return;const next=loadCfg(),kind=card.dataset.charKind,index=Number(card.dataset.charIndex||0),character=kind==='heroine'?next.heroine:next.partners[index];if(!character)return;
-      if(target?.dataset?.removePartner==='1'&&kind==='partner'&&index>0){next.partners.splice(index,1);saveCfg(next);wrap.remove();renderUI();scheduleDraftPatch();return;}
+      if(target?.dataset?.removePartner==='1'&&kind==='partner'&&index>0){next.partners.splice(index,1);saveCfg(next);wrap.remove();renderUI();refreshDependentUI();scheduleDraftPatch();return;}
       if(target?.dataset?.tagId){const key=target.dataset.tagKind==='personality'?'personalities':'tendencies',id=target.dataset.tagId,wasSelected=character[key].includes(id);character[key]=wasSelected?character[key].filter(x=>x!==id):[...character[key],id].slice(-5);saveCfg(next);const kindName=target.dataset.tagKind;card.querySelectorAll?.(`[data-tag-kind="${kindName}"][data-tag-id]`).forEach(btn=>{const on=character[key].includes(btn.dataset.tagId);btn.style.borderColor=on?'rgba(245,196,107,.60)':'rgba(245,196,107,.20)';btn.style.background=on?'rgba(245,196,107,.16)':'rgba(255,255,255,.03)';btn.style.color=on?'#ffebaa':'#cdbbc4';btn.setAttribute?.('aria-pressed',on?'true':'false');});scheduleDraftPatch();return;}
       if(target?.dataset?.prefId){const key=target.dataset.prefKind==='position'?'positionModes':'caressModes',id=target.dataset.prefId;character[key][id]=cycleMode(character[key][id]);saveCfg(next);paintMode(target,character[key][id]);scheduleDraftPatch();}
     });
@@ -320,7 +352,7 @@ ${depthActive?'- 세부 자극·플레이 후보는 INTIMACY PREFERENCE DEPTH에
     installStateBridge();const previousBuild=window.buildPrompt;
     window.buildPrompt=function(){const out=stripPriorBlock(previousBuild.apply(this,arguments)),state=window.__VELOUR_V4_STATE_SNAPSHOT__?.()||{},cfg=loadCfg(),block=directive(state,cfg),focus=focusPartner(cfg,state);window.__VELOUR_LAST_ENSEMBLE_CHARACTER_PREFERENCES__={version:VERSION,mode:cfg.mode,partnerCount:activePartners(cfg).length,focusPartner:focus?.name||'',episode:nextEpisode(state),at:new Date().toISOString()};return `${out}\n\n${block}`.trim();};
     window[GUARD]=true;window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__=VERSION;
-    window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__={POSITION_CATALOG,CARESS_CATALOG,SPEECH_PRESETS,PERSONALITY_PRESETS,TENDENCY_PRESETS,normalizeCfg,loadCfg,saveCfg,activePartners,focusPartner,modeBuckets,mutualPositionCandidates,mutualCaressCandidates,directive,cycleMode,initiativeBudget,heroineAgencySummary};
+    window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__={POSITION_CATALOG,CARESS_CATALOG,SPEECH_PRESETS,PERSONALITY_PRESETS,TENDENCY_PRESETS,normalizeCfg,loadCfg,saveCfg,activePartners,focusPartner,modeBuckets,mutualPositionCandidates,mutualCaressCandidates,directive,cycleMode,initiativeBudget,heroineAgencySummary,applyGenderDefaults,roleLabel,genderLabel,oppositeGender};
     renderUI();console.info('✦ VELOUR Ensemble Character Preferences V1 loaded');return true;
   }
   if(!install()){let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>160)clearInterval(timer);},80);}

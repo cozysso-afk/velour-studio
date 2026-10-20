@@ -4,7 +4,12 @@ import vm from 'node:vm';
 
 let state = {hardCanon:'B는 몇 차례 촬영 후 매니저를 맡기로 함.', runtime:{}};
 let direction = '';
-const context = vm.createContext({console:{info(){}}, document:{getElementById:id => ({value:id === 'v33Next' ? direction : ''})}, setInterval(){throw new Error('Unexpected installation retry');}, clearInterval(){}});
+const document={
+  getElementById:id => ({value:id === 'v33Next' ? direction : ''}),
+  createElement:()=>({dataset:{},style:{}}),
+  head:{appendChild(){}},documentElement:{appendChild(){}}
+};
+const context = vm.createContext({console:{info(){}}, document, setInterval(){throw new Error('Unexpected installation retry');}, clearInterval(){}});
 context.window = context;
 context.__VELOUR_V4_STATE_SNAPSHOT__ = () => structuredClone(state);
 context.__VELOUR_V4_STATE_RESTORE__ = next => { state = structuredClone(next); };
@@ -75,13 +80,13 @@ assert.ok(state.runtime.durableFacts.some(f=>f.includes('B와 계약을 종료�
 
 for (const age of ['35세', '35 세', '35살', '만 35세', '35세이다']) {
   const hint = voice.addressCanon({hardCanon:`B: ${age}`,runtime:{}});
-  assert.ok(hint.includes(`• B: ${age}`), age);
+  assert.ok(hint.includes(`B: ${age}`), age);
 }
 
 const html = readFileSync('index.html','utf8');
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
-assert.match(html,/vault-accept-hotfix.js\?v=17/);
+assert.match(html,/vault-accept-hotfix.js\?v=32/);
 assert.match(loader,/continuity-hotfix.js\?v=3/);
-assert.match(loader,/continuity-vault-hotfix.js\?v=6/);
+assert.match(loader,/continuity-vault-hotfix.js\?v=7/);
 assert.match(loader,/hard-canon-lock-hotfix.js\?v=1/);
 console.log('PASS: pending conditions, first/continuation prompts, settled baseline, full hard canon, per-character facts, deduplication, cache URLs');

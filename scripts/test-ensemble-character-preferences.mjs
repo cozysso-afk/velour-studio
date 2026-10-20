@@ -45,7 +45,7 @@ const context={window,document,localStorage,console,setInterval(fn){fn();return 
 context.globalThis=context;
 vm.runInNewContext(source,context,{filename:'velour-v4.4.38-ensemble-character-preferences.js'});
 
-assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.0.3');
+assert.equal(window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_VERSION__,'1.1.0');
 const qa=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__;
 assert.ok(qa);
 assert.equal(qa.POSITION_CATALOG.length,40,'core mirror should keep all 40 current position entries');
@@ -55,6 +55,9 @@ assert.match(qa.heroineAgencySummary(baseState),/very_high/);
 
 const loaded=qa.loadCfg();
 assert.equal(loaded.mode,'one_to_many');
+assert.equal(loaded.protagonistGender,'female','legacy snapshots must migrate to the existing female-protagonist behavior');
+assert.equal(loaded.heroine.gender,'female');
+assert.ok(loaded.partners.every(x=>x.gender==='male'));
 assert.equal(qa.activePartners(loaded).length,2);
 assert.equal(loaded.heroine.positionModes.missionary,'off');
 assert.equal(loaded.heroine.positionModes.rider_forward,'priority');
@@ -92,6 +95,8 @@ assert.match(prompt,/서윤/);
 assert.match(prompt,/도진/);
 assert.match(prompt,/태현/);
 assert.match(prompt,/여주 적극성 강도\/빈도는 기존 SCENE AGENCY 설정만 사용/);
+assert.match(prompt,/성별=여성 \/ 대명사=그녀/);
+assert.match(prompt,/성별=남성 \/ 대명사=그/);
 assert.match(prompt,/적극성=91\/100, 빈도 very_high — SCENE AGENCY 단일 설정/);
 assert.doesNotMatch(prompt,/서윤:.*적극성=15\/100/,'stale duplicate heroine agency value must not reach the prompt');
 assert.match(prompt,/OFF는 자동 생성 후보에서 완전히 제외/);
@@ -110,6 +115,6 @@ assert.equal(qa.loadCfg().mode,'one_to_one');
 const ensembleIndex=loader.indexOf('__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_LOADER__');
 const liveCanonIndex=loader.indexOf('__VELOUR_LIVE_CANON_SCENE_GOVERNOR_LOADER__');
 assert.ok(ensembleIndex>0&&liveCanonIndex>ensembleIndex,'ensemble planner must load before the final live HARD CANON governor');
-assert.match(loader,/ensemble-character-preferences\.js\?v=2/);
+assert.match(loader,/ensemble-character-preferences\.js\?v=3/);
 
 console.log('PASS: ensemble character preferences keep 1:1 compatibility, isolate multi-partner edges, reuse the single heroine agency authority, persist profiles, and enforce mutual tri-state preferences');

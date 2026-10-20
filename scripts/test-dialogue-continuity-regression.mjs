@@ -19,8 +19,8 @@ assert.match(body, /높은 우선순위 후보로 사용하되 장면마다 횟�
 
 const loader = readFileSync('velour-v4.4.38-vault-accept-hotfix.js','utf8');
 assert.match(loader,/continuity-hotfix\.js\?v=3/);
-assert.match(loader,/continuity-vault-hotfix\.js\?v=6/);
+assert.match(loader,/continuity-vault-hotfix\.js\?v=7/);
 const html = readFileSync('index.html','utf8');
-assert.match(html,/vault-accept-hotfix\.js\?v=31/);
+assert.match(html,/vault-accept-hotfix\.js\?v=32/);
 assert.match(html,/continuity-voice-guard\.js\?v=6/);
 console.log('PASS: dialogue function rotation + recent-state authority over archived arcs');

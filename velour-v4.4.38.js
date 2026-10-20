@@ -138,6 +138,7 @@
     ['dimension_cross','차원이동 · 이세계 적응'], ['past_life','전생 기억 · 환생 인연'],
     ['game_possession_dynamic','게임빙의 · 게임 규칙'], ['nonhuman_romance','인외/초월적 존재와의 관계'],
     ['omega_rules','오메가버스 규칙 · 성인 남녀'], ['reverse_harem','역하렘 · 한 여주 × 복수의 성인 남주 후보'],
+    ['harem','하렘 · 한 남주 × 복수의 성인 여주 후보'],
     ['identity_disguise','남장/신분위장 · 정체 발각'], ['pregnancy_change','임신/속도위반으로 관계 변화 · 선택 시에만'],
     ['family_inlaw','시가/가족 갈등 · 선택 시에만'],
     ['forced_proximity','강제적 근접 생활'], ['identity_secret','정체/이중생활 비밀'],
@@ -638,7 +639,7 @@
           <div class="v40-note">키·체형·얼굴·헤어의 기본 앵커를 여기서 지정해. 아래 ‘인물 구도 및 성격’ 칸에 외형을 직접 적으면 그 지시가 우선해. <b>정확한 신체 치수·컵 수치는 내부 캐논으로만 보존하고 본문에서 반복 낭독하지 않는다.</b></div>
           <div class="v40-grid" style="margin-top:9px">
             <div>
-              <h4 style="margin:0 0 8px">여주 외형</h4>
+              <h4 style="margin:0 0 8px">여성 인물 기본 외형</h4>
               <div class="v40-grid">
                 <div class="v40-field"><label>키 (cm)</label><input id="v44FemaleHeight" type="number" min="145" max="195" step="1"></div>
                 <div class="v40-field"><label>가슴 볼륨</label><select id="v44FemaleBust"><option value="D+">풍만 · D 이상</option><option value="full">풍만</option><option value="medium">중간</option><option value="small">아담함</option><option value="custom">사용자 설정 우선</option></select></div>
@@ -655,10 +656,10 @@
                 <div class="v40-field"><label>헤어 컬러</label><select id="v44FemaleHairColor">${selectListOptions(HAIR_COLORS, state.appearance?.female?.hairColor || 'dark_brown')}</select></div>
                 <div class="v40-field"><label>모델/분위기 메모</label><input id="v44FemaleVibe" value="${esc(state.appearance?.female?.vibe || '')}" placeholder="예: 청순한데 묘하게 여우상"></div>
               </div>
-              <div class="v40-field" style="margin-top:7px"><label>여주 외형 직접 메모 (선택)</label><textarea id="v44FemaleCustom" placeholder="예: 긴 속눈썹, 웃을 때 입꼬리 올라감, 흑발 레이어드">${esc(state.appearance?.female?.custom || '')}</textarea></div>
+              <div class="v40-field" style="margin-top:7px"><label>여성 인물 외형 직접 메모 (선택)</label><textarea id="v44FemaleCustom" placeholder="예: 긴 속눈썹, 웃을 때 입꼬리 올라감, 흑발 레이어드">${esc(state.appearance?.female?.custom || '')}</textarea></div>
             </div>
             <div>
-              <h4 style="margin:0 0 8px">남주 외형</h4>
+              <h4 style="margin:0 0 8px">남성 인물 기본 외형</h4>
               <div class="v40-grid">
                 <div class="v40-field"><label>키 (cm)</label><input id="v44MaleHeight" type="number" min="160" max="210" step="1"></div>
                 <div class="v40-field"><label>체격</label><select id="v44MaleBuild"><option value="broad">큰 체격·넓은 어깨·강한 피지컬</option><option value="lean">키 크고 날렵한 근육형</option><option value="balanced">균형 잡힌 체격</option><option value="slim">슬림하고 가벼운 체형</option></select></div>
@@ -673,7 +674,7 @@
                 <div class="v40-field"><label>헤어 컬러</label><select id="v44MaleHairColor">${selectListOptions(HAIR_COLORS, state.appearance?.male?.hairColor || 'black')}</select></div>
                 <div class="v40-field"><label>모델/분위기 메모</label><input id="v44MaleVibe" value="${esc(state.appearance?.male?.vibe || '')}" placeholder="예: 냉미남, 선 굵고 단정함"></div>
               </div>
-              <div class="v40-field" style="margin-top:7px"><label>남주 외형 직접 메모 (선택)</label><textarea id="v44MaleCustom" placeholder="예: 진한 눈썹, 높은 콧대, 짧은 흑발">${esc(state.appearance?.male?.custom || '')}</textarea></div>
+              <div class="v40-field" style="margin-top:7px"><label>남성 인물 외형 직접 메모 (선택)</label><textarea id="v44MaleCustom" placeholder="예: 진한 눈썹, 높은 콧대, 짧은 흑발">${esc(state.appearance?.male?.custom || '')}</textarea></div>
             </div>
           </div>
         </div>
@@ -720,7 +721,7 @@
           <div class="v40-field"><label>신체 묘사 반복 회피 범위</label><select id="v4416BodyWindow"><option value="2">최근 2화</option><option value="3">최근 3화 · 기본</option><option value="5">최근 5화</option></select></div>
         </div>
         <div class="v40-checks" style="margin-top:9px">
-          <label class="v40-chip"><input type="checkbox" id="v4415BodyFocus">남주가 여주의 가슴·엉덩이에 크게 반응</label>
+          <label class="v40-chip"><input type="checkbox" id="v4415BodyFocus">남성 인물이 여성 인물의 가슴·엉덩이에 크게 반응</label>
           <label class="v40-chip"><input type="checkbox" id="v4415LightSpanking">합의된 가벼운 엉덩이 스팽킹 · 몇 차례 허용</label>
           <label class="v40-chip"><input type="checkbox" id="v4416BodyRotation">같은 부위·묘사 관점 반복 자동 회피</label>
           <label class="v40-chip"><input type="checkbox" id="v4416PraiseVariety">몸매 칭찬 문장 패턴 반복 방지</label>
@@ -905,8 +906,9 @@
     return `
 [CHARACTER APPEARANCE — 연재 전체에서 일관 유지]
 - 아래 외형은 비노골적 기본 앵커다. 사용자가 이번 화 지시나 인물 구도 칸에서 더 구체적으로 적은 내용이 있으면 그 지시를 우선하되, 충돌이 없으면 아래 설정을 유지한다.
-- 여주: 키 약 ${f.height||165}cm, ${bustLabel(f.bust)}, ${waistLabel(f.waist)}, ${hipsLabel(f.hips)}, 피부톤 ${optionLabel(SKIN_TONES,f.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,f.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,f.eyes)}, 코 ${optionLabel(NOSE_STYLES,f.nose)}, 입술 ${optionLabel(LIP_STYLES,f.lips)}, 전체 인상 ${optionLabel(FEMALE_IMPRESSIONS,f.impression)}, 헤어 ${optionLabel(FEMALE_HAIR_LENGTHS,f.hairLength)} · ${optionLabel(FEMALE_HAIR_STYLES,f.hairStyle)} · ${optionLabel(HAIR_COLORS,f.hairColor)}.${f.vibe?` 분위기 메모: ${proseSafeAppearanceNote(f.vibe)}.`:''}${f.custom?` 추가 외형 메모: ${proseSafeAppearanceNote(f.custom)}.`:''}
-- 남주: 키 약 ${m.height||188}cm, 체격 ${buildLabel(m.build)}, 피부톤 ${optionLabel(SKIN_TONES,m.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,m.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,m.eyes)}, 코 ${optionLabel(NOSE_STYLES,m.nose)}, 입술 ${optionLabel(LIP_STYLES,m.lips)}, 전체 인상 ${optionLabel(MALE_IMPRESSIONS,m.impression)}, 헤어 ${optionLabel(MALE_HAIR_LENGTHS,m.hairLength)} · ${optionLabel(MALE_HAIR_STYLES,m.hairStyle)} · ${optionLabel(HAIR_COLORS,m.hairColor)}.${m.vibe?` 분위기 메모: ${m.vibe}.`:''}${m.custom?` 추가 외형 메모: ${m.custom}.`:''}
+- 여성 인물 기본값: 키 약 ${f.height||165}cm, ${bustLabel(f.bust)}, ${waistLabel(f.waist)}, ${hipsLabel(f.hips)}, 피부톤 ${optionLabel(SKIN_TONES,f.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,f.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,f.eyes)}, 코 ${optionLabel(NOSE_STYLES,f.nose)}, 입술 ${optionLabel(LIP_STYLES,f.lips)}, 전체 인상 ${optionLabel(FEMALE_IMPRESSIONS,f.impression)}, 헤어 ${optionLabel(FEMALE_HAIR_LENGTHS,f.hairLength)} · ${optionLabel(FEMALE_HAIR_STYLES,f.hairStyle)} · ${optionLabel(HAIR_COLORS,f.hairColor)}.${f.vibe?` 분위기 메모: ${proseSafeAppearanceNote(f.vibe)}.`:''}${f.custom?` 추가 외형 메모: ${proseSafeAppearanceNote(f.custom)}.`:''}
+- 남성 인물 기본값: 키 약 ${m.height||188}cm, 체격 ${buildLabel(m.build)}, 피부톤 ${optionLabel(SKIN_TONES,m.skin)}, 얼굴형 ${optionLabel(FACE_SHAPES,m.faceShape)}, 눈매 ${optionLabel(EYE_STYLES,m.eyes)}, 코 ${optionLabel(NOSE_STYLES,m.nose)}, 입술 ${optionLabel(LIP_STYLES,m.lips)}, 전체 인상 ${optionLabel(MALE_IMPRESSIONS,m.impression)}, 헤어 ${optionLabel(MALE_HAIR_LENGTHS,m.hairLength)} · ${optionLabel(MALE_HAIR_STYLES,m.hairStyle)} · ${optionLabel(HAIR_COLORS,m.hairColor)}.${m.vibe?` 분위기 메모: ${m.vibe}.`:''}${m.custom?` 추가 외형 메모: ${m.custom}.`:''}
+- 같은 성별의 인물이 여러 명이면 위 값은 공통 기본값일 뿐이다. 인물별 프로필·사용자 원문·HARD CANON의 개별 외형이 있으면 해당 인물에는 그 개별 설정을 우선한다.
 - 외형은 화마다 들쭉날쭉 바뀌지 않게 유지하되, 이 정보는 “연속성용 내부 앵커”이지 매 화 독자에게 다시 설명할 목록이 아니다.
 - 키, 가슴/허리/힙 치수, 브라 컵 문자, 숫자+컵 조합 등 정확한 신체 수치는 기본적으로 본문·대사에 그대로 인쇄하지 않는다. 사용자가 구체적 값을 입력했더라도 캐릭터 일관성을 위한 비공개 기준값으로만 보존한다.
 - 외형 묘사가 실제 장면에 필요할 때는 한 번에 1~2개 특징만 자연스럽게 사용한다. 매 화 같은 가슴 크기·키·눈매·헤어를 소개문처럼 반복하지 않는다.
@@ -925,7 +927,7 @@
 [BODY PROSE VARIATION — 외형 캐논과 문장 표현을 분리]
 - 신체 묘사 어휘 밀도: ${richness}. 외형을 자주 열거하라는 뜻이 아니라, 묘사가 필요한 순간에 단조로운 형용사 반복 대신 장면에 맞는 구체적이고 자연스러운 표현을 선택한다.
 - 신체 설정의 정확한 숫자·컵·치수는 appearance 캐논에만 보존하고, 본문은 숫자 대신 전체 실루엣·선과 비율·움직임과 자세·의상에 드러나는 형태·빛/거리/시점에 따른 인상·접촉 시의 감각 중 장면에 맞는 관점을 골라 쓴다.
-- 묘사 대상도 한 부위에 고정하지 않는다. 얼굴/머리, 목·어깨·쇄골, 등·허리선, 골반·엉덩이, 허벅지·다리, 전체 실루엣 등으로 자연스럽게 분산한다.${state.maleBodyFocus!==false?' 남주의 선호상 가슴과 엉덩이/허리선의 비중은 높일 수 있지만, 그것만 매 문단·매 화 반복해서 묘사하지 않는다.':''}
+- 묘사 대상도 한 부위에 고정하지 않는다. 얼굴/머리, 목·어깨·쇄골, 등·허리선, 골반·엉덩이, 허벅지·다리, 전체 실루엣 등으로 자연스럽게 분산한다.${state.maleBodyFocus!==false?' 남성 인물의 선호상 여성 인물의 가슴과 엉덩이/허리선 비중은 높일 수 있지만, 그것만 매 문단·매 화 반복하거나 여러 여성 인물에게 같은 반응을 복사하지 않는다.':''}
 - 같은 의미의 형용사만 바꿔 끼우는 식의 유사문장도 반복으로 간주한다. 명사+형용사 고정구뿐 아니라 동사, 문장 길이, 관찰 주체, 묘사 순서를 함께 바꾼다.
 - 최근 ${win}화 신체 묘사 초점: ${recentFocus.length?recentFocus.join(', '):'기록 없음'}. 최근 묘사 관점: ${recentAngles.length?recentAngles.join(', '):'기록 없음'}. ${state.bodyDescriptionRotation!==false?'가능하면 최근에 덜 쓴 부위와 관점을 우선한다.':'반복 회피는 강제하지 않는다.'}
 - 더티톡에서 몸매 칭찬이 허용된 경우에도 숫자·사이즈를 낭독하지 않는다.${state.bodyPraiseVariety!==false?' 같은 칭찬 문장이나 같은 부위+같은 평가의 조합을 연속 장면에서 복사하지 말고, 칭찬 대상과 문장 구조를 바꾼다.':''}
@@ -1070,7 +1072,10 @@ ${serviceContext?'- 홈서비스/출장/배송 직업은 실제 업무를 먼저
   function conceptDirective(){
     const ds=new Set(state.dynamics||[]);
     const pregnancyAllowed=ds.has('pregnancy_change') || /임신|속도위반/.test(String(state.hardCanon||''));
-    const reverseHarem=ds.has('reverse_harem');
+    let ensemble=null;try{ensemble=window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__?.loadCfg?.()||null;}catch(_){}
+    const configuredMany=ensemble?.mode==='one_to_many';
+    const reverseHarem=configuredMany?ensemble.protagonistGender!=='male':ds.has('reverse_harem');
+    const harem=configuredMany?ensemble.protagonistGender==='male':ds.has('harem');
     return `
 [CONCEPT-SPECIFIC CONSISTENCY]
 ${state.world==='dimension_travel'||ds.has('dimension_cross')?'- 차원이동/이세계: 출발 세계와 도착 세계의 규칙, 귀환 가능 여부, 주인공이 알고 있는 정보를 구분하고 에피소드마다 임의로 바꾸지 않는다.':''}
@@ -1079,6 +1084,7 @@ ${state.world==='game_possession'||ds.has('game_possession_dynamic')?'- 게임�
 ${state.world==='inhuman'||ds.has('nonhuman_romance')?'- 인외/초월적 존재: 종족 특성, 수명, 감각, 능력, 약점과 인간 사회에서의 정체를 HARD CANON처럼 일관되게 유지한다.':''}
 ${state.world==='omegaverse_mf'||ds.has('omega_rules')?'- 오메가버스: 모든 인물은 성인 남녀이며, 2차 성별·주기·향·사회 규칙은 작품 초기에 정한 설정만 사용한다. 규칙을 장면 편의를 위해 즉석에서 추가하지 않는다.':''}
 ${reverseHarem?'- 역하렘: 한 성인 여성 주인공과 복수의 성인 남성 후보 관계를 구분해 추적한다. 후보들의 성격/관계/진전도를 서로 복사하지 말고, 최종 선택 여부는 사용자 스토리라인을 우선한다.':''}
+${harem?'- 하렘: 한 성인 남성 주인공과 복수의 성인 여성 후보 관계를 구분해 추적한다. 후보들의 성격/관계/진전도를 서로 복사하지 말고, 최종 선택 여부는 사용자 스토리라인을 우선한다.':''}
 ${ds.has('identity_disguise')?'- 남장/신분위장: 실제 정체, 각 인물이 현재 알고 있는 정체, 발각 시점을 별도로 추적하고 조기 폭로나 설정 망각을 금지한다.':''}
 ${ds.has('family_inlaw')?'- 가족/시가 갈등: 연애의 모든 갈등을 가족 악역 하나로 몰지 말고, 독립·경계·생활 방식·가치관 충돌처럼 현실적인 원인을 분리한다.':''}
 ${pregnancyAllowed?'- 임신/속도위반 관계 변화가 선택되어 있다. 임신 여부·시점·누가 알고 있는지·관계 변화는 타임라인에 고정해 앞뒤가 바뀌지 않게 한다.':'- 임신/출산은 현재 선택된 컨셉이 아니다. 사용자가 HARD CANON이나 현재 지시에서 명시하지 않는 한 임신·출산을 관계 전개 장치로 새로 만들지 않는다.'}
@@ -1257,7 +1263,7 @@ ${cooldownLocked?`- 쿨다운 잠금: 최근 성인 장면이 EP.${last}. EP.${l
     return `
 [INTIMACY TEXTURE — 해금 구간]
 - 키스 ${kiss}, 애무 ${fore}, 장면 중 애정 접촉 지속 ${during}. 급히 다음 단계로 점프하지 말고 반응과 감정 흐름을 충분히 보여준다.
-${state.maleBodyFocus!==false?'- 남주는 여주의 전체적인 곡선과 가슴·허리·엉덩이 쪽 매력에 강하게 끌릴 수 있으나 같은 부위·문구를 반복하지 않고 정확한 치수는 낭독하지 않는다.':''}
+${state.maleBodyFocus!==false?'- 남성 인물은 여성 인물의 전체적인 곡선과 가슴·허리·엉덩이 쪽 매력에 강하게 끌릴 수 있으나 같은 부위·문구를 반복하지 않고 정확한 치수는 낭독하지 않는다. 같은 성별의 상대가 여러 명이면 이 반응을 모든 인물에게 똑같이 복사하지 않는다.':''}
 - 몸매 칭찬 ${praise}. 현재 대사 게이트 안에서만 사용하고 같은 칭찬 구조를 반복하지 않는다.
 ${state.lightSpanking!==false?'- 상호 동의가 분명한 가벼운 스팽킹은 허용하되 별도 요청 없이 강한 폭력/처벌로 확대하지 않는다.':'- 스팽킹은 기본 사용하지 않는다.'}
 - 위 값은 장면 질감 설정이며 매번 같은 순서로 복제하지 않는다.`;

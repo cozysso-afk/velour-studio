@@ -222,8 +222,9 @@
       if (!value || obj[key] === value) return;
       obj[key] = value; changed = true;
     };
-    assign(cfg.heroine,'role',occB);
-    assign(cfg.partners[0],'role',occA);
+    const maleLead = cfg.protagonistGender === 'male';
+    assign(cfg.heroine,'role',maleLead ? occA : occB);
+    assign(cfg.partners[0],'role',maleLead ? occB : occA);
     if (rel) {
       assign(cfg.heroine,'relationshipNote',`V4 현재 관계: ${rel}`);
       assign(cfg.partners[0],'relationshipNote',`V4 현재 관계: ${rel}`);
@@ -233,9 +234,16 @@
   }
 
   function sourceSummary(kind,index){
-    const role = kind === 'heroine' ? selectedText('v4OccB') : selectedText('v4OccA');
+    const qa = window.__VELOUR_ENSEMBLE_CHARACTER_PREFERENCES_QA__;
+    let cfg = null;
+    try { cfg = qa?.loadCfg?.() || null; } catch (_) {}
+    const maleLead = cfg?.protagonistGender === 'male';
+    const role = kind === 'heroine'
+      ? selectedText(maleLead ? 'v4OccA' : 'v4OccB')
+      : selectedText(maleLead ? 'v4OccB' : 'v4OccA');
     const rel = selectedText('v4Relationship');
-    const agencyNote = kind === 'heroine' ? '여주 적극성은 위 SCENE AGENCY에서 설정' : '이 상대의 적극성은 이 카드에서 개별 설정';
+    const leadLabel = maleLead ? '남주' : '여주';
+    const agencyNote = kind === 'heroine' ? `${leadLabel} 적극성은 위 SCENE AGENCY에서 설정` : '이 상대의 적극성은 이 카드에서 개별 설정';
     return `직업 ${role || '기존 V4 설정'} · 현재 관계 ${rel || '기존 V4 설정'} · ${agencyNote} — 직업/관계는 여기서 다시 입력하지 않아도 돼.`;
   }
 
@@ -524,7 +532,7 @@
     window.__VELOUR_AUTHORING_EXPERIENCE_VERSION__ = VERSION;
     window.__VELOUR_AUTHORING_EXPERIENCE_QA__ = {
       VERSION,GROUPS,EXTRA_CROSSOVERS,GROUP_BY_ID,groupFor,chooseMixIds,
-      syncBaseCharacterSources,currentSelectedIds,applyDiversifiedAutoMix,crossoverPromptBlock
+      syncBaseCharacterSources,compactBaseCards,currentSelectedIds,applyDiversifiedAutoMix,crossoverPromptBlock
     };
     console.info('✦ VELOUR Authoring Experience V1 loaded');
     return true;
