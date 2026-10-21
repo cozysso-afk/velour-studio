@@ -212,6 +212,15 @@
             white-space: nowrap;
         }
 
+        /* Keep the continue button's icon and label centered on mobile Safari. */
+        #btnNext {
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            line-height: 1.2;
+        }
+        #btnNext > span { line-height: 1; }
+
         .result-panel {
             background: rgba(18, 5, 12, 0.92);
             border: 1px solid var(--panel-border);
@@ -416,7 +425,7 @@
         <span>✦</span> <span id="btnGenText">스토리 실시간 생성</span>
     </button>
     <button class="btn-outline" id="btnNext" style="display:none; border-color:var(--gold-main);" onclick="generateStory(true)">
-        <span>✦</span> 다음 화 이어쓰기 (서사 연결)
+        <span aria-hidden="true">✦</span> <span>다음 화 이어쓰기 (서사 연결)</span>
     </button>
     <button class="btn-outline" onclick="copyMasterPrompt()">📋 마스터 프롬프트 복사</button>
 
@@ -581,7 +590,7 @@
                 const generated = data.candidates[0].content.parts[0].text;
                 novelText.innerText = generated;
                 storyHistory += (storyHistory ? "\n\n" : "") + generated;
-                btnNext.style.display = 'block';
+                btnNext.style.display = 'flex';
             } else {
                 novelText.innerText = "응답이 생성되지 않았습니다. (안전 정책 필터에 의해 거절되었거나 입력 설정을 점검해 주세요.)";
             }
@@ -901,7 +910,7 @@
       if(panel) panel.style.display='block';
       if(text) text.innerText=d.currentText || (sessionEpisodes.at(-1)?.text) || storyHistory;
       if(title) title.innerText='EPISODE '+String(episodeCount).padStart(2,'0');
-      const next=document.getElementById('btnNext'); if(next) next.style.display='block';
+      const next=document.getElementById('btnNext'); if(next) next.style.display='flex';
       document.getElementById('velourDraftBanner')?.classList.remove('show');
       panel?.scrollIntoView({behavior:'smooth'});
     } catch(e){ alert('임시 스토리를 복구하지 못했어.'); }
@@ -1026,7 +1035,7 @@
     if(panel) panel.style.display='block';
     if(text) text.innerText=item.currentText || sessionEpisodes.at(-1)?.text || storyHistory;
     if(title) title.innerText='EPISODE '+String(episodeCount).padStart(2,'0');
-    const next=document.getElementById('btnNext'); if(next) next.style.display='block';
+    const next=document.getElementById('btnNext'); if(next) next.style.display='flex';
     closeStoryLibrary(); saveDraft(); panel?.scrollIntoView({behavior:'smooth'});
   };
 
